@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  db:
+    container_name: whooks-db
+    image: timescale/timescaledb:latest-pg18
+    restart: always
+    environment:
+      POSTGRES_USER: whooks
+      POSTGRES_PASSWORD: whooks
+      POSTGRES_DB: whooks
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    container_name: whooks-redis
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  db_data:
+  redis_data:
