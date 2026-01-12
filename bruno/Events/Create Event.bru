@@ -1,0 +1,33 @@
+meta {
+  name: Create Event
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/v1/events
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "uid": "019bb3b7-71d2-7da7-a8eb-227aaf88a907",
+    "consumer_id": "consumer_1srOrx2ZWZBpBUvZwXKQmoEYga2",
+    "topic": "transaction.completed",
+    "data": {
+      "id": "019bb3b7-57f7-7b28-9ad1-ce122c7a66c0",
+      "status": "completed",
+      "amount": "15"
+    },
+    "metadata": {
+      "transaction_id": "01KESVHY8HACK7HGVYPRP90WS0"
+    },
+    "tags": ["019bb3b8-198d-7b7d-92af-d6dcb0ee7aad", "pix"]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

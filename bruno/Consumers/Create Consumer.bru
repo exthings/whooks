@@ -1,0 +1,27 @@
+meta {
+  name: Create Consumer
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/v1/consumers
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "organization_id": "org_01kesyffqgfy1949n8q30st23h",
+    "uid": "019bb3e9-eecb-7529-bb9f-c3537131cb0c",
+    "name": "Ocean Store",
+    "metadata": {
+      "group": "Premium"
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

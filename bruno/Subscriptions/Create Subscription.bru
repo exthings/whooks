@@ -1,0 +1,27 @@
+meta {
+  name: Create Subscription
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/v1/subscription
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "endpoint_id": "endpoint_01kesz4skbey79n3qxqt99mkvv",
+    "topics":  [
+      "transaction.completed",
+      "transaction.pending",
+      "transaction.error"
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Update Topic
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{base_url}}/v1/topics/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 
+}

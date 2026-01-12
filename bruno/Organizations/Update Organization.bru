@@ -1,0 +1,15 @@
+meta {
+  name: Update Organization
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{base_url}}/v1/organizations/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 
+}
