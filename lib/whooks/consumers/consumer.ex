@@ -3,6 +3,7 @@ defmodule Whooks.Consumers.Consumer do
   import Ecto.Changeset
 
   @primary_key {:id, TypeID, autogenerate: true, prefix: "consumer", type: :string}
+  @foreign_key_type TypeID
   schema "consumers" do
     field :uid, :string
     field :name, :string

@@ -6,6 +6,8 @@ defmodule Whooks.Organizations.Organization do
   schema "organizations" do
     field :name, :string
 
+    has_many :consumers, Whooks.Consumers.Consumer
+
     timestamps(type: :utc_datetime)
   end
 
