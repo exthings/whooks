@@ -19,6 +19,7 @@ defmodule WhooksWeb.Router do
     pipe_through :api
 
     resources "/organizations", OrganizationController, only: [:index, :create, :show]
+    resources "/consumers", ConsumerController, only: [:index, :create, :show]
   end
 
   scope "/ui", WhooksWeb.UI do
