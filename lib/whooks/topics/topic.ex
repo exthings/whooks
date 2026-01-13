@@ -2,6 +2,8 @@ defmodule Whooks.Topics.Topic do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Whooks.Common
+
   @primary_key {:id, TypeID, autogenerate: true, prefix: "topic", type: :string}
   @foreign_key_type TypeID
   schema "topics" do
@@ -21,5 +23,6 @@ defmodule Whooks.Topics.Topic do
     |> validate_required([:name, :status, :description, :json_schema, :project_id])
     |> unique_constraint([:name, :project_id])
     |> foreign_key_constraint(:project_id)
+    |> Common.Changeset.validate_dot_notation(:name)
   end
 end
