@@ -20,6 +20,8 @@ defmodule WhooksWeb.Router do
 
     resources "/organizations", OrganizationController, only: [:index, :create, :show]
     resources "/consumers", ConsumerController, only: [:index, :create, :show]
+    resources "/projects", ProjectController, only: [:index, :create, :show]
+    resources "/topics", TopicController, only: [:index, :create, :show]
   end
 
   scope "/ui", WhooksWeb.UI do
