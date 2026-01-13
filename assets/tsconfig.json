@@ -1,0 +1,45 @@
+// {
+//   "files": [],
+//   "references": [
+//     { "path": "./tsconfig.app.json" },
+//     { "path": "./tsconfig.node.json" }
+//   ]
+// }
+{
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "resolveJsonModule": true,
+    /**
+     * Typecheck JS in `.svelte` and `.js` files by default.
+     * Disable checkJs if you'd like to use dynamic types in JS.
+     * Note that setting allowJs false does not prevent the use
+     * of JS in `.svelte` files.
+     */
+    "allowJs": true,
+    "checkJs": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "$lib": ["./js/lib"],
+      "$lib/*": ["./js/lib/*"],
+      "$pages": ["./js/pages"],
+      "$pages/*": ["./js/pages/*"],
+      "$layouts": ["./js/layouts"],
+      "$layouts/*": ["./js/layouts/*"],
+      "$components": ["./js/components"],
+      "$components/*": ["./js/components/*"],
+      "$utils": ["./js/utils"],
+      "$utils/*": ["./js/utils/*"],
+      "$types": ["./js/types"],
+      "$types/*": ["./js/types/*"],
+      "$paraglide": ["./js/paraglide"],
+      "$paraglide/*": ["./js/paraglide/*"]
+    }
+  },
+  "include": ["js/**/*.ts", "js/**/*.js", "js/**/*.svelte"]
+}
