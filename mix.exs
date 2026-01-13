@@ -58,7 +58,8 @@ defmodule Whooks.MixProject do
       {:inertia, "~> 2.5"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:typeid_elixir, "~> 1.1"},
-      {:flop, "~> 0.26.3"}
+      {:flop, "~> 0.26.3"},
+      {:reactor, "~> 0.17.0"}
     ]
   end
 
