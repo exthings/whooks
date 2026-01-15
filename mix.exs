@@ -10,7 +10,10 @@ defmodule Whooks.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      package: package(),
+      description: description(),
+      deps: deps()
     ]
   end
 
@@ -59,7 +62,8 @@ defmodule Whooks.MixProject do
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:typeid_elixir, "~> 1.1"},
       {:flop, "~> 0.26.3"},
-      {:reactor, "~> 0.17.0"}
+      {:reactor, "~> 0.17.0"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 
@@ -82,6 +86,20 @@ defmodule Whooks.MixProject do
         "phx.digest"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+    ]
+  end
+
+  defp description() do
+    "Open source webhook router and dispatcher."
+  end
+
+  defp package() do
+    [
+      name: "whooks",
+      organization: "exthings",
+      files: ~w(lib priv .formatter.exs mix.exs README* LICENSE* CHANGELOG*),
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/exthings/whooks"}
     ]
   end
 end
