@@ -1,21 +1,30 @@
-# Whooks
+<div align="center">
+  <picture>
+    <img alt="Outpost logo" src="images/logo.svg" width="40%">
+  </picture>
+</div>
+
+<div align="center">
 
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue)](#license)
 
-## Open source webhooks as a service
+</div>
 
-Open-source highly scalable and feature-rich webhook dispatching system with the power of Elixir and the Phoenix framework.
-Designed for robust performance and fault tolerance, it serves as a central hub for reliably processing and routing real-time events.
+<div align="center">
+  <h1>Open source webhooks as a service</h1>
+  <p>Open-source highly scalable and feature-rich webhook dispatching system with the power of Elixir and the Phoenix framework.
+Designed for robust performance and fault tolerance, it serves as a central hub for reliably processing and routing real-time events.</p>
+</div>
+
+<div align="center">
+  <picture>
+    <img alt="Outpost logo" src="images/flow.png" width="70%">
+  </picture>
+</div>
 
 <br>
 
 ### Features
-
-<div align="center">
-  <picture>
-    <img alt="Outpost logo" src="images/flow.png" width="40%">
-  </picture>
-</div>
 
 - **Automatic Retries**: To ensure event delivery even in the face of temporary network issues or target service downtime, the dispatcher incorporates intelligent, configurable automatic retry mechanisms.
 - **Event Filtering**: Users can precisely control which events are sent to which targets through advanced event filtering rules, optimizing bandwidth and ensuring recipients only receive relevant data.
