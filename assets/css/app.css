@@ -52,6 +52,7 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+
   *,
   ::after,
   ::before,
@@ -62,7 +63,9 @@
 }
 
 :root {
-  --background: hsl(0 0% 100%) /* <- Wrap in HSL */;
+  --background: hsl(0 0% 100%)
+    /* <- Wrap in HSL */
+  ;
   --foreground: hsl(240 10% 3.9%);
   --muted: hsl(240 4.8% 95.9%);
   --muted-foreground: hsl(240 3.8% 46.1%);
@@ -72,7 +75,7 @@
   --card-foreground: hsl(240 10% 3.9%);
   --border: hsl(240 5.9% 90%);
   --input: hsl(240 5.9% 90%);
-  --primary: hsl(240 5.9% 10%);
+  --primary: hsl(6.55, 83.65%, 59.22%);
   --primary-foreground: hsl(0 0% 98%);
   --secondary: hsl(240 4.8% 95.9%);
   --secondary-foreground: hsl(240 5.9% 10%);

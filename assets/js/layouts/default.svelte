@@ -4,16 +4,14 @@
   import { Link } from "@inertiajs/svelte";
 
   import {
-    FishingHook,
     Building2,
     SquareChartGantt,
     Box,
     Inbox,
-    ClipboardList,
-    List,
     Settings2Icon,
-    ChevronRightIcon,
   } from "lucide-svelte";
+
+  import WhooksSymbol from "$components/whooks.svelte";
 
   import * as Sidebar from "$lib/components/ui/sidebar";
   import * as Collapsible from "$lib/components/ui/collapsible/index.js";
@@ -27,51 +25,51 @@
   const nav = [
     {
       title: "Organizations",
-      url: "#",
+      url: "/ui/admin/organizations",
       icon: Building2,
     },
     {
       title: "Projects",
-      url: "#",
+      url: "/ui/admin/projects",
       icon: Box,
       isActive: true,
       items: [
         {
           title: "Topics",
-          url: "#",
+          url: "/ui/admin/topics",
           icon: Box,
         },
       ],
     },
     {
       title: "Consumers",
-      url: "#",
+      url: "/ui/admin/consumers",
       icon: Inbox,
       isActive: true,
       items: [
         {
           title: "Endpoints",
-          url: "#",
+          url: "/ui/admin/endpoints",
           icon: Box,
         },
       ],
     },
     {
       title: "Events",
-      url: "#",
+      url: "/ui/admin/events",
       icon: SquareChartGantt,
       isActive: true,
       items: [
         {
           title: "Deliveries",
-          url: "#",
+          url: "/ui/admin/deliveries",
           icon: Box,
         },
       ],
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/ui/admin/settings",
       icon: Settings2Icon,
     },
   ];
@@ -87,9 +85,9 @@
             {#snippet child({ props })}
               <Link href="/ui/admin/dashboard" {...props}>
                 <div
-                  class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
+                  class="bg-primary p-1 text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
                 >
-                  <FishingHook size={20} />
+                  <WhooksSymbol class="fill-white" />
                 </div>
                 <div class="grid flex-1 text-left text-sm leading-tight">
                   <span class="truncate font-semibold">Whooks</span>
@@ -148,7 +146,7 @@
     <Sidebar.Footer></Sidebar.Footer>
   </Sidebar.Root>
   <Sidebar.Inset>
-    <div class="px-6 py-4 h-full flex flex-col">
+    <div class="overflow-hidden">
       {@render children()}
     </div>
   </Sidebar.Inset>
