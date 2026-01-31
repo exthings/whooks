@@ -27,5 +27,14 @@ defmodule WhooksWeb.V1.EndpointJSON do
       secret: endpoint.secret,
       old_secrets: endpoint.old_secrets
     }
+    |> maybe_add_subscriptions(endpoint.subscriptions)
+  end
+
+  defp maybe_add_subscriptions(data, %Ecto.Association.NotLoaded{}) do
+    data
+  end
+
+  defp maybe_add_subscriptions(data, subscriptions) do
+    Map.put(data, :subscriptions, for(subscription <- subscriptions, do: subscription.topic.name))
   end
 end

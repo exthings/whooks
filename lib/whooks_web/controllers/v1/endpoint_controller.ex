@@ -3,6 +3,7 @@ defmodule WhooksWeb.V1.EndpointController do
 
   alias Whooks.Endpoints
   alias Whooks.Endpoints.Endpoint
+  alias Whooks.Endpoints.Payloads
 
   action_fallback WhooksWeb.FallbackController
 
@@ -12,7 +13,19 @@ defmodule WhooksWeb.V1.EndpointController do
   end
 
   def create(conn, params) do
-    with {:ok, %Endpoint{} = endpoint} <- Endpoints.create_endpoint(params) do
+    payload = %Payloads.CreateEndpoint{
+      consumer_id: params["consumer_id"],
+      project_id: params["project_id"],
+      uid: params["uid"],
+      status: params["status"],
+      url: params["url"],
+      description: params["description"],
+      headers: params["headers"],
+      metadata: params["metadata"],
+      subscribe: params["subscribe"]
+    }
+
+    with {:ok, %Endpoint{} = endpoint} <- Endpoints.create_endpoint(payload) do
       conn
       |> put_status(:created)
       |> render(:show, endpoint: endpoint)

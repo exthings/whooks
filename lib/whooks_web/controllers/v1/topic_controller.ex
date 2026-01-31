@@ -23,20 +23,4 @@ defmodule WhooksWeb.V1.TopicController do
     topic = Topics.get_topic!(id)
     render(conn, :show, topic: topic)
   end
-
-  def update(conn, %{"id" => id, "topic" => topic_params}) do
-    topic = Topics.get_topic!(id)
-
-    with {:ok, %Topic{} = topic} <- Topics.update_topic(topic, topic_params) do
-      render(conn, :show, topic: topic)
-    end
-  end
-
-  def delete(conn, %{"id" => id}) do
-    topic = Topics.get_topic!(id)
-
-    with {:ok, %Topic{}} <- Topics.delete_topic(topic) do
-      send_resp(conn, :no_content, "")
-    end
-  end
 end
