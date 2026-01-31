@@ -7,8 +7,10 @@ defmodule Whooks.Projects.Project do
   schema "projects" do
     field :name, :string
     field :metadata, :map
+
     belongs_to :organization, Whooks.Organizations.Organization
     has_many :topics, Whooks.Topics.Topic
+    has_many :events, Whooks.Events.Event
 
     timestamps(type: :utc_datetime)
   end

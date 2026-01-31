@@ -11,7 +11,10 @@ defmodule Whooks.Topics.Topic do
     field :status, :string
     field :description, :string
     field :json_schema, :map
+
     belongs_to :project, Whooks.Projects.Project
+    has_many :subscriptions, Whooks.Subscriptions.Subscription
+    has_many :events, Whooks.Events.Event
 
     timestamps(type: :utc_datetime)
   end

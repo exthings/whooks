@@ -17,7 +17,7 @@ defmodule Whooks.Consumers.Consumer do
   @doc false
   def changeset(consumer, attrs) do
     consumer
-    |> cast(attrs, [:uid, :name, :metadata])
+    |> cast(attrs, [:uid, :name, :metadata, :organization_id])
     |> validate_required([:uid, :name])
     |> unique_constraint(:uid)
     |> foreign_key_constraint(:organization_id)

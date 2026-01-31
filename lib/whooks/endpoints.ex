@@ -8,6 +8,13 @@ defmodule Whooks.Endpoints do
 
   alias Whooks.Endpoints.Endpoint
 
+  alias Whooks.Topics
+  alias Whooks.Topics.Topic
+  alias Whooks.Common
+  alias Whooks.Endpoints.Endpoint
+  alias Whooks.Endpoints.Payloads.CreateEndpoint
+  alias Whooks.Subscriptions.Subscription
+
   @doc """
   Returns the list of endpoints.
 
@@ -18,7 +25,14 @@ defmodule Whooks.Endpoints do
 
   """
   def list_endpoints do
-    Repo.all(Endpoint)
+    from(e in Endpoint,
+      join: s in Subscription,
+      on: e.id == s.endpoint_id,
+      join: t in Topic,
+      on: s.topic_id == t.id,
+      preload: [subscriptions: :topic]
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -35,7 +49,11 @@ defmodule Whooks.Endpoints do
       ** (Ecto.NoResultsError)
 
   """
-  def get_endpoint!(id), do: Repo.get!(Endpoint, id)
+  def get_endpoint!(id) do
+    Endpoint
+    |> Repo.get!(id)
+    |> Repo.preload(subscriptions: [:topic])
+  end
 
   @doc """
   Creates a endpoint.
@@ -49,10 +67,29 @@ defmodule Whooks.Endpoints do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_endpoint(attrs) do
-    %Endpoint{}
-    |> Endpoint.changeset(attrs)
-    |> Repo.insert()
+  def create_endpoint(%CreateEndpoint{} = payload) do
+    with {:ok, topics} <- Topics.list_topics_by_names(payload.subscribe, payload.project_id) do
+      %Endpoint{}
+      |> Endpoint.changeset(%{
+        uid: payload.uid,
+        status: payload.status,
+        url: payload.url,
+        description: payload.description,
+        headers: payload.headers,
+        metadata: payload.metadata,
+        consumer_id: payload.consumer_id,
+        project_id: payload.project_id,
+        subscriptions:
+          Enum.map(topics, fn %Topic{} = topic ->
+            %{
+              topic_id: topic.id,
+              status: "enabled"
+            }
+          end)
+      })
+      |> Repo.insert()
+      |> Common.Ecto.preload(subscriptions: :topic)
+    end
   end
 
   @doc """

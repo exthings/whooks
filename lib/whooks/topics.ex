@@ -3,10 +3,15 @@ defmodule Whooks.Topics do
   The Topics context.
   """
 
+  use Nebulex.Caching
+
   import Ecto.Query, warn: false
   alias Whooks.Repo
+  alias Whooks.RedisCache
 
   alias Whooks.Topics.Topic
+
+  @ttl :timer.minutes(10)
 
   @doc """
   Returns the list of topics.
@@ -35,7 +40,52 @@ defmodule Whooks.Topics do
       ** (Ecto.NoResultsError)
 
   """
-  def get_topic!(id), do: Repo.get!(Topic, id)
+  @decorate cacheable(cache: RedisCache, opts: [ttl: @ttl])
+  def get_by_id!(id), do: Repo.get!(Topic, id)
+
+  @doc """
+  Gets a single topic by name.
+
+  Raises `Ecto.NoResultsError` if the Topic does not exist.
+
+  ## Examples
+
+      iex> get_topic_by_name!("my-topic")
+      %Topic{}
+
+      iex> get_topic_by_name!("non-existent")
+      ** (Ecto.NoResultsError)
+
+  """
+  @decorate cacheable(cache: RedisCache, opts: [ttl: @ttl])
+  def get_by_name!(name, project_id) do
+    Repo.get_by!(Topic, name: name, project_id: project_id)
+  end
+
+  @doc """
+  Returns the list of topics matching the given names.
+
+  ## Examples
+
+      iex> list_topics_by_names(["topic-1", "topic-2"])
+      [%Topic{}, ...]
+
+  """
+  def list_topics_by_names(names, project_id) do
+    unique_names = Enum.uniq(names)
+
+    Topic
+    |> where([t], t.name in ^unique_names)
+    |> where([t], t.project_id == ^project_id)
+    |> Repo.all()
+    |> case do
+      topics when topics != [] and length(topics) == length(unique_names) ->
+        {:ok, topics}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
 
   @doc """
   Creates a topic.

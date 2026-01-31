@@ -21,6 +21,11 @@ defmodule Whooks.Organizations do
     Repo.all(Organization)
   end
 
+  def list(params) do
+    Organization
+    |> Flop.validate_and_run(params, for: Organization)
+  end
+
   @doc """
   Gets a single organization.
 
