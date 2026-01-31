@@ -24,6 +24,8 @@ config :whooks, WhooksWeb.Endpoint,
 
 # Configure tailwind (the version is required)
 
+config :flop, repo: Whooks.Repo
+
 config :inertia,
   # The Phoenix Endpoint module for your application. This is used for building
   # asset URLs to compute a unique version hash to track when something has
@@ -68,6 +70,12 @@ config :logger, :default_formatter,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+config :whooks, Whooks.RedisCache,
+  conn_opts: [
+    host: "127.0.0.1",
+    port: 6379
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
