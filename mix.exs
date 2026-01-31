@@ -57,13 +57,21 @@ defmodule Whooks.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
+      {:castore, "~> 1.0"},
       {:bullmq, "~> 1.2"},
+      {:redix, "~> 1.2"},
+      {:nebulex, "~> 2.6"},
+      {:shards, "~> 1.0"},
+      {:decorator, "~> 1.4"},
+      {:telemetry, "~> 1.0"},
+      {:nebulex_redis_adapter, "~> 2.4"},
       {:inertia, "~> 2.5"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:typeid_elixir, "~> 1.1"},
       {:flop, "~> 0.26.3"},
       {:reactor, "~> 0.17.0"},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:req, "~> 0.5.17"}
     ]
   end
 
@@ -96,7 +104,6 @@ defmodule Whooks.MixProject do
   defp package() do
     [
       name: "whooks",
-      organization: "exthings",
       files: ~w(lib priv .formatter.exs mix.exs README* LICENSE* CHANGELOG*),
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/exthings/whooks"}
