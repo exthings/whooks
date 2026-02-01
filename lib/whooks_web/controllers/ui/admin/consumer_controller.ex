@@ -29,7 +29,7 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
         :events,
         inertia_defer(fn ->
           {:ok, {events, meta}} = Events.list(params, consumer_id: consumer.id)
-          for(event <- events, do: serialize_event(event))
+          %{data: for(event <- events, do: serialize_event(event)), meta: meta}
         end)
       )
       |> render_inertia("consumers/index")
