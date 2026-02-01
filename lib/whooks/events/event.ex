@@ -28,6 +28,7 @@ defmodule Whooks.Events.Event do
     belongs_to :topic, Whooks.Topics.Topic
     belongs_to :project, Whooks.Projects.Project
     belongs_to :consumer, Whooks.Consumers.Consumer
+    has_many :delivery_attempts, Whooks.DeliveryAttempts.DeliveryAttempt
 
     timestamps(type: :utc_datetime_usec)
   end

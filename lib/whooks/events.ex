@@ -10,6 +10,8 @@ defmodule Whooks.Events do
 
   alias Whooks.Topics
   alias Whooks.Topics.Topic
+  alias Whooks.Subscriptions.Subscription
+  alias Whooks.DeliveryAttempts.DeliveryAttempt
 
   require Logger
 
@@ -35,6 +37,20 @@ defmodule Whooks.Events do
       preload: [:topic]
     )
     |> apply_filters(opts)
+    |> Flop.validate_and_run(params, for: Event)
+  end
+
+  def list_by_endpoint(params, endpoint_id) do
+    from(e in Event,
+      join: t in Topic,
+      on: e.topic_id == t.id,
+      join: d in DeliveryAttempt,
+      on: e.id == d.event_id,
+      join: s in Subscription,
+      on: d.subscription_id == s.id,
+      where: s.endpoint_id == ^endpoint_id,
+      preload: [:topic]
+    )
     |> Flop.validate_and_run(params, for: Event)
   end
 

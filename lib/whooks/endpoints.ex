@@ -55,6 +55,18 @@ defmodule Whooks.Endpoints do
     |> Repo.preload(subscriptions: [:topic])
   end
 
+  def get_by_id(id) do
+    Endpoint
+    |> Repo.get(id)
+    |> Repo.preload(subscriptions: [:topic])
+    |> Repo.preload(:consumer)
+    |> Repo.preload(:project)
+    |> case do
+      nil -> {:error, :not_found}
+      endpoint -> {:ok, endpoint}
+    end
+  end
+
   @doc """
   Creates a endpoint.
 
