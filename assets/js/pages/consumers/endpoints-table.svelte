@@ -11,6 +11,7 @@
   import CellLabelDescription from "$components/cell-label-description.svelte";
   import BadgeStatus from "$components/badge-status.svelte";
   import DateTimeDisplay from "$components/date-time-display.svelte";
+  import { ChevronLeftIcon, ChevronRightIcon } from "lucide-svelte";
 
   let { endpoints }: { endpoints: Endpoint[] } = $props();
 
@@ -105,21 +106,11 @@
       {table.getFilteredRowModel().rows.length} row(s) selected.
     </div>
     <div class="space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onclick={() => table.previousPage()}
-        disabled={!table.getCanPreviousPage()}
-      >
-        Previous
+      <Button variant="outline" size="sm" type="button">
+        <ChevronLeftIcon />
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onclick={() => table.nextPage()}
-        disabled={!table.getCanNextPage()}
-      >
-        Next
+      <Button variant="outline" size="sm" type="button">
+        <ChevronRightIcon />
       </Button>
     </div>
   </div>

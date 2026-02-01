@@ -12,7 +12,7 @@
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import EndpointsTable from "./endpoints-table.svelte";
   import EventsTable from "./events-table.svelte";
-  import { RotateCwIcon } from "lucide-svelte";
+  import { RotateCwIcon, PlusIcon } from "lucide-svelte";
 
   import { getFilterValue } from "$utils";
   import { cn } from "$lib/utils";
@@ -21,7 +21,7 @@
   type Props = {
     consumers: Consumer[];
     consumer?: Consumer;
-    events?: (Event & { topic: Topic })[];
+    events?: { data: (Event & { topic: Topic })[]; meta: Meta };
     meta: Meta;
     id?: string | null;
   };
@@ -124,7 +124,7 @@
             >
               {consumer.name}
             </p>
-            <p class="text-xs text-gray-500 font-mono">
+            <p class="text-[0.625rem] text-gray-500 font-mono">
               {consumer.uid}
             </p>
           </div>
@@ -221,15 +221,26 @@
       <div>
         <div class="flex items-center justify-between pb-2">
           <h2 class="font-semibold">Endpoints</h2>
-          <Button
-            size="sm"
-            variant="outline"
-            type="button"
-            onclick={handleEndpointsRefresh}
-          >
-            <RotateCwIcon />
-            Refresh
-          </Button>
+          <div>
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onclick={handleEndpointsRefresh}
+            >
+              <RotateCwIcon />
+              Refresh
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onclick={handleEndpointsRefresh}
+            >
+              <PlusIcon />
+              Add
+            </Button>
+          </div>
         </div>
         <div>
           {#if consumer.endpoints}
@@ -259,7 +270,7 @@
               <div>Loading...</div>
             {/snippet}
             {#if events}
-              <EventsTable {events} />
+              <EventsTable events={events.data} meta={events.meta} />
             {/if}
           </Deferred>
         </div>

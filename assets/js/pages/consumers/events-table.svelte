@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Event, Topic } from "$types";
+  import type { Meta, Event, Topic } from "$types";
   import { type ColumnDef, getCoreRowModel } from "@tanstack/table-core";
   import * as Table from "$lib/components/ui/table";
   import { Button } from "$lib/components/ui/button";
@@ -13,8 +13,14 @@
   import CellId from "$components/cell-id.svelte";
   import CellTags from "$components/cell-tags.svelte";
   import CellText from "$components/cell-text.svelte";
+  import { ChevronLeftIcon, ChevronRightIcon } from "lucide-svelte";
 
-  let { events }: { events: (Event & { topic: Topic })[] } = $props();
+  type Props = {
+    events: { data: (Event & { topic: Topic })[] };
+    meta: Meta;
+  };
+
+  let { events, meta }: Props = $props();
 
   const statusVariantMap = {
     pending: "warning",
@@ -130,26 +136,25 @@
     </Table.Root>
   </div>
   <div class="flex items-center justify-end space-x-2 pt-3">
-    <div class="text-muted-foreground flex-1 text-sm">
-      {table.getFilteredSelectedRowModel().rows.length} of
-      {table.getFilteredRowModel().rows.length} row(s) selected.
+    <div class="text-muted-foreground flex-1 text-xs">
+      {meta.total_count} events
     </div>
     <div class="space-x-2">
       <Button
         variant="outline"
         size="sm"
-        onclick={() => table.previousPage()}
-        disabled={!table.getCanPreviousPage()}
+        type="button"
+        disabled={!meta.has_previous_page}
       >
-        Previous
+        <ChevronLeftIcon />
       </Button>
       <Button
         variant="outline"
         size="sm"
-        onclick={() => table.nextPage()}
-        disabled={!table.getCanNextPage()}
+        type="button"
+        disabled={!meta.has_next_page}
       >
-        Next
+        <ChevronRightIcon />
       </Button>
     </div>
   </div>
