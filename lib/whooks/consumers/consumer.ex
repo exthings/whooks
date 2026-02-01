@@ -2,6 +2,18 @@ defmodule Whooks.Consumers.Consumer do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder, only: [:id, :uid, :name, :metadata, :inserted_at, :updated_at]}
+
+  @derive {
+    Flop.Schema,
+    filterable: [:uid, :name, :inserted_at, :updated_at],
+    sortable: [:name, :inserted_at, :updated_at],
+    default_order: %{
+      order_by: [:name],
+      order_directions: [:asc]
+    }
+  }
+
   @primary_key {:id, TypeID, autogenerate: true, prefix: "consumer", type: :string}
   @foreign_key_type TypeID
   schema "consumers" do
@@ -10,6 +22,7 @@ defmodule Whooks.Consumers.Consumer do
     field :metadata, :map
 
     belongs_to :organization, Whooks.Organizations.Organization
+    has_many :endpoints, Whooks.Endpoints.Endpoint
 
     timestamps(type: :utc_datetime)
   end

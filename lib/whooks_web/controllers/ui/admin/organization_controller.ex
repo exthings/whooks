@@ -2,7 +2,6 @@ defmodule WhooksWeb.UI.Admin.OrganizationController do
   use WhooksWeb, :controller
 
   alias Whooks.Organizations
-  alias Whooks.Organizations.Organization
 
   def index(conn, params) do
     with {:ok, {organizations, meta}} <- Organizations.list(params) do

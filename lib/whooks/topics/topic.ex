@@ -4,6 +4,16 @@ defmodule Whooks.Topics.Topic do
 
   alias Whooks.Common
 
+  @derive {
+    Flop.Schema,
+    filterable: [:name, :status, :inserted_at, :updated_at],
+    sortable: [:name, :status, :inserted_at, :updated_at],
+    default_order: %{
+      order_by: [:name],
+      order_directions: [:asc]
+    }
+  }
+
   @primary_key {:id, TypeID, autogenerate: true, prefix: "topic", type: :string}
   @foreign_key_type TypeID
   schema "topics" do

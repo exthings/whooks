@@ -21,6 +21,20 @@ defmodule Whooks.Consumers do
     Repo.all(Consumer)
   end
 
+  def list(params) do
+    Consumer
+    |> Flop.validate_and_run(params, for: Consumer)
+  end
+
+  def get_by_id(id) do
+    Repo.get(Consumer, id)
+    |> Repo.preload(:endpoints)
+    |> case do
+      nil -> {:error, :not_found}
+      consumer -> {:ok, consumer}
+    end
+  end
+
   @doc """
   Gets a single consumer.
 

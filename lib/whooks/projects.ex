@@ -21,6 +21,11 @@ defmodule Whooks.Projects do
     Repo.all(Project)
   end
 
+  def list(params) do
+    Project
+    |> Flop.validate_and_run(params, for: Project)
+  end
+
   @doc """
   Gets a single project.
 

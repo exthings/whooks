@@ -5,7 +5,6 @@ defmodule Whooks.Events do
 
   import Ecto.Query, warn: false
   alias Whooks.Repo
-  alias Whooks.RedisCache
 
   alias Whooks.Events.Event
 
@@ -25,6 +24,18 @@ defmodule Whooks.Events do
   """
   def list_events do
     Repo.all(Event)
+  end
+
+  def list(params, opts \\ []) do
+    Logger.info("list events")
+
+    from(e in Event,
+      join: t in Topic,
+      on: e.topic_id == t.id,
+      preload: [:topic]
+    )
+    |> apply_filters(opts)
+    |> Flop.validate_and_run(params, for: Event)
   end
 
   @doc """
@@ -109,6 +120,19 @@ defmodule Whooks.Events do
 
     from(e in Event, where: e.id == ^id)
     |> Repo.update_all(set: [status: :success])
+  end
+
+  defp apply_filters(q, opts) do
+    Enum.reduce(opts, q, fn
+      {:consumer_id, consumer_id}, q ->
+        where(q, [e], e.consumer_id == ^consumer_id)
+
+      {:project_id, project_id}, q ->
+        where(q, [e], e.project_id == ^project_id)
+
+      _, q ->
+        q
+    end)
   end
 
   defp save_event(attrs) do
