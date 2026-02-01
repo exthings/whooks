@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import "@andypf/json-viewer";
 
   import { Link } from "@inertiajs/svelte";
 
@@ -33,39 +34,18 @@
       url: "/ui/admin/projects",
       icon: Box,
       isActive: true,
-      items: [
-        {
-          title: "Topics",
-          url: "/ui/admin/topics",
-          icon: Box,
-        },
-      ],
     },
     {
       title: "Consumers",
       url: "/ui/admin/consumers",
       icon: Inbox,
       isActive: true,
-      items: [
-        {
-          title: "Endpoints",
-          url: "/ui/admin/endpoints",
-          icon: Box,
-        },
-      ],
     },
     {
       title: "Events",
       url: "/ui/admin/events",
       icon: SquareChartGantt,
       isActive: true,
-      items: [
-        {
-          title: "Deliveries",
-          url: "/ui/admin/deliveries",
-          icon: Box,
-        },
-      ],
     },
     {
       title: "Settings",
@@ -107,10 +87,10 @@
                 <Sidebar.MenuItem {...props}>
                   <Sidebar.MenuButton tooltipContent={mainItem.title}>
                     {#snippet child({ props })}
-                      <a href={mainItem.url} {...props}>
+                      <Link href={mainItem.url} {...props}>
                         <mainItem.icon />
                         <span>{mainItem.title}</span>
-                      </a>
+                      </Link>
                     {/snippet}
                   </Sidebar.MenuButton>
                   {#if mainItem.items?.length}

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { HTMLAttributes } from "svelte/elements";
 	import { cn, type WithElementRef } from "$lib/utils.js";
+	import type { HTMLAttributes } from "svelte/elements";
 
 	let {
 		ref = $bindable(null),
@@ -12,8 +12,9 @@
 
 <div
 	bind:this={ref}
-	data-slot="alert-dialog-header"
-	class={cn("flex flex-col gap-2 text-center sm:text-start", className)}
+	role="list"
+	data-slot="item-group"
+	class={cn("group/item-group flex flex-col", className)}
 	{...restProps}
 >
 	{@render children?.()}

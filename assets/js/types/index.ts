@@ -4,6 +4,7 @@ import type { Event } from "./event";
 import type { Meta } from "./meta";
 import type { Organization } from "./organization";
 import type { Project } from "./project";
+import type { Subscription } from "./subscription";
 import type { Topic } from "./topic";
 
 export type {
@@ -13,5 +14,6 @@ export type {
   Meta,
   Organization,
   Project,
+  Subscription,
   Topic,
 };

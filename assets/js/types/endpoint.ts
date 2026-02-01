@@ -1,5 +1,8 @@
 export type Endpoint = {
   id: string;
+  uid: string;
+  insertedAt: string;
+  updatedAt: string;
   name: string;
   status: "enabled" | "disabled";
   url: string;
@@ -9,6 +12,5 @@ export type Endpoint = {
   secret: string;
   oldSecret: string;
   consumerId: string;
-  insertedAt: string;
-  updatedAt: string;
+  projectId: string;
 }
