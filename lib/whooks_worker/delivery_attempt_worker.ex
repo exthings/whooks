@@ -19,6 +19,7 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
       {:ok, %{sent: true}}
     else
       {:error, reason} ->
+        Logger.error("Delivery error")
         Logger.error(reason)
         {:error, reason}
     end
@@ -29,13 +30,27 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
   end
 
   defp prepare_attempt_data(data, response) do
+    Logger.info("prepare_attempt_data: #{inspect(response.body)}")
+
     %{
       res_status: response.status,
-      res_body: response.body,
+      res_body: parse_res_body(response.body),
       res_headers: response.headers,
       latency_ms: response.private[:latency_ms],
       event_id: data["event_id"],
       subscription_id: data["subscription_id"]
     }
+  end
+
+  defp parse_res_body(body) when is_binary(body) do
+    body |> Jason.decode!()
+  end
+
+  defp parse_res_body(body) when is_map(body) do
+    body
+  end
+
+  defp parse_res_body(body) when is_list(body) do
+    body
   end
 end
