@@ -1,3 +1,4 @@
+import type { Analytics } from "./analytics";
 import type { Consumer } from "./consumer";
 import type { Endpoint } from "./endpoint";
 import type { Event } from "./event";
@@ -8,6 +9,7 @@ import type { Subscription } from "./subscription";
 import type { Topic } from "./topic";
 
 export type {
+  Analytics,
   Consumer,
   Endpoint,
   Event,

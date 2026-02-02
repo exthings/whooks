@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Consumer, Event, Topic, Meta } from "$types";
+  import type { Analytics, Consumer, Event, Topic, Meta } from "$types";
 
   import { router, Link, Form, Deferred } from "@inertiajs/svelte";
   import * as Sheet from "$lib/components/ui/sheet";
@@ -13,6 +13,7 @@
   import EndpointsTable from "./endpoints-table.svelte";
   import EventsTable from "./events-table.svelte";
   import { RotateCwIcon, PlusIcon } from "lucide-svelte";
+  import ChartMetrics from "./containers/chart-metrics.svelte";
 
   import { getFilterValue } from "$utils";
   import { cn } from "$lib/utils";
@@ -24,9 +25,15 @@
     events?: { data: (Event & { topic: Topic })[]; meta: Meta };
     meta: Meta;
     id?: string | null;
+    eventsAnalytics?: {
+      data: Analytics[];
+      interval: "minute" | "hour" | "day";
+      last: "1h" | "12h" | "24h" | "48h" | "1w" | "1m";
+    };
   };
 
-  const { consumers, consumer, events, meta, id }: Props = $props();
+  const { consumers, consumer, events, meta, id, eventsAnalytics }: Props =
+    $props();
 
   let searchName = $derived(getFilterValue(meta.filters, "name")[0]?.value);
 
@@ -106,7 +113,7 @@
       {#each consumers as consumer (consumer.id)}
         <Link
           href={`/ui/admin/consumers/${consumer.id}`}
-          only={["consumer", "id", "events"]}
+          only={["consumer", "id", "events", "eventsAnalytics"]}
           class={cn(
             "flex items-center gap-1 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors text-left",
             id === consumer.id && "bg-gray-100",
@@ -135,147 +142,148 @@
 {/snippet}
 
 <ContentWithSidebar {sidebar}>
-  <div class="p-6 flex-1 flex flex-col gap-6 overflow-x-scroll">
-    {#if consumer}
-      <header>
-        <h1 class="text-xl font-semibold">{consumer.name}</h1>
-        <div class="w-full">
-          <dl class="text-sm grid grid-cols-4 gap-4">
-            <div class="flex flex-col gap-1">
-              <dt class="text-xs font-semibold">ID</dt>
-              <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-                {consumer.id}
-              </dd>
-            </div>
-            <div class="flex flex-col gap-1">
-              <dt class="text-xs font-semibold">UID</dt>
-              <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-                {consumer.uid}
-              </dd>
-            </div>
-            <div class="flex flex-col gap-1">
-              <dt class="text-xs font-semibold">Inserted at</dt>
-              <dd class="text-gray-700 sm:col-span-3">
-                <DateTimeDisplay
-                  value={consumer.insertedAt}
-                  size="sm"
-                  options={{ fractionalSecondDigits: undefined }}
-                />
-              </dd>
-            </div>
-            <div class="flex flex-col gap-1">
-              <dt class="text-xs font-semibold">Updated at</dt>
-              <dd class="text-gray-700 sm:col-span-3">
-                <DateTimeDisplay
-                  value={consumer.updatedAt}
-                  size="sm"
-                  options={{ fractionalSecondDigits: undefined }}
-                />
-              </dd>
-            </div>
-          </dl>
+  <div class="px-8 py-6 flex-1 flex flex-col gap-6 overflow-x-scroll">
+    {#key id}
+      {#if consumer}
+        <header>
+          <h1 class="text-xl font-semibold">{consumer.name}</h1>
+          <div class="w-full">
+            <dl class="text-sm grid grid-cols-4 gap-4">
+              <div class="flex flex-col gap-1">
+                <dt class="text-xs font-semibold">ID</dt>
+                <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                  {consumer.id}
+                </dd>
+              </div>
+              <div class="flex flex-col gap-1">
+                <dt class="text-xs font-semibold">UID</dt>
+                <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                  {consumer.uid}
+                </dd>
+              </div>
+              <div class="flex flex-col gap-1">
+                <dt class="text-xs font-semibold">Inserted at</dt>
+                <dd class="text-gray-700 sm:col-span-3">
+                  <DateTimeDisplay
+                    value={consumer.insertedAt}
+                    size="sm"
+                    options={{ fractionalSecondDigits: undefined }}
+                  />
+                </dd>
+              </div>
+              <div class="flex flex-col gap-1">
+                <dt class="text-xs font-semibold">Updated at</dt>
+                <dd class="text-gray-700 sm:col-span-3">
+                  <DateTimeDisplay
+                    value={consumer.updatedAt}
+                    size="sm"
+                    options={{ fractionalSecondDigits: undefined }}
+                  />
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </header>
+        <div class="grid grid-cols-4 gap-4">
+          <Card.Root class="shadow-none py-4 gap-1">
+            <Card.Header>
+              <Card.Title class="text-sm font-normal text-muted-foreground">
+                Total endpoints
+              </Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <p class="text-3xl">76</p>
+            </Card.Content>
+          </Card.Root>
+
+          <Card.Root class="shadow-none py-4 gap-1">
+            <Card.Header>
+              <Card.Title class="text-sm font-normal text-muted-foreground">
+                Success rate
+              </Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <p class="text-3xl">76</p>
+            </Card.Content>
+          </Card.Root>
+
+          <Card.Root class="shadow-none py-4 gap-1">
+            <Card.Header>
+              <Card.Title class="text-sm font-normal text-muted-foreground">
+                Recent events
+              </Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <p class="text-3xl">76</p>
+            </Card.Content>
+          </Card.Root>
         </div>
-      </header>
-      <div class="grid grid-cols-4 gap-4">
-        <Card.Root class="shadow-none py-4 gap-1">
-          <Card.Header>
-            <Card.Title class="text-sm font-normal text-muted-foreground">
-              Total endpoints
-            </Card.Title>
-          </Card.Header>
-          <Card.Content>
-            <p class="text-3xl">76</p>
-          </Card.Content>
-        </Card.Root>
 
-        <Card.Root class="shadow-none py-4 gap-1">
-          <Card.Header>
-            <Card.Title class="text-sm font-normal text-muted-foreground">
-              Success rate
-            </Card.Title>
-          </Card.Header>
-          <Card.Content>
-            <p class="text-3xl">76</p>
-          </Card.Content>
-        </Card.Root>
+        <ChartMetrics
+          data={eventsAnalytics?.data}
+          interval={eventsAnalytics?.interval}
+          last={eventsAnalytics?.last}
+        />
 
-        <Card.Root class="shadow-none py-4 gap-1">
-          <Card.Header>
-            <Card.Title class="text-sm font-normal text-muted-foreground">
-              Recent events
-            </Card.Title>
-          </Card.Header>
-          <Card.Content>
-            <p class="text-3xl">76</p>
-          </Card.Content>
-        </Card.Root>
-      </div>
-
-      <div>
-        <Card.Root class="shadow-none py-4 gap-1">
-          <Card.Header></Card.Header>
-          <Card.Content></Card.Content>
-        </Card.Root>
-      </div>
-
-      <div>
-        <div class="flex items-center justify-between pb-2">
-          <h2 class="font-semibold">Endpoints</h2>
+        <div>
+          <div class="flex items-center justify-between pb-2">
+            <h2 class="font-semibold">Endpoints</h2>
+            <div>
+              <Button
+                size="sm"
+                variant="outline"
+                type="button"
+                onclick={handleEndpointsRefresh}
+              >
+                <RotateCwIcon />
+                Refresh
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                type="button"
+                onclick={handleEndpointsRefresh}
+              >
+                <PlusIcon />
+                Add
+              </Button>
+            </div>
+          </div>
           <div>
+            {#if consumer.endpoints}
+              <EndpointsTable endpoints={consumer.endpoints} />
+            {:else}
+              <p>No endpoints found</p>
+            {/if}
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between pb-2">
+            <h2 class="font-semibold">Events</h2>
             <Button
               size="sm"
               variant="outline"
               type="button"
-              onclick={handleEndpointsRefresh}
+              onclick={handleEventsRefresh}
             >
               <RotateCwIcon />
               Refresh
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              type="button"
-              onclick={handleEndpointsRefresh}
-            >
-              <PlusIcon />
-              Add
-            </Button>
+          </div>
+          <div>
+            <Deferred data="events">
+              {#snippet fallback()}
+                <div>Loading...</div>
+              {/snippet}
+              {#if events}
+                <EventsTable events={events.data} meta={events.meta} />
+              {/if}
+            </Deferred>
           </div>
         </div>
-        <div>
-          {#if consumer.endpoints}
-            <EndpointsTable endpoints={consumer.endpoints} />
-          {:else}
-            <p>No endpoints found</p>
-          {/if}
-        </div>
-      </div>
-
-      <div>
-        <div class="flex items-center justify-between pb-2">
-          <h2 class="font-semibold">Events</h2>
-          <Button
-            size="sm"
-            variant="outline"
-            type="button"
-            onclick={handleEventsRefresh}
-          >
-            <RotateCwIcon />
-            Refresh
-          </Button>
-        </div>
-        <div>
-          <Deferred data="events">
-            {#snippet fallback()}
-              <div>Loading...</div>
-            {/snippet}
-            {#if events}
-              <EventsTable events={events.data} meta={events.meta} />
-            {/if}
-          </Deferred>
-        </div>
-      </div>
-    {/if}
+      {/if}
+    {/key}
   </div>
 </ContentWithSidebar>
 

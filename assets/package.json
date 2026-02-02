@@ -47,7 +47,7 @@
     "bits-ui": "^2.15.5",
     "clsx": "^2.1.1",
     "embla-carousel-svelte": "^8.6.0",
-    "layerchart": "2.0.0-next.43",
+    "layerchart": "2.0.0-next.44",
     "mode-watcher": "^1.1.0",
     "svelte-check": "^4.3.0",
     "svelte-preprocess": "^6.0.3",
