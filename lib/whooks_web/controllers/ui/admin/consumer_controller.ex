@@ -4,6 +4,7 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   alias Whooks.Common
   alias Whooks.Events
   alias Whooks.Consumers
+  alias Whooks.Analytics
 
   require Logger
 
@@ -18,6 +19,9 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   end
 
   def show(conn, params) do
+    interval = Map.get(params, "interval", "hour")
+    last = Map.get(params, "metrics", %{}) |> Map.get("last", "12h")
+
     with {:ok, consumer} <- Consumers.get_by_id(params["id"]),
          {:ok, {consumers, meta}} <- Consumers.list(params) do
       conn
@@ -30,6 +34,22 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
         inertia_defer(fn ->
           {:ok, {events, meta}} = Events.list(params, consumer_id: consumer.id)
           %{data: for(event <- events, do: serialize_event(event)), meta: meta}
+        end)
+      )
+      |> assign_prop(
+        :events_analytics,
+        inertia_defer(fn ->
+          interval = Map.get(params, "metrics", %{}) |> Map.get("interval", "hour")
+          last = Map.get(params, "metrics", %{}) |> Map.get("last", "24h")
+
+          {:ok, events_stats} =
+            Analytics.events(consumer_id: consumer.id, interval: interval, last: last)
+
+          %{
+            data: events_stats,
+            interval: interval,
+            last: last
+          }
         end)
       )
       |> render_inertia("consumers/index")
