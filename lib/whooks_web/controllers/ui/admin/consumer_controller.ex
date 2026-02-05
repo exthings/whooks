@@ -19,9 +19,6 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   end
 
   def show(conn, params) do
-    interval = Map.get(params, "interval", "hour")
-    last = Map.get(params, "metrics", %{}) |> Map.get("last", "12h")
-
     with {:ok, consumer} <- Consumers.get_by_id(params["id"]),
          {:ok, {consumers, meta}} <- Consumers.list(params) do
       conn
@@ -37,10 +34,12 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
         end)
       )
       |> assign_prop(
-        :events_analytics,
+        :events_metrics,
         inertia_defer(fn ->
-          interval = Map.get(params, "metrics", %{}) |> Map.get("interval", "hour")
-          last = Map.get(params, "metrics", %{}) |> Map.get("last", "24h")
+          interval = Map.get(params, "eventsMetrics", %{}) |> Map.get("interval", "hour")
+          last = Map.get(params, "eventsMetrics", %{}) |> Map.get("last", "24h")
+
+          Logger.info("Interval: #{interval}, Last: #{last}")
 
           {:ok, events_stats} =
             Analytics.events(consumer_id: consumer.id, interval: interval, last: last)

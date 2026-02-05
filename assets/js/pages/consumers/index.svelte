@@ -13,7 +13,8 @@
   import EndpointsTable from "./endpoints-table.svelte";
   import EventsTable from "./events-table.svelte";
   import { RotateCwIcon, PlusIcon } from "lucide-svelte";
-  import ChartMetrics from "./containers/chart-metrics.svelte";
+  import ChartMetrics from "$containers/chart-metrics.svelte";
+  import Section from "$components/section.svelte";
 
   import { getFilterValue } from "$utils";
   import { cn } from "$lib/utils";
@@ -141,6 +142,43 @@
   </div>
 {/snippet}
 
+{#snippet endpointsActions()}
+  <div>
+    <Button
+      size="sm"
+      variant="outline"
+      type="button"
+      onclick={handleEndpointsRefresh}
+    >
+      <RotateCwIcon />
+      Refresh
+    </Button>
+    <Button
+      size="sm"
+      variant="outline"
+      type="button"
+      onclick={handleEndpointsRefresh}
+    >
+      <PlusIcon />
+      Add
+    </Button>
+  </div>
+{/snippet}
+
+{#snippet eventsActions()}
+  <div>
+    <Button
+      size="sm"
+      variant="outline"
+      type="button"
+      onclick={handleEventsRefresh}
+    >
+      <RotateCwIcon />
+      Refresh
+    </Button>
+  </div>
+{/snippet}
+
 <ContentWithSidebar {sidebar}>
   <div class="px-8 py-6 flex-1 flex flex-col gap-6 overflow-x-scroll">
     {#key id}
@@ -219,36 +257,9 @@
           </Card.Root>
         </div>
 
-        <ChartMetrics
-          data={eventsAnalytics?.data}
-          interval={eventsAnalytics?.interval}
-          last={eventsAnalytics?.last}
-        />
+        <ChartMetrics propKey="eventsMetrics" />
 
-        <div>
-          <div class="flex items-center justify-between pb-2">
-            <h2 class="font-semibold">Endpoints</h2>
-            <div>
-              <Button
-                size="sm"
-                variant="outline"
-                type="button"
-                onclick={handleEndpointsRefresh}
-              >
-                <RotateCwIcon />
-                Refresh
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                type="button"
-                onclick={handleEndpointsRefresh}
-              >
-                <PlusIcon />
-                Add
-              </Button>
-            </div>
-          </div>
+        <Section title="Endpoints" actions={endpointsActions}>
           <div>
             {#if consumer.endpoints}
               <EndpointsTable endpoints={consumer.endpoints} />
@@ -256,21 +267,9 @@
               <p>No endpoints found</p>
             {/if}
           </div>
-        </div>
+        </Section>
 
-        <div>
-          <div class="flex items-center justify-between pb-2">
-            <h2 class="font-semibold">Events</h2>
-            <Button
-              size="sm"
-              variant="outline"
-              type="button"
-              onclick={handleEventsRefresh}
-            >
-              <RotateCwIcon />
-              Refresh
-            </Button>
-          </div>
+        <Section title="Events" actions={eventsActions}>
           <div>
             <Deferred data="events">
               {#snippet fallback()}
@@ -281,7 +280,7 @@
               {/if}
             </Deferred>
           </div>
-        </div>
+        </Section>
       {/if}
     {/key}
   </div>

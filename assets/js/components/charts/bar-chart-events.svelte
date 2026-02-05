@@ -12,10 +12,12 @@
 
   const { data, interval = "hour" }: Props = $props();
 
-  const chartData = data.map((item) => ({
-    date: new Date(item.dateTime),
-    value: item.count,
-  }));
+  const chartData = data
+    .filter((item) => item.status === "success")
+    .map((item) => ({
+      date: new Date(item.dateTime),
+      value: item.count,
+    }));
 
   const chartConfig = {
     success: { label: "success", color: "var(--color-green-400)" },
@@ -29,7 +31,6 @@
         return {
           hour: "2-digit",
           minute: "2-digit",
-          second: "2-digit",
         };
       case "hour":
         return { day: "2-digit", hour: "2-digit", minute: "2-digit" };
@@ -37,12 +38,11 @@
         return { day: "2-digit", month: "2-digit" };
     }
   });
+
+  $inspect(chartData);
 </script>
 
-<Chart.Container
-  config={chartConfig}
-  class="h-full w-full pl-10 pr-2 pb-4 pt-4"
->
+<Chart.Container config={chartConfig} class="h-full w-full pl-2 pr-2 pb-0 pt-2">
   <BarChart
     bind:context
     x="date"
@@ -55,12 +55,6 @@
         data: chartData,
       },
     ]}
-    padding={{
-      left: 0,
-      right: 0,
-      top: 0,
-      bottom: 0,
-    }}
     props={{
       bars: {
         stroke: "none",

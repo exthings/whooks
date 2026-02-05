@@ -4,8 +4,11 @@ defmodule WhooksWeb.UI.Admin.EndpointController do
   alias Whooks.Common
   alias Whooks.Events
   alias Whooks.Endpoints
+  alias Whooks.Metrics
 
-  def show(conn, %{"id" => id}) do
+  require Logger
+
+  def show(conn, %{"id" => id} = params) do
     with {:ok, endpoint} <- Endpoints.get_by_id(id) do
       conn
       |> assign_prop(:endpoint, serialize_endpoint(endpoint))
@@ -14,6 +17,22 @@ defmodule WhooksWeb.UI.Admin.EndpointController do
         inertia_defer(fn ->
           {:ok, {events, meta}} = Events.list_by_endpoint(%{}, endpoint.id)
           %{data: for(event <- events, do: serialize_event(event)), meta: meta}
+        end)
+      )
+      |> assign_prop(
+        :events_metrics,
+        inertia_defer(fn ->
+          interval = Map.get(params, "eventsMetrics", %{}) |> Map.get("interval", "hour")
+          last = Map.get(params, "eventsMetrics", %{}) |> Map.get("last", "24h")
+
+          {:ok, events_stats} =
+            Metrics.Endpoints.deliveries(endpoint_id: endpoint.id, interval: interval, last: last)
+
+          %{
+            data: events_stats,
+            interval: interval,
+            last: last
+          }
         end)
       )
       |> render_inertia("endpoints/show")

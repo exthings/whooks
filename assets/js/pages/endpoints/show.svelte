@@ -7,6 +7,7 @@
     Topic,
     Event,
     Meta,
+    Analytics,
   } from "$types";
   import * as Select from "$lib/components/ui/select";
   import { Button } from "$lib/components/ui/button";
@@ -14,10 +15,10 @@
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import BadgeStatus from "$components/badge-status.svelte";
   import * as Card from "$lib/components/ui/card";
-  import { BarChartEvents } from "$components/charts";
   import { router, Deferred } from "@inertiajs/svelte";
   import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-  import { buttonVariants } from "$lib/components/ui/button/index.js";
+  import ChartMetrics from "$containers/chart-metrics.svelte";
+  import Section from "$components/section.svelte";
 
   import EventsTable from "$components/events-table.svelte";
 
@@ -38,9 +39,14 @@
       subscriptions: (Subscription & { topic: Topic })[];
     };
     events: { data: (Event & { topic: Topic })[]; meta: Meta };
+    eventsMetrics?: {
+      data: Analytics[];
+      interval: "minute" | "hour" | "day";
+      last: "1h" | "12h" | "24h" | "48h" | "1w" | "1m";
+    };
   };
 
-  const { endpoint, events }: Props = $props();
+  const { endpoint, events, eventsMetrics }: Props = $props();
 
   const handleEventsRefresh = () => {
     router.get(
@@ -76,8 +82,21 @@
   <title>Endpoint - {endpoint.id.slice(endpoint.id.length - 6)}</title>
 </svelte:head>
 
+{#snippet subscriptionsActions()}
+  <div>
+    <Button
+      size="icon"
+      variant="outline"
+      type="button"
+      onclick={handleEventsRefresh}
+    >
+      <PlusIcon />
+    </Button>
+  </div>
+{/snippet}
+
 <ContentWithSidebar>
-  <div class="p-6 flex flex-col gap-8 flex-1 overflow-x-scroll">
+  <div class="px-8 py-6 flex flex-col gap-8 flex-1 overflow-x-scroll">
     <header class="flex flex-col gap-4">
       <div class="flex items-start justify-between">
         <div class="flex items-start gap-4">
@@ -157,51 +176,11 @@
     </header>
 
     <div class="grid grid-cols-3 gap-6">
-      <div class="col-span-2 flex flex-col gap-2">
-        <div class="flex items-center justify-between pb-2">
-          <h2 class="font-semibold">Metrics</h2>
-          <Select.Root
-            type="single"
-            name="metricsRange"
-            bind:value={metricsRangeValue}
-          >
-            <Select.Trigger class="w-24">
-              {metricsRangeContent}
-            </Select.Trigger>
-            <Select.Content>
-              <Select.Group>
-                {#each metricsRange as range (range.value)}
-                  <Select.Item
-                    value={range.value}
-                    label={range.label}
-                    disabled={range.value === "grapes"}
-                  >
-                    {range.label}
-                  </Select.Item>
-                {/each}
-              </Select.Group>
-            </Select.Content>
-          </Select.Root>
-        </div>
-        <Card.Root class="shadow-none py-4 gap-1 h-72">
-          <Card.Content class="h-full">
-            <BarChartEvents />
-          </Card.Content>
-        </Card.Root>
+      <div class="col-span-2">
+        <ChartMetrics propKey="eventsMetrics" />
       </div>
 
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center justify-between pb-2">
-          <h2 class="font-semibold">Subscriptions</h2>
-          <Button
-            size="icon"
-            variant="outline"
-            type="button"
-            onclick={handleEventsRefresh}
-          >
-            <PlusIcon />
-          </Button>
-        </div>
+      <Section title="Subscriptions" actions={subscriptionsActions}>
         <Card.Root
           class="shadow-none py-0 px-0 p-0 gap-1 h-72 overflow-x-scroll"
         >
@@ -232,7 +211,7 @@
             </ul>
           </Card.Content>
         </Card.Root>
-      </div>
+      </Section>
     </div>
 
     <div class="flex flex-col gap-2">
