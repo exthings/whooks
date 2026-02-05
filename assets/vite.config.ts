@@ -62,6 +62,7 @@ export default defineConfig(({ command }) => {
         $utils: resolve(__dirname, "js/utils"),
         $types: resolve(__dirname, "js/types"),
         $paraglide: resolve(__dirname, "js/paraglide"),
+        $containers: resolve(__dirname, "js/containers"),
       },
     },
   };

@@ -25,21 +25,59 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "$lib": ["./js/lib"],
-      "$lib/*": ["./js/lib/*"],
-      "$pages": ["./js/pages"],
-      "$pages/*": ["./js/pages/*"],
-      "$layouts": ["./js/layouts"],
-      "$layouts/*": ["./js/layouts/*"],
-      "$components": ["./js/components"],
-      "$components/*": ["./js/components/*"],
-      "$utils": ["./js/utils"],
-      "$utils/*": ["./js/utils/*"],
-      "$types": ["./js/types"],
-      "$types/*": ["./js/types/*"],
-      "$paraglide": ["./js/paraglide"],
-      "$paraglide/*": ["./js/paraglide/*"]
+      "$lib": [
+        "./js/lib"
+      ],
+      "$lib/*": [
+        "./js/lib/*"
+      ],
+      "$pages": [
+        "./js/pages"
+      ],
+      "$pages/*": [
+        "./js/pages/*"
+      ],
+      "$layouts": [
+        "./js/layouts"
+      ],
+      "$layouts/*": [
+        "./js/layouts/*"
+      ],
+      "$components": [
+        "./js/components"
+      ],
+      "$components/*": [
+        "./js/components/*"
+      ],
+      "$utils": [
+        "./js/utils"
+      ],
+      "$utils/*": [
+        "./js/utils/*"
+      ],
+      "$types": [
+        "./js/types"
+      ],
+      "$types/*": [
+        "./js/types/*"
+      ],
+      "$paraglide": [
+        "./js/paraglide"
+      ],
+      "$paraglide/*": [
+        "./js/paraglide/*"
+      ],
+      "$containers": [
+        "./js/containers"
+      ],
+      "$containers/*": [
+        "./js/containers/*"
+      ],
     }
   },
-  "include": ["js/**/*.ts", "js/**/*.js", "js/**/*.svelte"]
+  "include": [
+    "js/**/*.ts",
+    "js/**/*.js",
+    "js/**/*.svelte"
+  ]
 }
