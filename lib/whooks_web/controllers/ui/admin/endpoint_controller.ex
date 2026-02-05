@@ -26,7 +26,11 @@ defmodule WhooksWeb.UI.Admin.EndpointController do
           last = Map.get(params, "eventsMetrics", %{}) |> Map.get("last", "24h")
 
           {:ok, events_stats} =
-            Metrics.Endpoints.deliveries(endpoint_id: endpoint.id, interval: interval, last: last)
+            Metrics.EndpointStats.timeseries(
+              endpoint_id: endpoint.id,
+              interval: interval,
+              last: last
+            )
 
           %{
             data: events_stats,

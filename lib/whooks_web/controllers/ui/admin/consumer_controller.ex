@@ -5,6 +5,7 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   alias Whooks.Events
   alias Whooks.Consumers
   alias Whooks.Analytics
+  alias Whooks.Metrics
 
   require Logger
 
@@ -39,10 +40,12 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
           interval = Map.get(params, "eventsMetrics", %{}) |> Map.get("interval", "hour")
           last = Map.get(params, "eventsMetrics", %{}) |> Map.get("last", "24h")
 
-          Logger.info("Interval: #{interval}, Last: #{last}")
-
           {:ok, events_stats} =
-            Analytics.events(consumer_id: consumer.id, interval: interval, last: last)
+            Metrics.EventStats.timeseries(
+              consumer_id: consumer.id,
+              interval: interval,
+              last: last
+            )
 
           %{
             data: events_stats,
