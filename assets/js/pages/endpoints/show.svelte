@@ -19,6 +19,7 @@
   import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
   import ChartMetrics from "$containers/chart-metrics.svelte";
   import Section from "$components/section.svelte";
+  import Secret from "$components/secret.svelte";
 
   import EventsTable from "$components/events-table.svelte";
 
@@ -168,7 +169,7 @@
           <div class="flex flex-col gap-1">
             <dt class="text-xs font-semibold">Secret</dt>
             <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              {endpoint.secret || "-"}
+              <Secret value={endpoint.secret} />
             </dd>
           </div>
         </dl>
