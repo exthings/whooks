@@ -10,6 +10,8 @@ defmodule Whooks.Events do
 
   alias Whooks.Topics
   alias Whooks.Topics.Topic
+  alias Whooks.Projects.Project
+  alias Whooks.Consumers.Consumer
   alias Whooks.Subscriptions.Subscription
   alias Whooks.DeliveryAttempts.DeliveryAttempt
 
@@ -52,6 +54,52 @@ defmodule Whooks.Events do
       preload: [:topic]
     )
     |> Flop.validate_and_run(params, for: Event)
+  end
+
+  # def get(id) do
+  #   from(e in Event,
+  #     where: e.id == ^id,
+  #     join: t in Topic,
+  #     on: e.topic_id == t.id,
+  #     join: p in Project,
+  #     on: e.project_id == p.id,
+  #     join: c in Consumer,
+  #     on: e.consumer_id == c.id,
+  #     join: d in DeliveryAttempt,
+  #     on: e.id == d.event_id,
+  #     preload: [:topic, :project, :consumer, :delivery_attempts]
+  #   )
+  #   |> Repo.one()
+  #   |> case do
+  #     nil ->
+  #       {:error, :not_found}
+
+  #     event ->
+  #       {:ok, event}
+  #   end
+  # end
+
+  def get(id) do
+    from(e in Event,
+      where: e.id == ^id,
+      left_join: t in assoc(e, :topic),
+      left_join: p in assoc(e, :project),
+      left_join: c in assoc(e, :consumer),
+      left_join: d in assoc(e, :delivery_attempts),
+      left_join: s in assoc(d, :subscription),
+      left_join: ep in assoc(s, :endpoint),
+      preload: [
+        topic: t,
+        project: p,
+        consumer: c,
+        delivery_attempts: {d, subscription: {s, endpoint: ep}}
+      ]
+    )
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      event -> {:ok, event}
+    end
   end
 
   @doc """

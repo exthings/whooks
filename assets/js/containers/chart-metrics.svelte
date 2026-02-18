@@ -56,6 +56,7 @@
       {
         preserveState: true,
         preserveScroll: true,
+        replace: true,
       },
     );
   };

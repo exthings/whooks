@@ -1,4 +1,5 @@
 import type { Analytics } from "./analytics";
+import type { Attempt } from "./attempts";
 import type { Consumer } from "./consumer";
 import type { Endpoint } from "./endpoint";
 import type { Event } from "./event";
@@ -10,6 +11,7 @@ import type { Topic } from "./topic";
 
 export type {
   Analytics,
+  Attempt,
   Consumer,
   Endpoint,
   Event,
