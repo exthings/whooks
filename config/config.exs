@@ -24,7 +24,7 @@ config :whooks, WhooksWeb.Endpoint,
 
 # Configure tailwind (the version is required)
 
-config :flop, repo: Whooks.Repo
+config :flop, repo: Whooks.Repo, default_limit: 10
 
 config :inertia,
   # The Phoenix Endpoint module for your application. This is used for building
