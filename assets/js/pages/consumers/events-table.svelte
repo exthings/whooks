@@ -24,7 +24,7 @@
 
   const statusVariantMap = {
     pending: "warning",
-    scheduled: "success",
+    scheduled: "neutral",
     processing: "info",
     retry: "secondary",
     failed: "destructive",
