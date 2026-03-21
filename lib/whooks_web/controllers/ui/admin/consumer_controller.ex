@@ -4,7 +4,6 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   alias Whooks.Common
   alias Whooks.Events
   alias Whooks.Consumers
-  alias Whooks.Analytics
   alias Whooks.Metrics
 
   require Logger
@@ -23,8 +22,8 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
     with {:ok, consumer} <- Consumers.get_by_id(params["id"]),
          {:ok, {consumers, meta}} <- Consumers.list(params) do
       conn
-      |> assign_prop(:consumer, serialize_consumer(consumer))
       |> assign_prop(:id, params["id"])
+      |> assign_prop(:consumer, serialize_consumer(consumer))
       |> assign_prop(:consumers, for(consumer <- consumers, do: serialize_consumer(consumer)))
       |> assign_prop(:meta, meta)
       |> assign_prop(
