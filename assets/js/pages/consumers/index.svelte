@@ -26,15 +26,9 @@
     events?: { data: (Event & { topic: Topic })[]; meta: Meta };
     meta: Meta;
     id?: string | null;
-    eventsAnalytics?: {
-      data: Analytics[];
-      interval: "minute" | "hour" | "day";
-      last: "1h" | "12h" | "24h" | "48h" | "1w" | "1m";
-    };
   };
 
-  const { consumers, consumer, events, meta, id, eventsAnalytics }: Props =
-    $props();
+  const { consumers, consumer, events, meta, id }: Props = $props();
 
   let searchName = $derived(getFilterValue(meta.filters, "name")[0]?.value);
 
@@ -114,7 +108,7 @@
       {#each consumers as consumer (consumer.id)}
         <Link
           href={`/ui/admin/consumers/${consumer.id}`}
-          only={["consumer", "id", "events", "eventsAnalytics"]}
+          only={["consumer", "id", "events", "eventsMetrics"]}
           class={cn(
             "flex items-center gap-1 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors text-left",
             id === consumer.id && "bg-gray-100",
