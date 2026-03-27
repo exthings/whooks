@@ -6,4 +6,5 @@ export type Topic = {
   status: "enabled" | "disabled";
   description?: string;
   jsonSchema: Record<string, any>;
+  example?: Record<string, any>;
 };
