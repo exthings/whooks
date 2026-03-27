@@ -31,6 +31,10 @@
   export type StatusBadgeVariant = VariantProps<
     typeof badgeVariants
   >["variant"];
+
+  export type BadgeStatusVariant = VariantProps<
+    typeof badgeVariants
+  >["variant"];
 </script>
 
 <script lang="ts">
