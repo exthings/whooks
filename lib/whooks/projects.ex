@@ -7,6 +7,7 @@ defmodule Whooks.Projects do
   alias Whooks.Repo
 
   alias Whooks.Projects.Project
+  alias Whooks.Organizations.Organization
 
   @doc """
   Returns the list of projects.
@@ -22,7 +23,11 @@ defmodule Whooks.Projects do
   end
 
   def list(params) do
-    Project
+    from(p in Project,
+      join: o in Organization,
+      on: p.organization_id == o.id,
+      preload: [:organization]
+    )
     |> Flop.validate_and_run(params, for: Project)
   end
 
@@ -41,6 +46,17 @@ defmodule Whooks.Projects do
 
   """
   def get_project!(id), do: Repo.get!(Project, id)
+
+  def get_by_id(id) do
+    Project
+    |> Repo.get(id)
+    |> Repo.preload(:organization)
+    |> Repo.preload(:topics)
+    |> case do
+      nil -> {:error, :not_found}
+      project -> {:ok, project}
+    end
+  end
 
   @doc """
   Creates a project.

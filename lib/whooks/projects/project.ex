@@ -2,7 +2,16 @@ defmodule Whooks.Projects.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @derive {Jason.Encoder, only: [:id, :name, :metadata, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :name,
+             :metadata,
+             :organization,
+             :uid,
+             :inserted_at,
+             :updated_at
+           ]}
 
   @derive {
     Flop.Schema,
@@ -16,6 +25,8 @@ defmodule Whooks.Projects.Project do
   @primary_key {:id, TypeID, autogenerate: true, prefix: "project", type: :string}
   @foreign_key_type TypeID
   schema "projects" do
+    field :uid, :string
+    field :status, Ecto.Enum, values: [:enabled, :disabled], default: :enabled
     field :name, :string
     field :metadata, :map
 
