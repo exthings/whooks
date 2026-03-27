@@ -33,7 +33,7 @@ defmodule WhooksWeb.Router do
       get "/", HomeController, :home
 
       resources "/organizations", OrganizationController, only: [:index]
-      resources "/projects", ProjectController, only: [:index]
+      resources "/projects", ProjectController, only: [:index, :show]
       resources "/consumers", ConsumerController, only: [:index, :show, :create]
       resources "/endpoints", EndpointController, only: [:show, :create]
       resources "/events", EventController, only: [:show]
