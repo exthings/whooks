@@ -36,7 +36,9 @@ defmodule Whooks.Events do
     from(e in Event,
       join: t in Topic,
       on: e.topic_id == t.id,
-      preload: [:topic]
+      join: c in Consumer,
+      on: e.consumer_id == c.id,
+      preload: [:topic, :consumer]
     )
     |> apply_filters(opts)
     |> Flop.validate_and_run(params, for: Event)
@@ -50,8 +52,10 @@ defmodule Whooks.Events do
       on: e.id == d.event_id,
       join: s in Subscription,
       on: d.subscription_id == s.id,
+      join: c in Consumer,
+      on: e.consumer_id == c.id,
       where: s.endpoint_id == ^endpoint_id,
-      preload: [:topic]
+      preload: [:topic, :consumer]
     )
     |> Flop.validate_and_run(params, for: Event)
   end
