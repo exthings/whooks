@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import "@andypf/json-viewer";
-
-  import { Link } from "@inertiajs/svelte";
+  import { Link, page } from "@inertiajs/svelte";
 
   import {
     Building2,
@@ -27,29 +26,34 @@
     {
       title: "Organizations",
       url: "/ui/admin/organizations",
+      component: "organizations",
       icon: Building2,
     },
     {
       title: "Projects",
       url: "/ui/admin/projects",
+      component: "projects",
       icon: Box,
       isActive: true,
     },
     {
       title: "Consumers",
       url: "/ui/admin/consumers",
+      component: "consumers",
       icon: Inbox,
       isActive: true,
     },
     {
       title: "Events",
       url: "/ui/admin/events",
+      component: "events",
       icon: SquareChartGantt,
       isActive: true,
     },
     {
       title: "Settings",
       url: "/ui/admin/settings",
+      component: "settings",
       icon: Settings2Icon,
     },
   ];
@@ -85,7 +89,10 @@
             <Collapsible.Root open={mainItem.isActive}>
               {#snippet child({ props })}
                 <Sidebar.MenuItem {...props}>
-                  <Sidebar.MenuButton tooltipContent={mainItem.title}>
+                  <Sidebar.MenuButton
+                    tooltipContent={mainItem.title}
+                    isActive={$page.component.startsWith(mainItem.component)}
+                  >
                     {#snippet child({ props })}
                       <Link href={mainItem.url} {...props}>
                         <mainItem.icon />
