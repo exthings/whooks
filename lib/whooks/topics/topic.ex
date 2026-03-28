@@ -39,4 +39,13 @@ defmodule Whooks.Topics.Topic do
     |> foreign_key_constraint(:project_id)
     |> Common.Changeset.validate_dot_notation(:name)
   end
+
+  def create_changeset(topic, attrs) do
+    topic
+    |> cast(attrs, [:name, :status, :description, :json_schema, :example, :project_id])
+    |> validate_required([:name, :status, :project_id])
+    |> unique_constraint([:name, :project_id])
+    |> foreign_key_constraint(:project_id)
+    |> Common.Changeset.validate_dot_notation(:name)
+  end
 end

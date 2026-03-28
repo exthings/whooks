@@ -101,7 +101,7 @@ defmodule Whooks.Topics do
   """
   def create_topic(attrs) do
     %Topic{}
-    |> Topic.changeset(attrs)
+    |> Topic.create_changeset(attrs)
     |> Repo.insert()
   end
 
