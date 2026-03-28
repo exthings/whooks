@@ -95,11 +95,11 @@
     <div class="flex flex-col">
       {#each projects.data as project (project.id)}
         <SidebarItem
-          href={`/ui/admin/projects/${project.id}`}
+          href={`projects/${project.id}`}
           only={["id", "project", "events", "subscriptions"]}
           isActive={id === project.id}
           label={project.name}
-          description={project.organization.name}
+          description={project.uid}
           data={{ filters: projects.meta.filters }}
           preserveState={true}
           preserveScroll={true}
