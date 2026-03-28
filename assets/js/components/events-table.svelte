@@ -25,6 +25,7 @@
     ChevronRightIcon,
     RotateCwIcon,
   } from "lucide-svelte";
+  import { buildHref } from "$utils";
 
   type Props = {
     propsKey: string;
@@ -76,7 +77,7 @@
       cell: ({ row }) => {
         return renderComponent(CellId, {
           id: row.original.id,
-          href: `/ui/admin/events/${row.original.id}`,
+          href: buildHref(`/events/${row.original.id}`),
           maxVisibleLength: 64,
         });
       },

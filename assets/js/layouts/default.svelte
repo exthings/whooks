@@ -1,20 +1,15 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { onMount, type Snippet } from "svelte";
   import "@andypf/json-viewer";
-  import { Link, page } from "@inertiajs/svelte";
-
-  import {
-    Building2,
-    SquareChartGantt,
-    Box,
-    Inbox,
-    Settings2Icon,
-  } from "lucide-svelte";
+  import { Link, page, router } from "@inertiajs/svelte";
+  import OrganizationsCombobox from "$containers/organizations-combobox.svelte";
+  import { SquareChartGantt, Box, Inbox, Settings2Icon } from "lucide-svelte";
 
   import WhooksSymbol from "$components/whooks.svelte";
 
   import * as Sidebar from "$lib/components/ui/sidebar";
   import * as Collapsible from "$lib/components/ui/collapsible/index.js";
+  import { PersistedState } from "runed";
 
   type Props = {
     children: Snippet;
@@ -22,41 +17,59 @@
 
   let { children }: Props = $props();
 
-  const nav = [
-    {
-      title: "Organizations",
-      url: "/ui/admin/organizations",
-      component: "organizations",
-      icon: Building2,
-    },
-    {
-      title: "Projects",
-      url: "/ui/admin/projects",
-      component: "projects",
-      icon: Box,
-      isActive: true,
-    },
-    {
-      title: "Consumers",
-      url: "/ui/admin/consumers",
-      component: "consumers",
-      icon: Inbox,
-      isActive: true,
-    },
-    {
-      title: "Events",
-      url: "/ui/admin/events",
-      component: "events",
-      icon: SquareChartGantt,
-      isActive: true,
-    },
-    {
-      title: "Settings",
-      url: "/ui/admin/settings",
-      component: "settings",
-      icon: Settings2Icon,
-    },
-  ];
+  let organization = new PersistedState<string | null>(
+    "organization",
+    $page.props.organizationId,
+  );
+
+  let nav = $derived(
+    organization.current
+      ? [
+          {
+            title: "Projects",
+            url: `/ui/admin/${organization.current}/projects`,
+            component: "projects",
+            icon: Box,
+            isActive: true,
+          },
+          {
+            title: "Consumers",
+            url: `/ui/admin/${organization.current}/consumers`,
+            component: "consumers",
+            icon: Inbox,
+            isActive: true,
+          },
+          {
+            title: "Events",
+            url: `/ui/admin/${organization.current}/events`,
+            component: "events",
+            icon: SquareChartGantt,
+            isActive: true,
+          },
+          {
+            title: "Settings",
+            url: `/ui/admin/${organization.current}/settings`,
+            component: "settings",
+            icon: Settings2Icon,
+          },
+        ]
+      : [],
+  );
+
+  const setOrganization = (org: string) => {
+    console.log("crt org", organization.current);
+    console.log("new org", org);
+    console.log($page.url);
+    const newUrl = $page.url.replace(organization.current, org);
+    organization.current = org;
+    router.get(newUrl, {}, { preserveState: true });
+  };
+
+  onMount(() => {
+    if (organization.current === null && $page.props.organizationId) {
+      organization.current = $page.props.organizationId;
+    }
+  });
 </script>
 
 <Sidebar.Provider>
@@ -85,6 +98,9 @@
     <Sidebar.Content>
       <Sidebar.Group>
         <Sidebar.Menu>
+          <Sidebar.MenuItem class="mb-2">
+            <OrganizationsCombobox {organization} {setOrganization} />
+          </Sidebar.MenuItem>
           {#each nav as mainItem (mainItem.title)}
             <Collapsible.Root open={mainItem.isActive}>
               {#snippet child({ props })}

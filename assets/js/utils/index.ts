@@ -1,4 +1,6 @@
 import type { Filter } from "$types/meta";
+import { page } from '@inertiajs/svelte';
+import { get } from 'svelte/store';
 
 export const getFilterValue = <T = string>(
   filters: Filter[],
@@ -31,3 +33,8 @@ export const getFilterValue = <T = string>(
     return values;
   }, [] as Filter<T>[]);
 };
+
+export const buildHref = (path: string) => {
+  const orgId = get(page).props.organizationId
+  return `/ui/admin/${orgId}${path}`;
+}
