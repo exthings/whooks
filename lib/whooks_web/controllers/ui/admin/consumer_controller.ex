@@ -9,7 +9,8 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   require Logger
 
   def index(conn, params) do
-    with {:ok, {consumers, meta}} <- Consumers.list(params) do
+    with {:ok, {consumers, meta}} <-
+           Consumers.list(params, organization_id: params["organization_id"]) do
       conn
       |> assign_prop(:consumers, for(consumer <- consumers, do: serialize_consumer(consumer)))
       |> assign_prop(:meta, meta)
