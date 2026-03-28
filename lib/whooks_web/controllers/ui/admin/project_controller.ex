@@ -6,8 +6,13 @@ defmodule WhooksWeb.UI.Admin.ProjectController do
   alias Whooks.Serializer
   alias Whooks.Metrics
 
+  require Logger
+
   def index(conn, params) do
-    with {:ok, {projects, meta}} <- Projects.list(params) do
+    Logger.info("params: #{inspect(conn.req_headers)}")
+
+    with {:ok, {projects, meta}} <-
+           Projects.list(params, organization_id: params["organization_id"]) do
       conn
       |> assign_prop(:id, params["id"])
       |> assign_prop(:projects, %{data: Serializer.to_map(projects), meta: meta})

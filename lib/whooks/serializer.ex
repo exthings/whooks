@@ -90,6 +90,28 @@ defmodule Whooks.Serializer do
     }
   end
 
+  defp serialize(%Flop.Meta{} = meta) do
+    %{
+      current_page: meta.current_page,
+      page_size: meta.page_size,
+      total_count: meta.total_count,
+      total_pages: meta.total_pages,
+      has_next_page: meta.has_next_page?,
+      has_previous_page: meta.has_previous_page?,
+      next_page: meta.next_page,
+      previous_page: meta.previous_page,
+      filters: meta.flop.filters |> Enum.map(&map_filter/1)
+    }
+  end
+
+  defp map_filter(filter) do
+    %{
+      field: filter.field,
+      op: filter.op,
+      value: filter.value
+    }
+  end
+
   defp map_assoc(%Ecto.Association.NotLoaded{}), do: nil
   defp map_assoc(data) when is_list(data), do: for(item <- data, do: serialize(item))
   defp map_assoc(data), do: serialize(data)

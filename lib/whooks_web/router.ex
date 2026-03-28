@@ -15,6 +15,11 @@ defmodule WhooksWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :ui_shared_props do
+    plug WhooksWeb.Plugs.SelectOrganizationsPlug
+    plug WhooksWeb.Plugs.OrganizationsPropPlug
+  end
+
   scope "/v1", WhooksWeb.V1 do
     pipe_through :api
 
@@ -27,24 +32,27 @@ defmodule WhooksWeb.Router do
   end
 
   scope "/ui", WhooksWeb.UI do
-    pipe_through :browser
+    pipe_through [:browser, :ui_shared_props]
 
     scope "/admin", Admin do
-      get "/", HomeController, :home
+      get "/home", HomeController, :home
+      post "/organizations", OrganizationController, :create
 
-      resources "/organizations", OrganizationController, only: [:index]
-      resources "/projects", ProjectController, only: [:index, :show]
-      resources "/consumers", ConsumerController, only: [:index, :show, :create]
-      resources "/endpoints", EndpointController, only: [:show, :create]
-      resources "/events", EventController, only: [:show]
-      resources "/topics", TopicController, only: [:create]
+      scope ":organization_id" do
+        resources "/organizations", OrganizationController, only: [:index]
+        resources "/projects", ProjectController, only: [:index, :show]
+        resources "/consumers", ConsumerController, only: [:index, :show, :create]
+        resources "/endpoints", EndpointController, only: [:show, :create]
+        resources "/events", EventController, only: [:show]
+        resources "/topics", TopicController, only: [:create]
+      end
     end
   end
 
   # Other scopes may use custom stacks.
   # scope "/api", WhooksWeb do
   #   pipe_through :api
-  # end
+  # end'
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:whooks, :dev_routes) do

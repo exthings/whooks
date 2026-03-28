@@ -22,12 +22,13 @@ defmodule Whooks.Projects do
     Repo.all(Project)
   end
 
-  def list(params) do
+  def list(params, opts \\ []) do
     from(p in Project,
       join: o in Organization,
       on: p.organization_id == o.id,
       preload: [:organization]
     )
+    |> apply_filters(opts)
     |> Flop.validate_and_run(params, for: Project)
   end
 
@@ -121,5 +122,12 @@ defmodule Whooks.Projects do
   """
   def change_project(%Project{} = project, attrs \\ %{}) do
     Project.changeset(project, attrs)
+  end
+
+  defp apply_filters(q, opts) do
+    Enum.reduce(opts, q, fn
+      {:organization_id, id}, q -> where(q, [p], p.organization_id == ^id)
+      _, q -> q
+    end)
   end
 end
