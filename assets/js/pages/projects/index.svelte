@@ -48,7 +48,7 @@
 
   let projectFormOpen = $state(false);
   let selectedTopic = $state<Topic | null>(null);
-  let topicFormOpen = $state(true);
+  let topicFormOpen = $state(false);
 
   const handleSearch = useDebounce((e: Event) => {
     const target = e.target as HTMLInputElement;
