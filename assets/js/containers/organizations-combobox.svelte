@@ -25,11 +25,17 @@
 
   let { organization, setOrganization }: Props = $props();
 
+  let open = $state(false);
   let organizations = $derived($page.props["organizations"]);
   let organizationForm = $state(false);
+
+  const handleSetOrganization = (org: string) => {
+    setOrganization(org);
+    open = false;
+  };
 </script>
 
-<Popover.Root>
+<Popover.Root bind:open>
   <Popover.Trigger
     class={cn(buttonVariants({ variant: "outline" }), "w-full justify-between")}
   >
@@ -66,7 +72,7 @@
                 size="sm"
                 class="w-full justify-start font-normal"
                 type="button"
-                onclick={() => setOrganization(org.id)}
+                onclick={() => handleSetOrganization(org.id)}
               >
                 {#if organization.current === org.id}
                   <CheckIcon />
