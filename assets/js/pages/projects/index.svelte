@@ -2,12 +2,8 @@
   import type { Project, Event, Topic, Meta } from "$types";
 
   import { Deferred, router } from "@inertiajs/svelte";
-  import * as Sheet from "$lib/components/ui/sheet";
   import BadgeStatus from "$components/badge-status.svelte";
   import type { BadgeStatusVariant } from "$components/badge-status.svelte";
-  import { Input } from "$lib/components/ui/input";
-  import { Textarea } from "$lib/components/ui/textarea";
-  import { Label } from "$lib/components/ui/label";
   import { Button } from "$lib/components/ui/button";
   import * as Tabs from "$lib/components/ui/tabs";
   import * as Card from "$lib/components/ui/card";
@@ -21,9 +17,10 @@
   import { getFilterValue } from "$utils";
   import { useDebounce } from "runed";
   import { EllipsisIcon, EyeIcon, PlusIcon } from "lucide-svelte";
-  import JsonSchemaViewer from "$components/json-schema-viewer.svelte";
 
-  import * as Dialog from "$lib/components/ui/dialog/index.js";
+  import ProjectFormDialog from "./containers/project-form-dialog.svelte";
+  import TopicDialog from "./containers/topic-dialog.svelte";
+  import TopicFormDialog from "./containers/topic-form-dialog.svelte";
 
   type Subscriptions = {
     topicId: string;
@@ -49,10 +46,9 @@
     getFilterValue(projects.meta.filters, "name")[0]?.value,
   );
 
-  let formIsOpen = $state(false);
-
+  let projectFormOpen = $state(false);
   let selectedTopic = $state<Topic | null>(null);
-  let topicDialogIsOpen = $derived(selectedTopic !== null);
+  let topicFormOpen = $state(true);
 
   const handleSearch = useDebounce((e: Event) => {
     const target = e.target as HTMLInputElement;
@@ -90,7 +86,7 @@
 {#snippet sidebar()}
   <SidebarHeader
     title="Projects"
-    onCreate={() => (formIsOpen = true)}
+    onCreate={() => (projectFormOpen = true)}
     onSearch={handleSearch}
     searchValue={searchName}
   />
@@ -114,7 +110,9 @@
 {/snippet}
 
 {#snippet topicsActions()}
-  <Button variant="outline" size="icon"><PlusIcon /></Button>
+  <Button variant="outline" size="icon" onclick={() => (topicFormOpen = true)}
+    ><PlusIcon /></Button
+  >
 {/snippet}
 
 <ContentWithSidebar {sidebar}>
@@ -269,116 +267,8 @@
   </div>
 </ContentWithSidebar>
 
-<Sheet.Root bind:open={formIsOpen}>
-  <Sheet.Content side="right" class="">
-    <Sheet.Header>
-      <Sheet.Title>Create project</Sheet.Title>
-    </Sheet.Header>
-    <div class="grid flex-1 auto-rows-min gap-6 px-4">
-      <div class="grid gap-2">
-        <Label for="name" class="text-end">Name</Label>
-        <Input id="name" />
-      </div>
-      <div class="grid gap-2">
-        <Label for="uid" class="text-end">UID</Label>
-        <Input id="uid" />
-      </div>
-    </div>
-    <Sheet.Footer>
-      <Button type="submit">Create</Button>
-    </Sheet.Footer>
-  </Sheet.Content>
-</Sheet.Root>
+<ProjectFormDialog bind:open={projectFormOpen} />
 
-<Dialog.Root
-  open={topicDialogIsOpen}
-  onOpenChange={(value: boolean) => {
-    selectedTopic = null;
-  }}
->
-  <Dialog.Content class="sm:max-w-4xl">
-    <Dialog.Header>
-      <Dialog.Title>Topic - {selectedTopic?.name}</Dialog.Title>
-      <Dialog.Description>
-        {selectedTopic?.description}
-      </Dialog.Description>
-    </Dialog.Header>
-    <div class="flex flex-col gap-4">
-      {#if selectedTopic}
-        <dl class="text-sm grid grid-cols-2 gap-4">
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">ID</dt>
-            <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              {selectedTopic.id}
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Name</dt>
-            <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              {selectedTopic.name}
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Inserted at</dt>
-            <dd class="text-gray-700 sm:col-span-3">
-              <DateTimeDisplay
-                value={selectedTopic.insertedAt}
-                size="xs"
-                options={{ fractionalSecondDigits: undefined }}
-              />
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Updated at</dt>
-            <dd class="text-gray-700 sm:col-span-3">
-              <DateTimeDisplay
-                value={selectedTopic.updatedAt}
-                size="xs"
-                options={{ fractionalSecondDigits: undefined }}
-              />
-            </dd>
-          </div>
-        </dl>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="flex flex-col">
-            <h3 class=" font-semibold pb-2">JSON Schema</h3>
-            <Card.Root class="shadow-none py-2 flex-1">
-              <Card.Content>
-                <JsonSchemaViewer schema={selectedTopic.jsonSchema} />
-              </Card.Content>
-            </Card.Root>
-          </div>
-          <div class="flex flex-col">
-            <h3 class=" font-semibold pb-2">Example</h3>
-            <Card.Root class="shadow-none py-2 flex-1">
-              <Card.Content>
-                <andypf-json-viewer data={selectedTopic.example}
-                ></andypf-json-viewer>
-              </Card.Content>
-            </Card.Root>
-          </div>
-        </div>
-      {/if}
-    </div>
-  </Dialog.Content>
-</Dialog.Root>
+<TopicDialog topic={selectedTopic} />
 
-<Dialog.Root open={false}>
-  <Dialog.Content>
-    <Dialog.Header>
-      <Dialog.Title>Create topic</Dialog.Title>
-    </Dialog.Header>
-    <form>
-      <div class="flex flex-col gap-4">
-        <div class="grid gap-2">
-          <Label for="name" class="text-end">Name</Label>
-          <Input id="name" />
-        </div>
-        <div class="grid gap-2">
-          <Label for="description" class="text-end">Description</Label>
-          <Textarea id="description" />
-        </div>
-      </div>
-    </form>
-  </Dialog.Content>
-</Dialog.Root>
+<TopicFormDialog bind:open={topicFormOpen} projectId={id} />
