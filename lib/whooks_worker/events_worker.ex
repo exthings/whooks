@@ -41,6 +41,7 @@ defmodule WhooksWorker.EventsWorker do
         url: subscription.endpoint.url,
         headers: subscription.endpoint.headers,
         secret: subscription.endpoint.secret,
+        topic: subscription.topic.name,
         data: event.data
       },
       []

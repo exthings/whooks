@@ -54,6 +54,8 @@ defmodule Whooks.Serializer do
       description: endpoint.description,
       headers: endpoint.headers,
       metadata: endpoint.metadata,
+      secret: endpoint.secret,
+      old_secrets: endpoint.old_secrets,
       inserted_at: endpoint.inserted_at,
       updated_at: endpoint.updated_at,
       consumer: map_assoc(endpoint.consumer),

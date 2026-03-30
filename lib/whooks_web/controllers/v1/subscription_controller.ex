@@ -16,7 +16,6 @@ defmodule WhooksWeb.V1.SubscriptionController do
            Subscriptions.create_subscription(subscription_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", ~p"/api/subscriptions/#{subscription}")
       |> render(:show, subscription: subscription)
     end
   end

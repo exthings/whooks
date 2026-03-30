@@ -39,6 +39,10 @@ defmodule Whooks.StandardWebhooks do
     sign_with_version(id, timestamp, payload, secret)
   end
 
+  def build_body(topic, timestamp, data) do
+    %{type: topic, data: data, timestamp: timestamp}
+  end
+
   defp sign_with_version(id, timestamp, payload, secret) do
     validate_timestamp(timestamp)
 

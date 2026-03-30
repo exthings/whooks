@@ -25,9 +25,10 @@ defmodule Whooks.Subscriptions do
   def list_by_topic(topic_id, opts \\ []) do
     from(s in Subscription,
       join: e in assoc(s, :endpoint),
+      join: t in assoc(s, :topic),
       where: s.topic_id == ^topic_id,
       where: e.status == ^"enabled",
-      preload: [:endpoint]
+      preload: [:endpoint, :topic]
     )
     |> apply_filters(opts)
     |> Repo.all()

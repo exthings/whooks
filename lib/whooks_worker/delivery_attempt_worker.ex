@@ -14,7 +14,9 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
 
     id = DeliveryAttempt.gen_id()
     timestamp = DateTime.utc_now() |> DateTime.to_unix()
-    payload_data = data["data"] |> Jason.encode!()
+
+    payload_data =
+      StandardWebhooks.build_body(data["topic"], timestamp, data["data"]) |> Jason.encode!()
 
     headers =
       build_standard_webhook_headers(
