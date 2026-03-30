@@ -32,8 +32,17 @@ defmodule Whooks.Serializer do
     }
   end
 
-  defp serialize(%DeliveryAttempt{} = _delivery_attempt) do
-    %{}
+  defp serialize(%DeliveryAttempt{} = delivery_attempt) do
+    %{
+      id: delivery_attempt.id,
+      status: delivery_attempt.status,
+      inserted_at: delivery_attempt.inserted_at,
+      req_headers: delivery_attempt.req_headers,
+      res_headers: delivery_attempt.res_headers,
+      res_status: delivery_attempt.res_status,
+      res_body: delivery_attempt.res_body,
+      latency_ms: delivery_attempt.latency_ms
+    }
   end
 
   defp serialize(%Endpoint{} = endpoint) do
@@ -46,7 +55,10 @@ defmodule Whooks.Serializer do
       headers: endpoint.headers,
       metadata: endpoint.metadata,
       inserted_at: endpoint.inserted_at,
-      updated_at: endpoint.updated_at
+      updated_at: endpoint.updated_at,
+      consumer: map_assoc(endpoint.consumer),
+      project: map_assoc(endpoint.project),
+      subscriptions: map_assoc(endpoint.subscriptions)
     }
   end
 
@@ -61,7 +73,9 @@ defmodule Whooks.Serializer do
       metadata: event.metadata,
       tags: event.tags,
       topic: map_assoc(event.topic),
-      consumer: map_assoc(event.consumer)
+      consumer: map_assoc(event.consumer),
+      project: map_assoc(event.project),
+      attempts: map_assoc(event.delivery_attempts)
     }
   end
 
@@ -88,8 +102,14 @@ defmodule Whooks.Serializer do
     }
   end
 
-  defp serialize(%Subscription{} = _subscription) do
-    %{}
+  defp serialize(%Subscription{} = subscription) do
+    %{
+      id: subscription.id,
+      inserted_at: subscription.inserted_at,
+      updated_at: subscription.updated_at,
+      status: subscription.status,
+      topic: map_assoc(subscription.topic)
+    }
   end
 
   defp serialize(%Topic{} = topic) do
