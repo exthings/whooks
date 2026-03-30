@@ -21,8 +21,9 @@ defmodule Whooks.Consumers do
     Repo.all(Consumer)
   end
 
-  def list(params) do
+  def list(params, opts \\ []) do
     Consumer
+    |> apply_filters(opts)
     |> Flop.validate_and_run(params, for: Consumer)
   end
 
@@ -114,5 +115,12 @@ defmodule Whooks.Consumers do
   """
   def change_consumer(%Consumer{} = consumer, attrs \\ %{}) do
     Consumer.changeset(consumer, attrs)
+  end
+
+  defp apply_filters(q, opts) do
+    Enum.reduce(opts, q, fn
+      {:organization_id, id}, q -> where(q, [p], p.organization_id == ^id)
+      _, q -> q
+    end)
   end
 end

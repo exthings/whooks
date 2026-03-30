@@ -11,7 +11,7 @@
   import SidebarHeader from "$components/sidebar-header.svelte";
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import EndpointsTable from "./endpoints-table.svelte";
-  import EventsTable from "./events-table.svelte";
+  import { EventsTable } from "$containers";
   import { RotateCwIcon, PlusIcon } from "lucide-svelte";
   import ChartMetrics from "$containers/chart-metrics.svelte";
   import Section from "$components/section.svelte";
@@ -21,16 +21,17 @@
   import { useDebounce } from "runed";
 
   type Props = {
-    consumers: Consumer[];
+    consumers: { data: Consumer[]; meta: Meta };
     consumer?: Consumer;
     events?: { data: (Event & { topic: Topic })[]; meta: Meta };
-    meta: Meta;
     id?: string | null;
   };
 
-  const { consumers, consumer, events, meta, id }: Props = $props();
+  const { consumers, consumer, events, id }: Props = $props();
 
-  let searchName = $derived(getFilterValue(meta.filters, "name")[0]?.value);
+  let searchName = $derived(
+    getFilterValue(consumers.meta.filters, "name")[0]?.value,
+  );
 
   let formIsOpen = $state(false);
 
@@ -62,26 +63,12 @@
     router.get(
       "",
       {
-        filters: meta.filters,
+        filters: consumers.meta.filters,
       },
       {
         queryStringArrayFormat: "indices",
         preserveState: true,
         only: ["endpoints"],
-      },
-    );
-  };
-
-  const handleEventsRefresh = () => {
-    router.get(
-      "",
-      {
-        filters: meta.filters,
-      },
-      {
-        queryStringArrayFormat: "indices",
-        preserveState: true,
-        only: ["events"],
       },
     );
   };
@@ -105,7 +92,7 @@
 
   <div class="grow overflow-y-scroll">
     <div class="flex flex-col">
-      {#each consumers as consumer (consumer.id)}
+      {#each consumers.data as consumer (consumer.id)}
         <Link
           href={`consumers/${consumer.id}`}
           only={["consumer", "id", "events", "eventsMetrics"]}
@@ -113,7 +100,7 @@
             "flex items-center gap-1 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors text-left",
             id === consumer.id && "bg-gray-100",
           )}
-          data={{ filters: meta.filters }}
+          data={{ filters: consumers.meta.filters }}
           preserveState={true}
           preserveScroll={true}
         >
@@ -155,20 +142,6 @@
     >
       <PlusIcon />
       Add
-    </Button>
-  </div>
-{/snippet}
-
-{#snippet eventsActions()}
-  <div>
-    <Button
-      size="sm"
-      variant="outline"
-      type="button"
-      onclick={handleEventsRefresh}
-    >
-      <RotateCwIcon />
-      Refresh
     </Button>
   </div>
 {/snippet}
@@ -263,18 +236,10 @@
           </div>
         </Section>
 
-        <Section title="Events" actions={eventsActions}>
-          <div>
-            <Deferred data="events">
-              {#snippet fallback()}
-                <div>Loading...</div>
-              {/snippet}
-              {#if events}
-                <EventsTable events={events.data} meta={events.meta} />
-              {/if}
-            </Deferred>
-          </div>
-        </Section>
+        <EventsTable
+          propsKey="events"
+          columnVisibility={["insertedAt", "id", "topic", "status", "tags"]}
+        />
       {/if}
     {/key}
   </div>

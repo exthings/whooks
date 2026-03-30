@@ -5,6 +5,7 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   alias Whooks.Events
   alias Whooks.Consumers
   alias Whooks.Metrics
+  alias Whooks.Serializer
 
   require Logger
 
@@ -12,26 +13,34 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
     with {:ok, {consumers, meta}} <-
            Consumers.list(params, organization_id: params["organization_id"]) do
       conn
-      |> assign_prop(:consumers, for(consumer <- consumers, do: serialize_consumer(consumer)))
-      |> assign_prop(:meta, meta)
       |> assign_prop(:id, params["id"])
+      |> assign_prop(:consumers, %{
+        data: Serializer.to_map(consumers),
+        meta: Serializer.to_map(meta)
+      })
       |> render_inertia("consumers/index")
     end
   end
 
   def show(conn, params) do
-    with {:ok, consumer} <- Consumers.get_by_id(params["id"]),
-         {:ok, {consumers, meta}} <- Consumers.list(params) do
+    with {:ok, consumer} <- Consumers.get_by_id(params["id"]) do
       conn
       |> assign_prop(:id, params["id"])
-      |> assign_prop(:consumer, serialize_consumer(consumer))
-      |> assign_prop(:consumers, for(consumer <- consumers, do: serialize_consumer(consumer)))
-      |> assign_prop(:meta, meta)
+      |> assign_prop(:consumer, Serializer.to_map(consumer))
+      |> assign_prop(:consumers, fn ->
+        Consumers.list(params, organization_id: params["organization_id"])
+        |> case do
+          {:ok, {consumers, meta}} ->
+            %{data: Serializer.to_map(consumers), meta: Serializer.to_map(meta)}
+        end
+      end)
       |> assign_prop(
         :events,
         inertia_defer(fn ->
-          {:ok, {events, meta}} = Events.list(params, consumer_id: consumer.id)
-          %{data: for(event <- events, do: serialize_event(event)), meta: meta}
+          {:ok, {events, meta}} =
+            Events.list(Map.get(params, "events_params", %{}), consumer_id: consumer.id)
+
+          %{data: Serializer.to_map(events), meta: Serializer.to_map(meta)}
         end)
       )
       |> assign_prop(
@@ -68,52 +77,5 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
         |> assign_errors(changeset)
         |> redirect(to: ~p"/ui/admin/consumers")
     end
-  end
-
-  defp serialize_consumer(consumer) do
-    %{
-      id: consumer.id,
-      uid: consumer.uid,
-      name: consumer.name,
-      metadata: consumer.metadata,
-      inserted_at: consumer.inserted_at,
-      updated_at: consumer.updated_at,
-      endpoints: Common.Ecto.map_if_loaded(consumer.endpoints, &serialize_endpoint/1)
-    }
-  end
-
-  defp serialize_endpoint(endpoint) do
-    %{
-      id: endpoint.id,
-      uid: endpoint.uid,
-      status: endpoint.status,
-      url: endpoint.url,
-      description: endpoint.description,
-      headers: endpoint.headers,
-      metadata: endpoint.metadata,
-      inserted_at: endpoint.inserted_at,
-      updated_at: endpoint.updated_at
-    }
-  end
-
-  defp serialize_event(event) do
-    %{
-      id: event.id,
-      inserted_at: event.inserted_at,
-      updated_at: event.updated_at,
-      uid: event.uid,
-      status: event.status,
-      data: event.data,
-      metadata: event.metadata,
-      tags: event.tags,
-      topic: serialize_topic(event.topic)
-    }
-  end
-
-  defp serialize_topic(topic) do
-    %{
-      id: topic.id,
-      name: topic.name
-    }
   end
 end

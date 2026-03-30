@@ -23,7 +23,12 @@ defmodule Whooks.Serializer do
   defp serialize(%Consumer{} = consumer) do
     %{
       id: consumer.id,
-      name: consumer.name
+      name: consumer.name,
+      uid: consumer.uid,
+      metadata: consumer.metadata,
+      inserted_at: consumer.inserted_at,
+      updated_at: consumer.updated_at,
+      endpoints: map_assoc(consumer.endpoints)
     }
   end
 
@@ -31,8 +36,18 @@ defmodule Whooks.Serializer do
     %{}
   end
 
-  defp serialize(%Endpoint{} = _endpoint) do
-    %{}
+  defp serialize(%Endpoint{} = endpoint) do
+    %{
+      id: endpoint.id,
+      uid: endpoint.uid,
+      status: endpoint.status,
+      url: endpoint.url,
+      description: endpoint.description,
+      headers: endpoint.headers,
+      metadata: endpoint.metadata,
+      inserted_at: endpoint.inserted_at,
+      updated_at: endpoint.updated_at
+    }
   end
 
   defp serialize(%Event{} = event) do

@@ -13,6 +13,7 @@
   import BadgeStatus from "$components/badge-status.svelte";
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import { ChevronLeftIcon, ChevronRightIcon } from "lucide-svelte";
+  import { buildHref } from "$utils";
 
   let { endpoints }: { endpoints: Endpoint[] } = $props();
 
@@ -84,7 +85,8 @@
           <Table.Row
             class="cursor-pointer"
             data-state={row.getIsSelected() && "selected"}
-            onclick={() => router.get(`/ui/admin/endpoints/${row.original.id}`)}
+            onclick={() =>
+              router.get(buildHref(`/endpoints/${row.original.id}`))}
           >
             {#each row.getVisibleCells() as cell (cell.id)}
               <Table.Cell class="[&:has([role=checkbox])]:ps-3">
