@@ -9,7 +9,6 @@
     Meta,
     Analytics,
   } from "$types";
-  import * as Select from "$lib/components/ui/select";
   import { Button } from "$lib/components/ui/button";
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
   import DateTimeDisplay from "$components/date-time-display.svelte";
@@ -17,11 +16,9 @@
   import * as Card from "$lib/components/ui/card";
   import { router, Deferred } from "@inertiajs/svelte";
   import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-  import ChartMetrics from "$containers/chart-metrics.svelte";
   import Section from "$components/section.svelte";
   import Secret from "$components/secret.svelte";
-
-  import EventsTable from "$components/events-table.svelte";
+  import { ChartMetrics, EventsTable } from "$containers";
 
   import {
     EllipsisVerticalIcon,
@@ -215,28 +212,10 @@
       </Section>
     </div>
 
-    <div class="flex flex-col gap-2">
-      <div class="flex items-center justify-between pb-2">
-        <h2 class="font-semibold">Latest delivery attempts</h2>
-        <Button
-          size="sm"
-          variant="outline"
-          type="button"
-          onclick={handleEventsRefresh}
-        >
-          <RotateCwIcon />
-          Refresh
-        </Button>
-      </div>
-      <Deferred data="events">
-        {#snippet fallback()}
-          <div>Loading...</div>
-        {/snippet}
-        {#if events}
-          <EventsTable events={events.data} meta={events.meta} />
-        {/if}
-      </Deferred>
-    </div>
+    <EventsTable
+      propsKey="events"
+      columnVisibility={["insertedAt", "id", "topic", "status", "tags"]}
+    />
 
     <div class="col-span-2 flex flex-col gap-2">
       <h2 class="font-semibold">Headers</h2>
