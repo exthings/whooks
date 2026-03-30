@@ -3,12 +3,13 @@ defmodule Whooks.Sender do
 
   def post(%{url: url, data: data, headers: headers}) do
     req()
-    |> Req.post(base_url: url, json: data, headers: headers)
+    |> Req.post(base_url: url, body: data, headers: headers)
   end
 
   defp req() do
     Req.new(
       headers: %{
+        "accept" => "application/json",
         "content-type" => "application/json",
         "user-agent" => "whooks/#{Application.spec(:whooks, :vsn)}"
       }
