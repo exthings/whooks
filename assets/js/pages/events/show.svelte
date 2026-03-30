@@ -221,7 +221,8 @@
                   <div class="pb-4">
                     <div class="py-2 px-4">
                       <p class="text-xs font-mono font-semibold">Headers</p>
-                      <andypf-json-viewer data={{}}></andypf-json-viewer>
+                      <andypf-json-viewer data={selectedAttempt.reqHeaders}
+                      ></andypf-json-viewer>
                     </div>
                     <div class="py-2 px-4">
                       <p class="text-xs font-mono font-semibold">Body</p>
