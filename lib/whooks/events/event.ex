@@ -4,7 +4,7 @@ defmodule Whooks.Events.Event do
 
   @derive {
     Flop.Schema,
-    filterable: [:uid, :status, :inserted_at, :updated_at],
+    filterable: [:id, :uid, :status, :tags, :inserted_at, :updated_at],
     sortable: [:status, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:inserted_at],

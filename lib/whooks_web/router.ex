@@ -43,7 +43,7 @@ defmodule WhooksWeb.Router do
         resources "/projects", ProjectController, only: [:index, :show]
         resources "/consumers", ConsumerController, only: [:index, :show, :create]
         resources "/endpoints", EndpointController, only: [:show, :create]
-        resources "/events", EventController, only: [:show]
+        resources "/events", EventController, only: [:index, :show]
         resources "/topics", TopicController, only: [:create]
       end
     end

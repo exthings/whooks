@@ -38,7 +38,9 @@ defmodule Whooks.Events do
       on: e.topic_id == t.id,
       join: c in Consumer,
       on: e.consumer_id == c.id,
-      preload: [:topic, :consumer]
+      left_join: d in DeliveryAttempt,
+      on: e.id == d.event_id,
+      preload: [:topic, :consumer, :delivery_attempts]
     )
     |> apply_filters(opts)
     |> Flop.validate_and_run(params, for: Event)
