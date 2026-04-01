@@ -6,12 +6,12 @@ export type Filter<T = string> = {
 
 export type Meta<T = string> = {
   filters: Filter<T>[];
-  current_page: number;
-  page_size: number;
-  total_count: number;
-  total_pages: number;
-  has_next_page: boolean;
-  has_previous_page: boolean;
-  next_page: number | null;
-  previous_page: number | null;
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  nextPage: number | null;
+  previousPage: number | null;
 };
