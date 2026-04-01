@@ -29,14 +29,16 @@
     {/if}
   </div>
 
-  <InputGroup.Root>
-    <InputGroup.Input
-      placeholder="Search..."
-      value={searchValue}
-      oninput={onSearch}
-    />
-    <InputGroup.Addon>
-      <SearchIcon />
-    </InputGroup.Addon>
-  </InputGroup.Root>
+  {#if onSearch}
+    <InputGroup.Root>
+      <InputGroup.Input
+        placeholder="Search..."
+        value={searchValue}
+        oninput={onSearch}
+      />
+      <InputGroup.Addon>
+        <SearchIcon />
+      </InputGroup.Addon>
+    </InputGroup.Root>
+  {/if}
 </div>
