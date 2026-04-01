@@ -1,5 +1,12 @@
 <script lang="ts">
-  import type { Event, Topic, Consumer, Project, Attempt } from "$types";
+  import type {
+    Event,
+    Topic,
+    Consumer,
+    Project,
+    Attempt,
+    Endpoint,
+  } from "$types";
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import BadgeStatus from "$components/badge-status.svelte";
@@ -9,27 +16,22 @@
   import * as Tabs from "$lib/components/ui/tabs";
   import { cn } from "$lib/utils";
 
-  import {
-    EllipsisVerticalIcon,
-    BoxIcon,
-    InboxIcon,
-    PlusIcon,
-    RotateCwIcon,
-    XIcon,
-  } from "lucide-svelte";
+  import { EllipsisVerticalIcon, BoxIcon, InboxIcon } from "lucide-svelte";
+
+  type AttemptWithEndpoint = Attempt & { endpoint: Endpoint };
 
   type Props = {
     event: Event & {
       topic: Topic;
       consumer: Consumer;
       project: Project;
-      attempts: Attempt[];
+      attempts: AttemptWithEndpoint[];
     };
   };
 
   let { event }: Props = $props();
 
-  let selectedAttempt = $state<Attempt>(event.attempts[0]);
+  let selectedAttempt = $state<AttemptWithEndpoint>(event.attempts[0]);
 
   const statusVariant = $derived(
     {
@@ -132,23 +134,23 @@
       </div>
     </header>
 
-    <div class="grid grid-cols-5 border rounded-lg flex-1">
-      <div class="col-span-2 divide-y">
-        <div class="flex items-center text-sm font-semibold px-3 py-2">
-          <span class="w-1/6">Status</span>
-          <span class="w-2/6">Timestamp</span>
-          <span class="flex-1">ID</span>
+    <div class="grid grid-cols-6 border rounded-lg flex-1">
+      <div class="col-span-3 divide-y">
+        <div class="grid grid-cols-12 px-3 py-2 text-sm font-semibold">
+          <span class="col-span-2">Status</span>
+          <span class="col-span-3">Timestamp</span>
+          <span class="col-span-7">URL</span>
         </div>
         {#each event.attempts as attempt}
           <button
             class={cn(
-              "flex items-center py-2 px-3 cursor-pointer hover:bg-muted text-left w-full",
+              "grid grid-cols-12 py-2 px-3 cursor-pointer hover:bg-muted text-left w-full",
               selectedAttempt.id === attempt.id && "bg-muted",
             )}
             onclick={() => (selectedAttempt = attempt)}
             type="button"
           >
-            <div class="w-1/6">
+            <div class="col-span-2">
               <BadgeStatus
                 variant={attempt.status === "success"
                   ? "success"
@@ -156,16 +158,16 @@
                 label={attempt.status}
               />
             </div>
-            <div class="w-2/6">
+            <div class="col-span-3">
               <DateTimeDisplay
                 value={attempt.insertedAt}
                 size="xs"
                 options={{ fractionalSecondDigits: undefined }}
               />
             </div>
-            <div class="flex-1">
+            <div class="col-span-7">
               <span class="text-xs font-mono text-muted-foreground"
-                >{attempt.id}</span
+                >{attempt.endpoint.url}</span
               >
             </div>
           </button>
@@ -175,20 +177,27 @@
       <div class="col-span-3 border-l pt-2">
         {#if selectedAttempt}
           <div class="flex flex-col">
-            <div class="flex items-center gap-4 px-4 pb-1">
-              <h3 class="font-semibold">Attempt</h3>
-              <BadgeStatus
-                variant={selectedAttempt.status === "success"
-                  ? "success"
-                  : "destructive"}
-                label={selectedAttempt.status}
-              />
+            <div class="px-4">
+              <div class="flex items-center gap-4 pb-1">
+                <h3 class="font-semibold">Attempt</h3>
+                <BadgeStatus
+                  variant={selectedAttempt.status === "success"
+                    ? "success"
+                    : "destructive"}
+                  label={selectedAttempt.status}
+                />
+              </div>
+              <p class="text-xs font-mono text-muted-foreground pb-1">
+                {selectedAttempt.id}
+              </p>
+              <div class="flex gap-1 pb-4">
+                <dt class="text-xs font-semibold">URL</dt>
+                <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                  {selectedAttempt.endpoint.url}
+                </dd>
+              </div>
             </div>
-            <p class="text-xs font-mono text-muted-foreground px-4 pb-4">
-              {selectedAttempt.id}
-            </p>
-
-            <dl class="text-sm grid grid-cols-4 gap-4 px-4 pb-6">
+            <dl class="text-sm grid grid-cols-3 gap-4 px-4 pb-6">
               <div class="flex flex-col gap-1">
                 <dt class="text-xs font-semibold">Timestamp</dt>
                 <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
