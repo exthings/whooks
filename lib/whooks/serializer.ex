@@ -41,7 +41,8 @@ defmodule Whooks.Serializer do
       res_headers: delivery_attempt.res_headers,
       res_status: delivery_attempt.res_status,
       res_body: delivery_attempt.res_body,
-      latency_ms: delivery_attempt.latency_ms
+      latency_ms: delivery_attempt.latency_ms,
+      endpoint: add_endpoint_to_delivery_attempt(delivery_attempt.subscription)
     }
   end
 
@@ -147,6 +148,14 @@ defmodule Whooks.Serializer do
       op: filter.op,
       value: filter.value
     }
+  end
+
+  defp add_endpoint_to_delivery_attempt(%Ecto.Association.NotLoaded{} = subscription) do
+    map_assoc(subscription)
+  end
+
+  defp add_endpoint_to_delivery_attempt(%Subscription{} = subscription) do
+    map_assoc(subscription.endpoint)
   end
 
   defp map_assoc(%Ecto.Association.NotLoaded{}), do: nil
