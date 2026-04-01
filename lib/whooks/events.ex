@@ -36,9 +36,12 @@ defmodule Whooks.Events do
     from(e in Event,
       join: t in Topic,
       on: e.topic_id == t.id,
+      as: :topic,
       join: c in Consumer,
       on: e.consumer_id == c.id,
+      as: :consumer,
       left_join: d in DeliveryAttempt,
+      as: :delivery_attempt,
       on: e.id == d.event_id,
       preload: [:topic, :consumer, :delivery_attempts]
     )
@@ -85,15 +88,21 @@ defmodule Whooks.Events do
   #   end
   # end
 
-  def get(id) do
+  def get(id, opts \\ []) do
     from(e in Event,
       where: e.id == ^id,
       left_join: t in assoc(e, :topic),
+      as: :topic,
       left_join: p in assoc(e, :project),
+      as: :project,
       left_join: c in assoc(e, :consumer),
+      as: :consumer,
       left_join: d in assoc(e, :delivery_attempts),
+      as: :delivery_attempt,
       left_join: s in assoc(d, :subscription),
+      as: :subscription,
       left_join: ep in assoc(s, :endpoint),
+      as: :endpoint,
       preload: [
         topic: t,
         project: p,
@@ -101,6 +110,7 @@ defmodule Whooks.Events do
         delivery_attempts: {d, subscription: {s, endpoint: ep}}
       ]
     )
+    |> apply_filters(opts)
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -199,6 +209,9 @@ defmodule Whooks.Events do
 
       {:project_id, project_id}, q ->
         where(q, [e], e.project_id == ^project_id)
+
+      {:organization_id, organization_id}, q ->
+        where(q, [], as(:consumer).organization_id == ^organization_id)
 
       _, q ->
         q

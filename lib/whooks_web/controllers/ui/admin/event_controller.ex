@@ -18,7 +18,7 @@ defmodule WhooksWeb.UI.Admin.EventController do
   end
 
   def show(conn, params) do
-    with {:ok, event} <- Events.get(params["id"]) do
+    with {:ok, event} <- Events.get(params["id"], organization_id: params["organization_id"]) do
       conn
       |> assign_prop(:event, Serializer.to_map(event))
       |> render_inertia("events/show")
