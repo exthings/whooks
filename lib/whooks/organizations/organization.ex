@@ -2,8 +2,6 @@ defmodule Whooks.Organizations.Organization do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @derive {Jason.Encoder, only: [:id, :name, :inserted_at, :updated_at]}
-
   @derive {
     Flop.Schema,
     filterable: [:name, :inserted_at, :updated_at],

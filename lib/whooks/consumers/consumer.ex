@@ -2,8 +2,6 @@ defmodule Whooks.Consumers.Consumer do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @derive {Jason.Encoder, only: [:id, :uid, :name, :metadata, :inserted_at, :updated_at]}
-
   @derive {
     Flop.Schema,
     filterable: [:uid, :name, :inserted_at, :updated_at],

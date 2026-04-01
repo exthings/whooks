@@ -2,17 +2,6 @@ defmodule Whooks.Projects.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @derive {Jason.Encoder,
-           only: [
-             :id,
-             :name,
-             :metadata,
-             :organization,
-             :uid,
-             :inserted_at,
-             :updated_at
-           ]}
-
   @derive {
     Flop.Schema,
     filterable: [:name, :inserted_at, :updated_at],

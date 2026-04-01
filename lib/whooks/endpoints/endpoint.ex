@@ -2,6 +2,16 @@ defmodule Whooks.Endpoints.Endpoint do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {
+    Flop.Schema,
+    filterable: [:uid, :status, :url, :inserted_at, :updated_at],
+    sortable: [:status, :inserted_at, :updated_at],
+    default_order: %{
+      order_by: [:inserted_at],
+      order_directions: [:asc]
+    }
+  }
+
   @primary_key {:id, TypeID, autogenerate: true, prefix: "endpoint", type: :string}
   @foreign_key_type TypeID
   schema "endpoints" do
