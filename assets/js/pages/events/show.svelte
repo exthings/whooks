@@ -10,13 +10,20 @@
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import BadgeStatus from "$components/badge-status.svelte";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
   import CellTags from "$components/cell-tags.svelte";
   import * as Tabs from "$lib/components/ui/tabs";
   import { cn } from "$lib/utils";
 
-  import { EllipsisVerticalIcon, BoxIcon, InboxIcon } from "lucide-svelte";
+  import {
+    EllipsisVerticalIcon,
+    BoxIcon,
+    InboxIcon,
+    ForwardIcon,
+  } from "lucide-svelte";
+  import { router } from "@inertiajs/svelte";
 
   type AttemptWithEndpoint = Attempt & { endpoint: Endpoint };
 
@@ -31,18 +38,24 @@
 
   let { event }: Props = $props();
 
-  let selectedAttempt = $state<AttemptWithEndpoint>(event.attempts[0]);
+  let selectedAttempt = $derived<AttemptWithEndpoint | null>(
+    event.attempts?.[0],
+  );
 
   const statusVariant = $derived(
     {
       pending: "warning",
       scheduled: "secondary",
-      processing: "warning",
+      processing: "info",
       retry: "secondary",
       success: "success",
       failed: "destructive",
     }[event.status],
   );
+
+  const resend = () => {
+    router.post(`${event.id}/resend`, {});
+  };
 </script>
 
 <svelte:head>
@@ -53,17 +66,30 @@
   <div class="px-8 py-6 flex flex-col gap-8 flex-1 overflow-x-scroll">
     <header class="flex flex-col gap-4">
       <div class="flex items-start justify-between">
-        <div class="flex items-start gap-4">
-          <div>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
             <h1 class="text-lg font-semibold">Event</h1>
-            <p class="text-sm font-mono text-muted-foreground">{event.id}</p>
+            <BadgeStatus variant={statusVariant} label={event.status} />
           </div>
-          <BadgeStatus variant={statusVariant} label={event.status} />
+          <p class="text-sm font-mono text-muted-foreground">{event.id}</p>
         </div>
         <div>
-          <Button variant="outline" size="sm">
-            <EllipsisVerticalIcon />
-          </Button>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              {#snippet child({ props })}
+                <Button {...props} variant="outline">
+                  <EllipsisVerticalIcon />
+                </Button>
+              {/snippet}
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content class="w-56" align="end">
+              <DropdownMenu.Group>
+                <DropdownMenu.Item onclick={resend}
+                  ><ForwardIcon />Resend</DropdownMenu.Item
+                >
+              </DropdownMenu.Group>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
         </div>
       </div>
       <div class="w-full">
@@ -85,8 +111,8 @@
             <dd class="text-gray-700 sm:col-span-3">
               <DateTimeDisplay
                 value={event.insertedAt}
-                size="sm"
-                options={{ fractionalSecondDigits: undefined }}
+                size="xs"
+                options={{ fractionalSecondDigits: 3 }}
               />
             </dd>
           </div>
@@ -95,8 +121,8 @@
             <dd class="text-gray-700 sm:col-span-3">
               <DateTimeDisplay
                 value={event.updatedAt}
-                size="sm"
-                options={{ fractionalSecondDigits: undefined }}
+                size="xs"
+                options={{ fractionalSecondDigits: 3 }}
               />
             </dd>
           </div>
@@ -145,7 +171,7 @@
           <button
             class={cn(
               "grid grid-cols-12 py-2 px-3 cursor-pointer hover:bg-muted text-left w-full",
-              selectedAttempt.id === attempt.id && "bg-muted",
+              selectedAttempt?.id === attempt.id && "bg-muted",
             )}
             onclick={() => (selectedAttempt = attempt)}
             type="button"
