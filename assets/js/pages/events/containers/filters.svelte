@@ -14,16 +14,17 @@
         {
           events_params: {
             filters: [
-              {
-                field: "id",
-                op: "eq",
-                value: value,
-              },
-              {
-                field: "uid",
-                op: "eq",
-                value: value,
-              },
+              value.startsWith("event_")
+                ? {
+                    field: "id",
+                    op: "==",
+                    value: value,
+                  }
+                : {
+                    field: "uid",
+                    op: "==",
+                    value: value,
+                  },
             ],
           },
         },
