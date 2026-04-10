@@ -4,6 +4,16 @@ defmodule Whooks.DeliveryAttempts.DeliveryAttempt do
 
   @prefix "attempt"
 
+  @derive {
+    Flop.Schema,
+    filterable: [:status, :inserted_at, :updated_at],
+    sortable: [:status, :inserted_at, :updated_at],
+    default_order: %{
+      order_by: [:inserted_at],
+      order_directions: [:desc]
+    }
+  }
+
   @primary_key {:id, TypeID, autogenerate: true, prefix: @prefix, type: :string}
   @foreign_key_type TypeID
   schema "delivery_attempts" do
@@ -60,9 +70,6 @@ defmodule Whooks.DeliveryAttempts.DeliveryAttempt do
     |> validate_required([
       :status,
       :req_headers,
-      :res_status,
-      :res_headers,
-      :latency_ms,
       :subscription_id,
       :event_id
     ])

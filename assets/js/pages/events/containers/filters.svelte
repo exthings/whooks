@@ -14,16 +14,17 @@
         {
           events_params: {
             filters: [
-              {
-                field: "id",
-                op: "eq",
-                value: value,
-              },
-              {
-                field: "uid",
-                op: "eq",
-                value: value,
-              },
+              value.startsWith("event_")
+                ? {
+                    field: "id",
+                    op: "==",
+                    value: value,
+                  }
+                : {
+                    field: "uid",
+                    op: "==",
+                    value: value,
+                  },
             ],
           },
         },
@@ -80,13 +81,13 @@
     </InputGroup.Root>
   </div>
 
-  <Collapsible label="Consumer">
+  <!-- <Collapsible label="Consumer">
     <Input id="consumer" name="consumer" />
   </Collapsible>
 
   <Collapsible label="Topic">
     <Input id="topic" name="topic" />
-  </Collapsible>
+  </Collapsible> -->
 
   <Collapsible label="Tags">
     <InputGroup.Root>

@@ -6,49 +6,30 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
   alias Whooks.DeliveryAttempts.DeliveryAttempt
   alias Whooks.Events
   alias Whooks.StandardWebhooks
+  alias Whooks.Repo
 
   require Logger
 
   def process(%Job{name: "attempt", data: data}) do
-    Logger.info("Processing delivery_attempt: #{inspect(data)}")
+    Logger.info("Processing event delivery_attempt: #{inspect(data)}")
 
+    event = Events.get_event!(data["event_id"])
     id = DeliveryAttempt.gen_id()
     timestamp = DateTime.utc_now() |> DateTime.to_unix()
 
     payload_data =
-      StandardWebhooks.build_body(data["topic"], timestamp, data["data"]) |> Jason.encode!()
+      StandardWebhooks.build_body(data["topic"], timestamp, data["data"])
+      |> Jason.encode!()
 
-    headers =
-      build_standard_webhook_headers(
-        id |> TypeID.to_string(),
-        timestamp,
-        payload_data,
-        data["secret"]
-      )
-      |> Map.merge(Map.get(data, "headers", %{}))
-
+    headers = build_headers(id, timestamp, payload_data, data)
     request = %{url: data["url"], data: payload_data, headers: headers}
 
-    with {:ok, %Req.Response{} = response} <- Sender.post(request),
-         {:ok, attempt} <-
-           DeliveryAttempts.create_success(%{
-             id: id,
-             req_headers: headers,
-             res_status: response.status,
-             res_body: parse_res_body(response.body),
-             res_headers: response.headers,
-             latency_ms: response.private[:latency_ms],
-             event_id: data["event_id"],
-             subscription_id: data["subscription_id"]
-           }),
-         _ <- Events.update_to_success(data["event_id"]) do
-      Logger.info("Delivery attempt created with success: #{inspect(attempt.id)}")
-      {:ok, %{sent: true}}
+    with {:ok, event} <- Events.update_to_processing(event),
+         {:ok, response} <- Sender.post(request) do
+      handle_success(id, response, event, headers, data)
     else
-      {:error, reason} ->
-        Logger.error("Delivery error")
-        Logger.error(reason)
-        {:error, reason}
+      {:error, error} ->
+        handle_failure(id, error, event, headers, data)
     end
   end
 
@@ -56,9 +37,10 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
     {:error, "Unknown job type: #{name}"}
   end
 
-  defp prepare_attempt_data(id, data, response) do
-    %{
+  defp handle_success(id, %Req.Response{} = response, event, headers, data) do
+    attempt_params = %{
       id: id,
+      req_headers: headers,
       res_status: response.status,
       res_body: parse_res_body(response.body),
       res_headers: response.headers,
@@ -66,18 +48,40 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
       event_id: data["event_id"],
       subscription_id: data["subscription_id"]
     }
+
+    Repo.transact(fn ->
+      {:ok, _attempt} = DeliveryAttempts.create_success(attempt_params)
+      {:ok, _} = Events.update_to_success(event)
+
+      Logger.info("Event sent successfully: #{inspect(event.id)}")
+      {:ok, :sent}
+    end)
   end
 
-  defp parse_res_body(body) when is_binary(body) do
-    body |> Jason.decode!()
+  defp handle_failure(id, error, event, headers, data) do
+    attempt_params = %{
+      id: id,
+      req_headers: headers,
+      res_status: 500,
+      latency_ms: 0,
+      event_id: data["event_id"],
+      subscription_id: data["subscription_id"]
+    }
+
+    Repo.transact(fn ->
+      {:ok, _attempt} = DeliveryAttempts.create_failed(attempt_params)
+      {:ok, _} = Events.update_to_retry(event)
+
+      Logger.info("Event failed: #{inspect(event.id)}")
+      {:error, error}
+    end)
   end
 
-  defp parse_res_body(body) when is_map(body) do
-    body
-  end
-
-  defp parse_res_body(body) when is_list(body) do
-    body
+  defp build_headers(id, timestamp, payload_data, data) do
+    id
+    |> TypeID.to_string()
+    |> build_standard_webhook_headers(timestamp, payload_data, data["secret"])
+    |> Map.merge(Map.get(data, "headers", %{}))
   end
 
   defp build_standard_webhook_headers(id, timestamp, payload, secret) do
@@ -91,4 +95,13 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
       "webhook-signature" => signature
     }
   end
+
+  defp parse_res_body(body) when is_binary(body) do
+    case Jason.decode(body) do
+      {:ok, parsed} -> parsed
+      {:error, _} -> body
+    end
+  end
+
+  defp parse_res_body(body), do: body
 end

@@ -32,7 +32,10 @@ defmodule WhooksWorker.EventsWorker do
     {:error, "Unknown job type: #{name}"}
   end
 
-  defp prepare_delivery_attempt(subscription, event) do
+  defp prepare_delivery_attempt(
+         %Subscriptions.Subscription{} = subscription,
+         %Events.Event{} = event
+       ) do
     {
       "attempt",
       %{
@@ -44,7 +47,10 @@ defmodule WhooksWorker.EventsWorker do
         topic: subscription.topic.name,
         data: event.data
       },
-      []
+      [
+        attempts: 10,
+        backoff: %{type: :exponential, delay: 5_000}
+      ]
     }
   end
 end

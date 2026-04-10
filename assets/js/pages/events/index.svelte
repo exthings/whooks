@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Event, Meta } from "$types";
-
+  import { usePoll } from "@inertiajs/svelte";
   import SidebarHeader from "$components/sidebar-header.svelte";
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
   import { EventsTable } from "$containers";
@@ -11,6 +11,8 @@
   };
 
   const { events }: Props = $props();
+
+  usePoll(2000);
 </script>
 
 <svelte:head>
