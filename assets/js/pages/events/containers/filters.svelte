@@ -81,13 +81,13 @@
     </InputGroup.Root>
   </div>
 
-  <Collapsible label="Consumer">
+  <!-- <Collapsible label="Consumer">
     <Input id="consumer" name="consumer" />
   </Collapsible>
 
   <Collapsible label="Topic">
     <Input id="topic" name="topic" />
-  </Collapsible>
+  </Collapsible> -->
 
   <Collapsible label="Tags">
     <InputGroup.Root>
