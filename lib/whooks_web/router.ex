@@ -38,13 +38,17 @@ defmodule WhooksWeb.Router do
       get "/home", HomeController, :home
       post "/organizations", OrganizationController, :create
 
-      scope ":organization_id" do
+      scope "/:organization_id" do
         resources "/organizations", OrganizationController, only: [:index]
         resources "/projects", ProjectController, only: [:index, :show]
         resources "/consumers", ConsumerController, only: [:index, :show, :create]
         resources "/endpoints", EndpointController, only: [:show, :create]
-        resources "/events", EventController, only: [:index, :show]
         resources "/topics", TopicController, only: [:create]
+
+        scope "/events" do
+          resources "/", EventController, only: [:index, :show]
+          post "/:id/resend", EventController, :resend
+        end
       end
     end
   end

@@ -10,7 +10,6 @@ defmodule Whooks.Events do
 
   alias Whooks.Topics
   alias Whooks.Topics.Topic
-  alias Whooks.Projects.Project
   alias Whooks.Consumers.Consumer
   alias Whooks.Subscriptions.Subscription
   alias Whooks.DeliveryAttempts.DeliveryAttempt
@@ -40,10 +39,7 @@ defmodule Whooks.Events do
       join: c in Consumer,
       on: e.consumer_id == c.id,
       as: :consumer,
-      left_join: d in DeliveryAttempt,
-      as: :delivery_attempt,
-      on: e.id == d.event_id,
-      preload: [:topic, :consumer, :delivery_attempts]
+      preload: [:topic, :consumer]
     )
     |> apply_filters(opts)
     |> Flop.validate_and_run(params, for: Event)
@@ -103,6 +99,7 @@ defmodule Whooks.Events do
       as: :subscription,
       left_join: ep in assoc(s, :endpoint),
       as: :endpoint,
+      order_by: [desc: d.inserted_at],
       preload: [
         topic: t,
         project: p,
@@ -116,6 +113,32 @@ defmodule Whooks.Events do
       nil -> {:error, :not_found}
       event -> {:ok, event}
     end
+  end
+
+  def get!(id) do
+    from(e in Event,
+      where: e.id == ^id,
+      left_join: t in assoc(e, :topic),
+      as: :topic,
+      left_join: p in assoc(e, :project),
+      as: :project,
+      left_join: c in assoc(e, :consumer),
+      as: :consumer,
+      left_join: d in assoc(e, :delivery_attempts),
+      as: :delivery_attempt,
+      left_join: s in assoc(d, :subscription),
+      as: :subscription,
+      left_join: ep in assoc(s, :endpoint),
+      as: :endpoint,
+      order_by: [desc: d.inserted_at],
+      preload: [
+        topic: t,
+        project: p,
+        consumer: c,
+        delivery_attempts: {d, subscription: {s, endpoint: ep}}
+      ]
+    )
+    |> Repo.one!()
   end
 
   @doc """
@@ -150,15 +173,8 @@ defmodule Whooks.Events do
     Logger.info("Creating event: #{inspect(attrs)}")
 
     event_data =
-      attrs["topic"]
-      |> case do
-        "topic_" <> _ = topic_id ->
-          {:error, :invalid_topic}
-
-        topic_name ->
-          with {:ok, topic} <- get_topic(topic_name, attrs["project_id"]) do
-            attrs |> Map.put("topic_id", topic.id)
-          end
+      with {:ok, topic} <- get_topic(attrs["topic"], attrs["project_id"]) do
+        attrs |> Map.put("topic_id", topic.id)
       end
 
     with {:ok, event} <- save_event(event_data),
@@ -202,6 +218,12 @@ defmodule Whooks.Events do
     |> Repo.update_all(set: [status: :success])
   end
 
+  def update_to_retry(%Event{} = event) do
+    event
+    |> Event.update_changeset(%{status: :retry})
+    |> Repo.update()
+  end
+
   defp apply_filters(q, opts) do
     Enum.reduce(opts, q, fn
       {:consumer_id, consumer_id}, q ->
@@ -224,15 +246,15 @@ defmodule Whooks.Events do
     |> Repo.insert()
   end
 
-  defp enqueue_event(%Event{} = event) do
+  def enqueue_event(%Event{} = event) do
     Logger.info("Enqueuing event: #{inspect(event.id)}")
 
-    {:ok, job} =
-      BullMQ.Queue.add("events", "created", %{id: event.id}, connection: :bullmq_redis)
+    with {:ok, job} <-
+           BullMQ.Queue.add("events", "created", %{id: event.id}, connection: :bullmq_redis) do
+      Logger.info("Job added: #{inspect(job.id)}")
 
-    Logger.info("Job added: #{inspect(job.id)}")
-
-    {:ok, event}
+      {:ok, event}
+    end
   end
 
   defp get_topic("topic_" <> _ = topic_id, project_id) do

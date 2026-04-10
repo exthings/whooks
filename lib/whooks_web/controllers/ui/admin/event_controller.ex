@@ -24,4 +24,21 @@ defmodule WhooksWeb.UI.Admin.EventController do
       |> render_inertia("events/show")
     end
   end
+
+  def resend(conn, params) do
+    with {:ok, event} <- Events.get(params["id"], organization_id: params["organization_id"]) do
+      Events.enqueue_event(event)
+      |> case do
+        {:ok, _} ->
+          conn
+          |> put_flash(:info, "Event enqueued")
+          |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/events/#{params["id"]}")
+
+        {:error, reason} ->
+          conn
+          |> put_flash(:error, "Failed to enqueue event: #{inspect(reason)}")
+          |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/events/#{params["id"]}")
+      end
+    end
+  end
 end
