@@ -56,6 +56,10 @@ defmodule WhooksWeb.Router do
           post "/:id/resend", EventController, :resend
         end
       end
+
+      scope "/settings", Settings do
+        resources "/users", UsersController, only: [:index, :create, :show, :update]
+      end
     end
 
     scope "/consumers", Consumer do

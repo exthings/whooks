@@ -2,6 +2,16 @@ defmodule Whooks.Auth.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {
+    Flop.Schema,
+    filterable: [:external_id, :name, :email, :inserted_at, :updated_at],
+    sortable: [:name, :email, :inserted_at, :updated_at],
+    default_order: %{
+      order_by: [:name],
+      order_directions: [:asc]
+    }
+  }
+
   @primary_key {:id, TypeID, autogenerate: true, prefix: "user", type: :string}
   schema "users" do
     field :external_id, :string
@@ -34,9 +44,20 @@ defmodule Whooks.Auth.User do
     |> validate_email(opts)
   end
 
+  def update_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:name, :role])
+  end
+
   def create_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:name, :email, :password])
+    |> cast(attrs, [:name, :email, :password, :role])
+    |> validate_email(opts)
+  end
+
+  def full_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:name, :email, :password, :role])
     |> validate_email(opts)
     |> validate_password(opts)
   end

@@ -11,6 +11,11 @@ defmodule Whooks.Auth do
 
   require Logger
 
+  def list_users(params \\ %{}) do
+    User
+    |> Flop.validate_and_run(params, for: User)
+  end
+
   ## Database getters
 
   @doc """
@@ -77,10 +82,21 @@ defmodule Whooks.Auth do
       {:error, %Ecto.Changeset{}}
 
   """
-  def register_user(attrs) do
+  def register_user(attrs, opts \\ []) do
     %User{}
-    |> User.create_changeset(attrs)
+    |> User.full_changeset(attrs, opts)
     |> Repo.insert()
+  end
+
+  def create_user(attrs, opts \\ []) do
+    %User{}
+    |> User.create_changeset(attrs, opts)
+    |> Repo.insert()
+  end
+
+  def update_user(id, attrs) do
+    user = get_user!(id)
+    user |> User.update_changeset(attrs) |> Repo.update()
   end
 
   ## Settings
