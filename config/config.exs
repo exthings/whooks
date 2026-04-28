@@ -7,6 +7,19 @@
 # General application configuration
 import Config
 
+config :whooks, :scopes,
+  auth_user: [
+    default: false,
+    module: Whooks.Auth.Scope,
+    assign_key: :current_scope,
+    access_path: [:user, :id],
+    schema_key: :user_id,
+    schema_type: :id,
+    schema_table: :users,
+    test_data_fixture: Whooks.AuthFixtures,
+    test_setup_helper: :register_and_log_in_user
+  ]
+
 config :whooks,
   ecto_repos: [Whooks.Repo],
   generators: [timestamp_type: :utc_datetime]
@@ -76,6 +89,8 @@ config :whooks, Whooks.RedisCache,
     host: "127.0.0.1",
     port: 6379
   ]
+
+config :swoosh, :api_client, Swoosh.ApiClient.Req
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

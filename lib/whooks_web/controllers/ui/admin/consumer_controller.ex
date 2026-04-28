@@ -6,6 +6,7 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   alias Whooks.Consumers
   alias Whooks.Metrics
   alias Whooks.Serializer
+  alias Whooks.Auth
 
   require Logger
 
@@ -63,6 +64,13 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
           }
         end)
       )
+      |> assign_prop(
+        :portal_link,
+        inertia_optional(fn ->
+          token = Auth.create_consumer_portal_link(consumer)
+          url(~p"/ui/consumers/login/#{token}")
+        end)
+      )
       |> render_inertia("consumers/index")
     end
   end
@@ -70,12 +78,20 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   def create(conn, params) do
     with {:ok, consumer} <- Consumers.create_consumer(params) do
       conn
-      |> redirect(to: ~p"/ui/admin/consumers/#{consumer.id}")
+      |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/consumers/#{consumer.id}")
     else
       {:error, changeset} ->
         conn
         |> assign_errors(changeset)
-        |> redirect(to: ~p"/ui/admin/consumers")
+        |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/consumers")
+    end
+  end
+
+  def create_portal_link(conn, params) do
+    with {:ok, consumer} <- Consumers.get_by_id(params["id"]) do
+      conn
+      |> put_flash(:info, "Portal link for #{consumer.name} created.")
+      |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/consumers/#{consumer.id}")
     end
   end
 end

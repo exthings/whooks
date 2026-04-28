@@ -8,6 +8,7 @@ import type { Organization } from "./organization";
 import type { Project } from "./project";
 import type { Subscription } from "./subscription";
 import type { Topic } from "./topic";
+import type { Scope, User } from "./auth";
 
 export type {
   Analytics,
@@ -20,4 +21,6 @@ export type {
   Project,
   Subscription,
   Topic,
+  Scope,
+  User,
 };
