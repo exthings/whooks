@@ -12,6 +12,8 @@ defmodule Whooks.Serializer do
   alias Whooks.Projects.Project
   alias Whooks.Subscriptions.Subscription
   alias Whooks.Topics.Topic
+  alias Whooks.Auth.Scope
+  alias Whooks.Auth.User
 
   def to_map(data, opts \\ [])
 
@@ -19,6 +21,27 @@ defmodule Whooks.Serializer do
     do: for(item <- data, do: serialize(item))
 
   def to_map(data, _opts), do: serialize(data)
+
+  defp serialize(%Scope{} = scope) do
+    %{
+      user: serialize(scope.user),
+      consumer: serialize(scope.consumer)
+    }
+  end
+
+  defp serialize(%User{} = user) do
+    %{
+      id: user.id,
+      name: user.name,
+      external_id: user.external_id,
+      email: user.email,
+      role: user.role,
+      confirmed_at: user.confirmed_at,
+      disabled_at: user.disabled_at,
+      inserted_at: user.inserted_at,
+      updated_at: user.updated_at
+    }
+  end
 
   defp serialize(%Consumer{} = consumer) do
     %{
@@ -141,6 +164,8 @@ defmodule Whooks.Serializer do
       filters: meta.flop.filters |> Enum.map(&map_filter/1)
     }
   end
+
+  defp serialize(nil), do: nil
 
   defp map_filter(filter) do
     %{
