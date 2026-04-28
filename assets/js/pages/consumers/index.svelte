@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Analytics, Consumer, Event, Topic, Meta } from "$types";
+  import type { Consumer, Event, Topic, Meta } from "$types";
 
-  import { router, Link, Form, Deferred } from "@inertiajs/svelte";
+  import { router, Link, Form } from "@inertiajs/svelte";
   import * as Sheet from "$lib/components/ui/sheet";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -12,9 +12,12 @@
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import EndpointsTable from "./endpoints-table.svelte";
   import { EventsTable } from "$containers";
-  import { RotateCwIcon, PlusIcon } from "lucide-svelte";
+  import { RotateCwIcon, PlusIcon, EllipsisIcon } from "lucide-svelte";
   import ChartMetrics from "$containers/chart-metrics.svelte";
   import Section from "$components/section.svelte";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  import CopyClipboard from "$components/copy-clipboard.svelte";
+  import * as Dialog from "$lib/components/ui/dialog/index.js";
 
   import { getFilterValue } from "$utils";
   import { cn } from "$lib/utils";
@@ -25,15 +28,20 @@
     consumer?: Consumer;
     events?: { data: (Event & { topic: Topic })[]; meta: Meta };
     id?: string | null;
+    organizationId: string;
+    portalLink?: string;
   };
 
-  const { consumers, consumer, events, id }: Props = $props();
+  const { consumers, consumer, id, organizationId, portalLink }: Props =
+    $props();
 
   let searchName = $derived(
     getFilterValue(consumers.meta.filters, "name")[0]?.value,
   );
 
   let formIsOpen = $state(false);
+
+  let showPortalLinkDialog = $state(false);
 
   const handleSearch = useDebounce((e: Event) => {
     const target = e.target as HTMLInputElement;
@@ -71,6 +79,15 @@
         only: ["endpoints"],
       },
     );
+  };
+
+  const handleCreatePortalLink = () => {
+    router.reload({
+      only: ["portalLink"],
+      onSuccess: () => {
+        showPortalLinkDialog = true;
+      },
+    });
   };
 </script>
 
@@ -151,7 +168,25 @@
     {#key id}
       {#if consumer}
         <header>
-          <h1 class="text-xl font-semibold">{consumer.name}</h1>
+          <div class="flex items-center justify-between">
+            <h1 class="text-xl font-semibold">{consumer.name}</h1>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                <Button variant="outline" size="icon">
+                  <EllipsisIcon />
+                </Button></DropdownMenu.Trigger
+              >
+              <DropdownMenu.Content align="end">
+                <DropdownMenu.Group>
+                  <DropdownMenu.Item onclick={handleCreatePortalLink}
+                    >Portal link</DropdownMenu.Item
+                  >
+                  <DropdownMenu.Item>Edit</DropdownMenu.Item>
+                  <DropdownMenu.Item>Disable</DropdownMenu.Item>
+                </DropdownMenu.Group>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </div>
           <div class="w-full">
             <dl class="text-sm grid grid-cols-4 gap-4">
               <div class="flex flex-col gap-1">
@@ -276,3 +311,19 @@
     </Form>
   </Sheet.Content>
 </Sheet.Root>
+
+<Dialog.Root bind:open={showPortalLinkDialog}>
+  <Dialog.Content class="sm:max-w-4xl">
+    <Dialog.Header>
+      <Dialog.Title>Portal link</Dialog.Title>
+      <Dialog.Description>
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-sm">
+            {portalLink}
+          </span>
+          <CopyClipboard value={portalLink} />
+        </div>
+      </Dialog.Description>
+    </Dialog.Header>
+  </Dialog.Content>
+</Dialog.Root>

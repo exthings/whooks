@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Scope } from "$types";
   import { onMount, type Snippet } from "svelte";
   import "@andypf/json-viewer";
   import { Link, page, router } from "@inertiajs/svelte";
@@ -6,6 +7,7 @@
   import { SquareChartGantt, Box, Inbox, Settings2Icon } from "lucide-svelte";
 
   import WhooksSymbol from "$components/whooks.svelte";
+  import NavUser from "$components/nav-user.svelte";
 
   import * as Sidebar from "$lib/components/ui/sidebar";
   import * as Collapsible from "$lib/components/ui/collapsible/index.js";
@@ -13,13 +15,15 @@
 
   type Props = {
     children: Snippet;
+    currentScope: Scope;
+    organizationId: string;
   };
 
-  let { children }: Props = $props();
+  let { children, currentScope, organizationId }: Props = $props();
 
   let organization = new PersistedState<string | null>(
     "organization",
-    $page.props.organizationId,
+    organizationId,
   );
 
   let nav = $derived(
@@ -70,6 +74,8 @@
       organization.current = $page.props.organizationId;
     }
   });
+
+  $inspect(currentScope);
 </script>
 
 <Sidebar.Provider>
@@ -146,7 +152,12 @@
         </Sidebar.Menu>
       </Sidebar.Group>
     </Sidebar.Content>
-    <Sidebar.Footer></Sidebar.Footer>
+    <Sidebar.Footer>
+      {#if currentScope && currentScope.user}
+        <NavUser name={currentScope.user.name} email={currentScope.user.email}
+        ></NavUser>
+      {/if}
+    </Sidebar.Footer>
   </Sidebar.Root>
   <Sidebar.Inset>
     <div class="overflow-hidden">
