@@ -6,12 +6,6 @@
   import { EventsTable } from "$containers";
   import Filters from "./containers/filters.svelte";
 
-  type Props = {
-    events: { data: Event[]; meta: Meta };
-  };
-
-  const { events }: Props = $props();
-
   usePoll(2000);
 </script>
 
