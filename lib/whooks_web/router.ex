@@ -15,10 +15,11 @@ defmodule WhooksWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug :require_api_key
   end
 
   scope "/v1", WhooksWeb.V1 do
-    pipe_through :api
+    pipe_through [:api]
 
     resources "/organizations", OrganizationController, only: [:index, :create, :show]
     resources "/consumers", ConsumerController, only: [:index, :create, :show]
@@ -38,7 +39,7 @@ defmodule WhooksWeb.Router do
     end
 
     scope "/admin", Admin do
-      pipe_through [:require_authenticated_user, :require_manager_user, :fetch_organizations]
+      pipe_through [:require_authenticated_user, :fetch_organizations]
 
       get "/home", HomeController, :home
 

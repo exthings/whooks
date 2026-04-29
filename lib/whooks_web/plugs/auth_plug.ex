@@ -103,6 +103,44 @@ defmodule WhooksWeb.Plugs.Auth do
     end
   end
 
+  @doc """
+  Plug to validate that the request has a Bearer token matching the API_KEY env variable.
+  """
+  def require_api_key(conn, _opts) do
+    Logger.info("PLUG: requiring API key")
+
+    with {:ok, token} <- validate_bearer_token(conn),
+         true <- validate_api_key_from_env(token) do
+      conn
+    else
+      _ ->
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{error: "Unauthorized"})
+        |> halt()
+    end
+  end
+
+  defp validate_bearer_token(conn) do
+    with [<<bearer::binary-size(6), " ", token::binary>>] <- get_req_header(conn, "authorization"),
+         true <- String.downcase(bearer) == "bearer" do
+      {:ok, token}
+    else
+      _ ->
+        {:error, :invalid_bearer_token}
+    end
+  end
+
+  defp validate_api_key_from_env(api_key) do
+    expected_key = System.get_env("API_KEY")
+
+    if is_binary(expected_key) and Plug.Crypto.secure_compare(api_key, expected_key) do
+      true
+    else
+      false
+    end
+  end
+
   defp ensure_user_token(conn) do
     if token = get_session(conn, :user_token) do
       {token, conn}
@@ -243,20 +281,6 @@ defmodule WhooksWeb.Plugs.Auth do
     else
       conn
       |> put_flash(:error, "You must log in to access this page.")
-      |> maybe_store_return_to()
-      |> redirect(to: ~p"/ui/auth/login")
-      |> halt()
-    end
-  end
-
-  def require_manager_user(conn, _opts) do
-    user = conn.assigns.current_scope.user
-
-    if user.role in [:root, :admin, :support] do
-      conn
-    else
-      conn
-      |> put_flash(:error, "You must be an admin to access this page.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/ui/auth/login")
       |> halt()
