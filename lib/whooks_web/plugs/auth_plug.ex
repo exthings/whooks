@@ -91,7 +91,7 @@ defmodule WhooksWeb.Plugs.Auth do
     Logger.info("PLUG: fetching scope for consumer")
 
     with {token, conn} <- ensure_user_token(conn),
-         {consumer, token_inserted_at} <- Auth.get_consumer_by_token(token) do
+         {consumer, _token_inserted_at} <- Auth.get_consumer_by_token(token) do
       Logger.info("Consumer Token: #{inspect(token)}")
       Logger.info("Current Scope Consumer: #{inspect(consumer)}")
 

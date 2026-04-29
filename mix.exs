@@ -42,6 +42,7 @@ defmodule Whooks.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:argon2_elixir, "~> 4.0"},
       {:phoenix, "~> 1.8.3"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.13"},
@@ -65,13 +66,16 @@ defmodule Whooks.MixProject do
       {:decorator, "~> 1.4"},
       {:telemetry, "~> 1.0"},
       {:nebulex_redis_adapter, "~> 2.4"},
-      {:inertia, "~> 2.5"},
+      {:inertia, "~> 2.6"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:typeid_elixir, "~> 1.1"},
       {:flop, "~> 0.26.3"},
       {:reactor, "~> 0.17.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:req, "~> 0.5.17"}
+      {:req, "~> 0.5.17"},
+      {:timescale, "~> 0.1.1"},
+      {:swoosh, "~> 1.25"},
+      {:bodyguard, "~> 2.4"}
     ]
   end
 

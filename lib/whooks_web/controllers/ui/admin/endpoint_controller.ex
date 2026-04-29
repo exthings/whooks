@@ -7,10 +7,13 @@ defmodule WhooksWeb.UI.Admin.EndpointController do
   alias Whooks.Metrics
   alias Whooks.Serializer
 
+  action_fallback WhooksWeb.UI.FallbackController
+
   require Logger
 
   def show(conn, %{"id" => id} = params) do
-    with {:ok, endpoint} <- Endpoints.get_by_id(id) do
+    with :ok <- Bodyguard.permit(Endpoints, :get, conn.assigns.current_scope, []),
+         {:ok, endpoint} <- Endpoints.get_by_id(id) do
       conn
       |> assign_prop(:endpoint, Serializer.to_map(endpoint))
       |> assign_prop(

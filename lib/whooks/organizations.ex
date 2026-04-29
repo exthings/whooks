@@ -2,11 +2,14 @@ defmodule Whooks.Organizations do
   @moduledoc """
   The Organizations context.
   """
+  @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
   alias Whooks.Repo
-
+  alias Whooks.Auth.Scope
   alias Whooks.Organizations.Organization
+
+  require Logger
 
   @doc """
   Returns the list of organizations.
@@ -105,5 +108,25 @@ defmodule Whooks.Organizations do
   """
   def change_organization(%Organization{} = organization, attrs \\ %{}) do
     Organization.changeset(organization, attrs)
+  end
+
+  def authorize(:get, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:list, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:create, %Scope{user: user}, _opts) do
+    user.role == :root
+  end
+
+  def authorize(:update, %Scope{user: user}, _opts) do
+    user.role == :root
+  end
+
+  def authorize(:delete, %Scope{user: user}, _opts) do
+    user.role == :root
   end
 end

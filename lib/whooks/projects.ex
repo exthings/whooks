@@ -2,12 +2,14 @@ defmodule Whooks.Projects do
   @moduledoc """
   The Projects context.
   """
+  @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
   alias Whooks.Repo
 
   alias Whooks.Projects.Project
   alias Whooks.Organizations.Organization
+  alias Whooks.Auth.Scope
 
   @doc """
   Returns the list of projects.
@@ -129,5 +131,25 @@ defmodule Whooks.Projects do
       {:organization_id, id}, q -> where(q, [p], p.organization_id == ^id)
       _, q -> q
     end)
+  end
+
+  def authorize(:get, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:list, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:create, %Scope{user: user}, _opts) do
+    user.role == :root
+  end
+
+  def authorize(:update, %Scope{user: user}, _opts) do
+    user.role == :root
+  end
+
+  def authorize(:delete, %Scope{user: user}, _opts) do
+    user.role == :root
   end
 end

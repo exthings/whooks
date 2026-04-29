@@ -1,9 +1,7 @@
 defmodule WhooksWeb.Plugs.UISharedProps do
   use WhooksWeb, :verified_routes
 
-  import Plug.Conn
   import Inertia.Controller
-  import Phoenix.Controller
 
   alias Whooks.Organizations
   alias Whooks.Serializer
@@ -12,9 +10,9 @@ defmodule WhooksWeb.Plugs.UISharedProps do
 
   def fetch_organizations(conn, _opts) do
     Logger.info("PLUG: fetching organizations")
-    user = conn.assigns.current_scope.user
+    scope = conn.assigns.current_scope
 
-    if user.role in [:root, :admin, :support] do
+    with :ok <- Bodyguard.permit(Whooks.Organizations, :list, scope, []) do
       conn
       |> assign_prop(
         :organizations,
@@ -25,9 +23,14 @@ defmodule WhooksWeb.Plugs.UISharedProps do
           %{data: Serializer.to_map(organizations), meta: Serializer.to_map(meta)}
         end)
       )
-      |> assign_prop(:organization_id, Map.get(conn.params, "organization_id"))
+      |> assign_prop(:organization_id, conn.params["organization_id"])
     else
-      conn
+      _ ->
+        conn
+        |> assign_prop(
+          :organization_id,
+          conn.params["organization_id"]
+        )
     end
   end
 end

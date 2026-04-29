@@ -6,12 +6,15 @@ defmodule WhooksWeb.UI.Admin.ProjectController do
   alias Whooks.Serializer
   alias Whooks.Metrics
 
+  action_fallback WhooksWeb.UI.FallbackController
+
   require Logger
 
   def index(conn, params) do
     Logger.info("params: #{inspect(conn.req_headers)}")
 
-    with {:ok, {projects, meta}} <-
+    with :ok <- Bodyguard.permit(Projects, :list, conn.assigns.current_scope, []),
+         {:ok, {projects, meta}} <-
            Projects.list(params, organization_id: params["organization_id"]) do
       conn
       |> assign_prop(:id, params["id"])
@@ -23,7 +26,8 @@ defmodule WhooksWeb.UI.Admin.ProjectController do
   def show(conn, params) do
     project_id = params["id"]
 
-    with {:ok, project} <- Projects.get_by_id(project_id) do
+    with :ok <- Bodyguard.permit(Projects, :get, conn.assigns.current_scope, []),
+         {:ok, project} <- Projects.get_by_id(project_id) do
       conn
       |> assign_prop(:id, project_id)
       |> assign_prop(:project, Serializer.to_map(project))

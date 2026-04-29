@@ -8,10 +8,13 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   alias Whooks.Serializer
   alias Whooks.Auth
 
+  action_fallback WhooksWeb.UI.FallbackController
+
   require Logger
 
   def index(conn, params) do
-    with {:ok, {consumers, meta}} <-
+    with :ok <- Bodyguard.permit(Consumers, :list, conn.assigns.current_scope, []),
+         {:ok, {consumers, meta}} <-
            Consumers.list(params, organization_id: params["organization_id"]) do
       conn
       |> assign_prop(:id, params["id"])
@@ -24,7 +27,8 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   end
 
   def show(conn, params) do
-    with {:ok, consumer} <- Consumers.get_by_id(params["id"]) do
+    with :ok <- Bodyguard.permit(Consumers, :get, conn.assigns.current_scope, []),
+         {:ok, consumer} <- Consumers.get_by_id(params["id"]) do
       conn
       |> assign_prop(:id, params["id"])
       |> assign_prop(:consumer, Serializer.to_map(consumer))
@@ -76,7 +80,8 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   end
 
   def create(conn, params) do
-    with {:ok, consumer} <- Consumers.create_consumer(params) do
+    with :ok <- Bodyguard.permit(Consumers, :create, conn.assigns.current_scope, []),
+         {:ok, consumer} <- Consumers.create_consumer(params) do
       conn
       |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/consumers/#{consumer.id}")
     else
@@ -88,7 +93,8 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   end
 
   def create_portal_link(conn, params) do
-    with {:ok, consumer} <- Consumers.get_by_id(params["id"]) do
+    with :ok <- Bodyguard.permit(Consumers, :create_portal_link, conn.assigns.current_scope, []),
+         {:ok, consumer} <- Consumers.get_by_id(params["id"]) do
       conn
       |> put_flash(:info, "Portal link for #{consumer.name} created.")
       |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/consumers/#{consumer.id}")
