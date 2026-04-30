@@ -3,19 +3,16 @@ title: Endpoints
 description: Configure where webhook events are delivered.
 ---
 
-# Endpoints
+Endpoints are the destinations where webhook events are sent. They are typically HTTP URLs exposed by your system or by your customer's system.
 
-Endpoints are the destinations where webhook events are sent.
+<Callout>
+Currently we only support HTTPS endpoints. We have plans to support other protocols in the future.
+</Callout>
 
-They are typically HTTP URLs exposed by your system or by your customer's system.
-
----
 
 ## What is an endpoint
 
-An endpoint is a URL that can receive HTTP `POST` requests.
-
-Example:
+An endpoint is a URL that can receive HTTP `POST` requests. Example:
 
 ```txt
 https://api.yourapp.com/webhooks
@@ -23,28 +20,23 @@ https://api.yourapp.com/webhooks
 
 Whooks sends webhook events to this URL whenever an event needs to be delivered.
 
----
+
 
 ## How endpoints work
 
-Each application can have one or more endpoints.
+Each application can have one or more endpoints and subscribe to one or more topic. When an event is sent:
 
-When an event is sent:
-
-- Whooks identifies the target application
-- Whooks finds the endpoints configured for that application
+- Whooks identifies the target topic
+- Whooks finds the endpoints configured for that topic
 - Whooks delivers the event to each endpoint
 - Each endpoint receives its own delivery attempt
 
 This means a single event can generate multiple deliveries if an application has multiple endpoints.
 
----
 
 ## Multiple endpoints
 
-You can configure multiple endpoints for the same application.
-
-This is useful when you need to send events to different services, environments, or workflows.
+You can configure multiple endpoints for the same topic. This is useful when you need to send events to different services, environments, or workflows.
 
 Examples:
 
@@ -53,7 +45,6 @@ Examples:
 - Internal automation endpoint
 - External integration endpoint
 
----
 
 ## Endpoint requirements
 
@@ -65,7 +56,6 @@ Your endpoint must:
 - Be reachable from the public internet or from the configured network
 - Respond quickly to avoid timeouts and unnecessary retries
 
----
 
 ## Example endpoint
 
@@ -81,15 +71,17 @@ Whooks will send an HTTP request similar to this:
 POST /webhooks/whooks HTTP/1.1
 Host: api.customer.com
 Content-Type: application/json
-Whooks-Signature: t=timestamp,v1=signature
+webhook-id: attempt_01kqg68sa2ekgs6c2p9vw9rknw
+webhook-timestamp: 1674087231
+webhook-signature: v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4=
 ```
 
 With a JSON payload:
 
 ```json
 {
-  "event": "payment.created",
-  "event_id": "evt_123",
+  "type": "payment.created",
+  "timestamp": 1709430429,
   "data": {
     "id": "txn_123",
     "amount": 1000,
@@ -139,32 +131,11 @@ Endpoints should verify that incoming requests are actually coming from Whooks.
 Recommended security practices:
 
 - Use HTTPS
-- Verify webhook signatures
+- Verify webhook signatures and timestamp is not too old
 - Reject invalid signatures
 - Keep signing secrets secure
 - Avoid exposing unnecessary data in webhook responses
 
----
-
-## Processing recommendations
-
-Webhook endpoints should respond quickly.
-
-Avoid running heavy business logic directly inside the request handler.
-
-Recommended flow:
-
-```txt
-Receive webhook
-Verify signature
-Store or enqueue event
-Return 2xx response
-Process event asynchronously
-```
-
-This reduces timeout risk and avoids unnecessary retries.
-
----
 
 ## Best practices
 
@@ -176,7 +147,6 @@ This reduces timeout risk and avoids unnecessary retries.
 - Monitor failed deliveries and endpoint latency
 - Validate incoming payloads before processing them
 
----
 
 ## Common mistakes
 
@@ -189,10 +159,7 @@ Avoid these common issues:
 - Using unstable or temporary URLs in production
 - Not monitoring failed deliveries
 
----
 
 ## Summary
 
-Endpoints define where webhook events are delivered.
-
-A reliable endpoint should be secure, fast, available, and prepared to handle retries or duplicate deliveries.
+Endpoints define where webhook events are delivered. A reliable endpoint should be secure, fast, available, and prepared to handle retries or duplicate deliveries.
