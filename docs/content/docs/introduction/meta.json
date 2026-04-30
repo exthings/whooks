@@ -1,0 +1,9 @@
+{
+  "defaultOpen": true,
+  "pages": [
+    "concepts",
+    "quickstart",
+    "self-hosting",
+    "consuming-webhooks"
+  ]
+}
