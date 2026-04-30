@@ -3,4 +3,41 @@ title: Concepts
 description: Whooks concepts
 ---
 
-# Whooks is a webhooks management system.
+When building a SaaS, API platform, or any product that requires dispatching webhooks to your customers, Whooks provides a comprehensive multi-tenant control plane to manage that infrastructure.
+
+The core concepts remain similar to a standard event-driven system: an action occurs within your application (an Event), it is categorized by its type (a Topic), and a recipient needs it delivered to a specific location (an Endpoint).
+
+## Data model
+
+### Organizations
+The highest-level entity in the Whooks hierarchy. An organization typically represents your company or a major business unit. It serves as a secure administrative container that owns and isolates all your underlying resources, providing centralized access control.
+
+### Projects
+Projects provide a logical grouping for your events, topics, and configurations. They usually map 1:1 to a specific product, application, or service within your organization—such as a Payment Gateway, a CRM system, or an ERP application. This allows you to maintain clean separation of concerns when managing multiple distinct webhook streams.
+
+### Consumers
+A consumer represents an external client, tenant, or user of your product who needs to receive webhooks. In a multi-tenant architecture, each of your customers is represented as a Consumer in Whooks. They are the target recipients who subscribe to topics and define where their events should be delivered.
+
+### Topics
+Topics (or event types) are used to categorize the events occurring in your system. They allow you to define a catalog of available events (e.g., `user.created`, `invoice.paid`) so that Consumers can subscribe only to the specific types of events they care about, optimizing routing and reducing unnecessary traffic.
+
+### Events
+An event is a discrete data payload representing a specific action or state change that occurred within your system. Every event is published to a specific Topic and is then fanned out by Whooks to all or specific Consumers subscribed to that Topic.
+
+### Endpoints
+An endpoint is a specific destination configured by a Consumer to receive events. It defines the delivery method and location—most commonly a webhook URL—along with necessary configuration details such as signing secrets, custom headers, and security policies.
+
+### Delivery Attempts
+Every time Whooks tries to send an event to an endpoint, a delivery attempt is recorded. This includes the exact payload sent, the response received from the endpoint, the HTTP status code, and timing metrics. These detailed logs are crucial for debugging, monitoring delivery health, and executing automatic retries upon failure.
+
+### Users
+Whooks allows users to authenticate using email and password.
+
+<Callout type="info">
+In near future will support OIDC and OAuth.
+</Callout>
+
+### Consumer portal link
+The consumer portal is a self-service portal where your consumers can manage their webhook subscriptions and view their event history. You can generate a unique link for each consumer to access their portal. This link should be shared with your consumers so they can access their webhook information.
+
+

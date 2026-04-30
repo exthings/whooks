@@ -4,11 +4,33 @@ description: An introduction to Whooks
 icon: ScrollText
 ---
 
-# Whooks is a webhooks management system.
+Whooks provides robust, self-hosted infrastructure for dispatching outbound webhooks and events. It serves as an open-source implementation of the [Event Destinations](https://eventdestinations.org) standard, empowering you to reliably route your platform's events directly to your users' preferred endpoints.
 
-## What is Next?
+Built with Elixir, Phoenix, PostgresSQL, Redis and BullMQ, Whooks is open source (Apache-2.0) and designed for high concurrency and fault tolerance. It is easy to self-host and deploy via Docker, requiring minimal external dependencies.
 
-<Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
-</Cards>
+## Project Goals
+
+Whooks is engineered to be a lightweight yet highly performant solution for webhook delivery. We focus strictly on the fundamental requirements of a great event delivery system: guaranteeing at-least-once delivery and offering a seamless, Stripe-like developer experience. 
+
+By design, Whooks avoids overly complex or highly specialized features (such as dynamic per-tenant rate limiting) that would inflate infrastructure costs and architectural complexity. Instead, by adhering to the Event Destinations model, Whooks gives you the foundation to let your users control their own throughput, transformations, and advanced routing logic on their end.
+
+## Key Features
+
+* **Full backoffice management:** Manage your organization, projects, topics, consumers, endpoints, and events through a comprehensive backoffice dashboard.
+* **Secure Event Destinations:** Scalable and secure outbound event delivery.
+* **Topic-Based Fan-out:** Easily categorize events with topics and automatically broadcast them to multiple subscribed endpoints.
+* **Reliable Retries:** Built-in automatic retries with exponential backoff, alongside the ability to manually trigger retries via the dashboard or API.
+* **Developer-First API:** A fully authenticated API that allows you to easily integrate Whooks into your own application or build a self-serve webhook portal for your customers.
+* **Industry Standards:** Out-of-the-box support for payload signing and best practices, fully compatible with the Standard Webhooks specification.
+
+## Supported Endpoints
+
+Currently, Whooks can deliver events to the following destination types:
+
+* **Webhook** — Direct HTTP POST requests to any internet-accessible endpoint.
+
+<Callout type="info">
+Support for additional destination types—such as AMQP, Kafka, Amazon S3, and others—is planned for the near future.
+</Callout>
+
+If you have a specific destination type in mind, please [open an issue or submit a PR](https://github.com/exthings/whooks/issues) on our GitHub repository.
