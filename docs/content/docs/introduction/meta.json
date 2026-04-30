@@ -1,8 +1,8 @@
 {
   "defaultOpen": true,
   "pages": [
-    "concepts",
     "quickstart",
+    "concepts",
     "self-hosting",
     "consuming-webhooks"
   ]
