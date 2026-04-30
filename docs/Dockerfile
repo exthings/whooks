@@ -5,27 +5,36 @@
 # IMPORTANT: Node.js Version Maintenance
 # This Dockerfile uses Node.js 24.13.0-slim, which was the latest LTS version at the time of writing.
 # To ensure security and compatibility, regularly update the NODE_VERSION ARG to the latest LTS version.
-ARG NODE_VERSION=24.13.0-slim
 
-FROM node:${NODE_VERSION} AS dependencies
+FROM node:24-slim AS base
+
+FROM base AS dependencies
 
 # Set working directory
 WORKDIR /app
 
 # Copy package-related files first to leverage Docker's caching mechanism
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* source.config.ts next.config.* ./
 
 # Install project dependencies with frozen lockfile for reproducible builds
 RUN --mount=type=cache,target=/root/.npm \
   --mount=type=cache,target=/usr/local/share/.cache/yarn \
   --mount=type=cache,target=/root/.local/share/pnpm/store \
-  corepack enable pnpm && pnpm install --frozen-lockfile; 
+  if [ -f package-lock.json ]; then \
+  npm ci --no-audit --no-fund; \
+  elif [ -f yarn.lock ]; then \
+  corepack enable yarn && yarn install --frozen-lockfile --production=false; \
+  elif [ -f pnpm-lock.yaml ]; then \
+  corepack enable pnpm && pnpm install --frozen-lockfile; \
+  else \
+  echo "No lockfile found." && exit 1; \
+  fi
 
 # ============================================
 # Stage 2: Build Next.js application in standalone mode
 # ============================================
 
-FROM node:${NODE_VERSION} AS builder
+FROM base AS builder
 
 # Set working directory
 WORKDIR /app
@@ -49,13 +58,21 @@ ENV NODE_ENV=production
 # This caches the .next/cache directory across builds, but it also prevents
 # .next/cache/fetch-cache from being included in the final image, meaning
 # cached fetch responses from the build won't be available at runtime.
-RUN corepack enable pnpm && pnpm build;
+RUN if [ -f package-lock.json ]; then \
+  npm run build; \
+  elif [ -f yarn.lock ]; then \
+  corepack enable yarn && yarn build; \
+  elif [ -f pnpm-lock.yaml ]; then \
+  corepack enable pnpm && pnpm build; \
+  else \
+  echo "No lockfile found." && exit 1; \
+  fi
 
 # ============================================
 # Stage 3: Run Next.js application
 # ============================================
 
-FROM node:${NODE_VERSION} AS runner
+FROM base AS runner
 
 # Set working directory
 WORKDIR /app
