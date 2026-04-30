@@ -1,0 +1,46 @@
+---
+title: Event tags
+description: Organizing and filtering webhook events using custom tags
+---
+
+Event tags in Whooks provide a flexible way to attach free-form string labels to your webhook events. These labels act as metadata specifically designed to help you search, categorize, and filter your outgoing messages.
+
+
+## Implementing tags
+
+To attach tags to an event, include an array of strings in the `tags` property when publishing a new message. A common use case is tagging an event with a specific resource identifier, enabling you or your users to easily retrieve all webhooks related to that resource later on.
+
+```shell
+curl "https://whooks.exthings.org/v1/events" \
+    -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer {API_KEY}" \
+    --data-binary @- << EOF
+        {
+        "uid": "fk0113ybcxknwrrjz3311w1v",
+        "consumer_id": "consumer_01kg14nxkbfxgs1fv576yh871z",
+        "project_id": "project_01kf4s8r2wf4crny60y8gbeen8",
+        "topic": "transaction.completed",
+        "data": {
+            "id": "019bb3b7-57f7-7b28-9ad1-ce122c7a66c0",
+            "status": "completed",
+            "amount": "15"
+        },
+        "metadata": {
+            "transaction_id": "01KESVHY8HACK7HGVYPRP90WS0"
+        },
+        "tags": ["019bb3b8-198d-7b7d-92af-d6dcb0ee7aad"]
+        }
+    EOF
+```
+
+Typically, these tags mirror critical information already present within the event's `data` payload—such as user identifiers, transaction IDs, order numbers, or specific product categories.
+
+Once attached, these tags are prominently displayed in your Whooks dashboard, empowering you to execute highly specific searches across your event history.
+
+
+You can also leverage tags programmatically to filter results when querying the API for past events or delivery attempts.
+
+## Limitations and best practices
+
+It is important to understand that tags **do not** influence where or how a message is delivered. They exist strictly for organizational and search purposes.

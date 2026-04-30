@@ -1,0 +1,104 @@
+---
+title: Quickstart
+description: Learn how to send your first webhook with Whooks.
+---
+
+## How Whooks works
+
+Whooks provides a complete platform for managing and dispatching webhooks. It allows your users to seamlessly subscribe to the notifications they need to drive their own apps and automated workflows. By integrating with a single API endpoint on your end, Whooks takes over the heavy lifting of payload delivery—ensuring high availability, automatic retries, robust security, and deep visibility into every message sent to your customers' URLs.
+
+Beyond the core delivery engine, Whooks also includes a customizable, [white-labeled portal](app-portal.mdx) that you can drop directly into your application. This interface empowers your end-users to add their own endpoint URLs, manage which events they care about, and monitor their webhook traffic without requiring engineering support from your team.
+
+![How Whooks works](/img/how-it-works.png)
+
+### Core concepts
+
+Whooks is composed of six core building blocks: `organizations`, `projects`, `consumers`, `topics`, `events`, and `endpoints`.
+
+- [`Organizations`](concepts#organizations): Top-level entities that manage global settings and segregation.
+- [`Projects`](concepts#projects): Logical groupings of environments or applications within an organization.
+- [`Consumers`](concepts#consumers): Your customers or end-users who receive the webhooks.
+- [`Topics`](concepts#topics): Categories or channels of events that consumers can subscribe to.
+- [`Events`](concepts#events): The actual payload and metadata sent when an action occurs.
+- [`Endpoints`](overview#endpoints): The destination URLs where the events are delivered.
+
+### Information flow
+
+Events are generated within your backend system, typically alongside your core business logic when specific actions occur. These events are then either transmitted directly to Whooks or routed through an internal event bus (such as SQS, GCP Pub/Sub, or Kafka) before reaching Whooks.
+
+A message is dispatched to a specific project and consumer under a designated topic. Whooks then takes over, fanning out the message to all endpoints configured by that consumer for the given project and topic.
+
+![Information flow graph](/img/msg-flow-2.svg)
+
+## Prerequisites
+
+### API key
+
+To interact with the Whooks APIs, you will need an API key. You can set this up in multiple ways:
+
+- Using a `.env` file with a global `API_KEY=...` variable.
+- Generating an API key directly from the Whooks backoffice dashboard.
+
+## Create an organization
+
+Before you can start sending events, you need to create an organization. Organizations act as the top-level container for your projects and consumers. You can create one via the Whooks backoffice or API.
+
+## Create a project and topics
+
+Once your organization is set up, create a project. Projects help you isolate different environments (e.g., staging, production) or different products. Inside your project, you can define topics, which represent the different types of events your consumers can subscribe to.
+
+## Create a consumer
+
+As mentioned in the core concepts, consumers represent your customers or the destination applications where webhooks will be delivered. Each of your customers should have their own consumer record in Whooks.
+
+Every entity in Whooks supports a `uid` (user-defined ID), which can be used interchangeably with Whooks-generated IDs throughout the API. This allows you to map your internal customer identifiers directly to Whooks `uid`s without needing to store any additional mapping on your end.
+
+For example, you can create a consumer with the `uid` set to `example-customer-123`, matching their ID in your primary database.
+
+## Send an event
+
+When you send an event in Whooks, you must specify the destination by choosing a specific project and/or consumer, along with the relevant topic.
+
+#### Idempotency
+
+Whooks supports [idempotency](https://en.wikipedia.org/wiki/Idempotence) to safely retry requests without accidentally performing the same operation twice. This is crucial when an API call is disrupted in transit and you do not receive a response.
+
+For more detailed information, please refer to the [idempotency section](./features/idempotency.mdx) of our documentation.
+
+*Note: While the `eventId` can potentially be used to enforce short-term uniqueness, we highly recommend utilizing the built-in idempotency mechanism when necessary rather than relying solely on `eventId` checks.*
+
+## Subscribe your customers to webhooks
+
+In the previous steps, we discussed how to set up the infrastructure and send events, but those events won't be delivered until endpoints are configured. To receive webhooks, endpoints must be added.
+
+### Using the Consumer Portal
+
+We provide a pre-built consumer portal. With a single API call, you can grant your users access to this UI, allowing them to manage and add their own endpoints. The portal can be seamlessly embedded into your own dashboard and customized to match your brand's look and feel.
+
+App portal access relies on short-lived sessions using magic links. Your customers do not need a Whooks account, nor do they need to know that Whooks powers the infrastructure behind the scenes.
+
+You can read more about this feature in the [consumer portal docs](./app-portal.mdx).
+
+![embedded iframe screen](/img/embedded-view-screen.webp)
+
+### Using the API
+
+The app portal is built on top of the Whooks SDKs, meaning everything available in the portal can also be accomplished programmatically via the Whooks API, including the creation of endpoints.
+
+Additionally, you can expose this functionality directly to your customers by building your own API endpoints that wrap calls to the Whooks API internally. For more on this pattern, please reference the [exposing the API to your customers tutorial](./tutorials/api-webhook-management.md).
+
+## Further reading
+
+### Consuming webhooks documentation
+
+Please refer to the [consuming webhooks](./consuming-webhooks.mdx) section for resources you can share with your customers. It covers how they can easily consume webhooks and navigate the application portal.
+
+### Common Usage Examples
+
+The sections above cover the essentials to get you up and running with Whooks. We have also compiled examples of the most common ways developers utilize the Whooks API to help you follow best practices from day one.
+
+For more details, please review the [common usage examples section](./common-usage-examples.mdx).
+
+## Closing words
+
+That's it! You have now learned the foundational steps for using Whooks. The primary operations you'll perform are creating consumers, dispatching events, and providing your users with access to the App Portal to manage their endpoints. All of these workflows are covered throughout our documentation.

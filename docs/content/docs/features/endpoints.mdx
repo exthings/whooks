@@ -1,0 +1,165 @@
+---
+title: Endpoints
+description: Configure where webhook events are delivered.
+---
+
+Endpoints are the destinations where webhook events are sent. They are typically HTTP URLs exposed by your system or by your customer's system.
+
+<Callout>
+Currently we only support HTTPS endpoints. We have plans to support other protocols in the future.
+</Callout>
+
+
+## What is an endpoint
+
+An endpoint is a URL that can receive HTTP `POST` requests. Example:
+
+```txt
+https://api.yourapp.com/webhooks
+```
+
+Whooks sends webhook events to this URL whenever an event needs to be delivered.
+
+
+
+## How endpoints work
+
+Each application can have one or more endpoints and subscribe to one or more topic. When an event is sent:
+
+- Whooks identifies the target topic
+- Whooks finds the endpoints configured for that topic
+- Whooks delivers the event to each endpoint
+- Each endpoint receives its own delivery attempt
+
+This means a single event can generate multiple deliveries if an application has multiple endpoints.
+
+
+## Multiple endpoints
+
+You can configure multiple endpoints for the same topic. This is useful when you need to send events to different services, environments, or workflows.
+
+Examples:
+
+- Production webhook endpoint
+- Staging webhook endpoint
+- Internal automation endpoint
+- External integration endpoint
+
+
+## Endpoint requirements
+
+Your endpoint must:
+
+- Accept HTTP `POST` requests
+- Support JSON payloads
+- Return a `2xx` status code when the event is accepted
+- Be reachable from the public internet or from the configured network
+- Respond quickly to avoid timeouts and unnecessary retries
+
+
+## Example endpoint
+
+A basic endpoint may look like this:
+
+```txt
+https://api.customer.com/webhooks/whooks
+```
+
+Whooks will send an HTTP request similar to this:
+
+```http
+POST /webhooks/whooks HTTP/1.1
+Host: api.customer.com
+Content-Type: application/json
+webhook-id: attempt_01kqg68sa2ekgs6c2p9vw9rknw
+webhook-timestamp: 1674087231
+webhook-signature: v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4=
+```
+
+With a JSON payload:
+
+```json
+{
+  "type": "payment.created",
+  "timestamp": 1709430429,
+  "data": {
+    "id": "txn_123",
+    "amount": 1000,
+    "currency": "BRL",
+    "status": "created"
+  }
+}
+```
+
+---
+
+## Delivery success
+
+Whooks considers an endpoint delivery successful when the endpoint returns a `2xx` status code.
+
+Examples:
+
+```http
+HTTP/1.1 200 OK
+```
+
+```http
+HTTP/1.1 204 No Content
+```
+
+Any non-2xx response is treated as a failed delivery.
+
+---
+
+## Failed deliveries
+
+A delivery can fail when:
+
+- The endpoint returns a non-2xx status code
+- The endpoint times out
+- A network error occurs
+- The endpoint is unavailable
+
+When a delivery fails, Whooks can retry the event according to the retry policy.
+
+---
+
+## Endpoint security
+
+Endpoints should verify that incoming requests are actually coming from Whooks.
+
+Recommended security practices:
+
+- Use HTTPS
+- Verify webhook signatures and timestamp is not too old
+- Reject invalid signatures
+- Keep signing secrets secure
+- Avoid exposing unnecessary data in webhook responses
+
+
+## Best practices
+
+- Keep endpoints highly available
+- Use HTTPS for all webhook endpoints
+- Respond with a `2xx` status code as soon as the event is accepted
+- Use background jobs or queues for long-running work
+- Handle duplicate events safely
+- Monitor failed deliveries and endpoint latency
+- Validate incoming payloads before processing them
+
+
+## Common mistakes
+
+Avoid these common issues:
+
+- Returning a non-2xx response after successfully receiving an event
+- Processing events without verifying signatures
+- Running slow business logic before responding
+- Assuming events will only be delivered once
+- Using unstable or temporary URLs in production
+- Not monitoring failed deliveries
+
+
+## Summary
+
+Endpoints define where webhook events are delivered. A reliable endpoint should be secure, fast, available, and prepared to handle retries or duplicate deliveries.

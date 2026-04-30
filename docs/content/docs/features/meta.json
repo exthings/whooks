@@ -1,0 +1,12 @@
+{
+  "defaultOpen": true,
+  "pages": [
+    "topics",
+    "endpoints",
+    "event-tags",
+    "idempotency",
+    "retries",
+    "consumer-portal",
+    "backoffice"
+  ]
+}

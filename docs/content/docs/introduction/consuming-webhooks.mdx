@@ -1,0 +1,190 @@
+---
+title: Consuming webhooks
+description: Learn how to receive and handle webhook events from Whooks.
+---
+
+# Consuming Webhooks
+
+When an event happens in a system using Whooks, your server receives an HTTP request with the event data.
+This request is called a webhook.
+This page explains how to receive webhook events, respond correctly, handle failures, and process events safely.
+
+
+## Your endpoint
+
+To receive webhooks, you need to expose an HTTP endpoint in your system.
+
+Example:
+
+```txt
+https://api.yourapp.com/webhooks
+```
+
+Whooks will send HTTP `POST` requests to this URL when an event needs to be delivered.
+
+Your endpoint must:
+
+- Accept `POST` requests
+- Read JSON payloads
+- Verify the webhook signature
+- Return a `2xx` status code when processing succeeds or `4xx` status codes when processing fails
+
+
+## Example request
+
+A webhook request from Whooks may look like this:
+
+```http
+POST /webhooks HTTP/1.1
+Host: api.yourapp.com
+Content-Type: application/json
+webhook-id: attempt_01kqg68sa2ekgs6c2p9vw9rknw
+webhook-timestamp: 1674087231
+webhook-signature: v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4=
+```
+
+With a JSON payload:
+
+```json
+{
+  "timestamp": 1714510311,
+  "type": "payment.created",
+  "data": {
+    "id": "txn_123",
+    "amount": 1000,
+    "currency": "BRL",
+    "status": "created"
+  }
+}
+```
+
+## Handling the event
+
+Before processing a webhook, verify that it came from Whooks. Whooks signs webhook requests so your system can validate their authenticity. The steps should be:
+
+1. Read the raw request body
+2. Verify the webhook signature and timestamp
+3. Validate the payload structure
+4. Check if the event was already processed
+5. Process the event
+6. Return a success response
+
+This ensures that your system only processes legitimate and safe events.
+
+
+## Responding to webhooks
+
+Whooks considers a delivery successful when your endpoint returns any `2xx` response.
+
+Example:
+
+```http
+HTTP/1.1 200 OK
+```
+
+If your endpoint returns a non-2xx response, Whooks considers the delivery failed.
+
+Examples of failed responses:
+
+```http
+HTTP/1.1 400 Bad Request
+```
+
+```http
+HTTP/1.1 500 Internal Server Error
+```
+
+Timeouts are also treated as failed deliveries.
+
+---
+
+## Retry behavior
+
+If a delivery fails, Whooks retries the event automatically.
+
+Retries can happen when:
+
+- Your endpoint returns a non-2xx status code
+- Your endpoint times out
+- A network error occurs
+
+Because of retries, the same event may be delivered more than once.
+
+Your system must be prepared to handle duplicate events safely.
+
+
+## Idempotency
+
+Webhook consumers should treat every event as potentially duplicated.
+
+To process events safely:
+
+- Store processed event IDs
+- Check if an event was already processed before running business logic
+- Ignore duplicate events
+- Make operations safe to repeat
+
+Example flow:
+
+```txt
+Receive event
+Check event_id
+If already processed, return success
+If not processed, run business logic
+Store event_id
+Return success
+```
+
+This prevents duplicate side effects such as double charges, duplicated records, or repeated notifications.
+
+
+## Processing asynchronously
+
+Webhook handlers should respond quickly. Avoid doing long or expensive work directly inside the request handler. The recommended approach is:
+
+1. Receive the webhook
+2. Verify the signature
+3. Store or enqueue the event
+4. Return a `2xx` response
+5. Process the event in the background
+
+<Callout>
+This reduces timeouts and avoids unnecessary retries.
+</Callout>
+
+
+## Best practices
+
+- Always verify webhook signatures and timestamp is not too old
+- Always handle duplicate events
+- Return a `2xx` response as soon as possible
+- Avoid long processing inside the webhook request
+- Use queues or background jobs for heavy work
+- Log received events and delivery failures
+- Monitor webhook processing errors
+
+---
+
+## Common mistakes
+
+Avoid these common issues:
+
+- Processing webhooks without signature verification and timestamp validation
+- Assuming each event will be delivered only once
+- Returning success before validating the payload
+- Running slow business logic inside the request handler
+- Not storing processed event IDs
+- Treating all failed deliveries as lost events
+
+
+## Summary
+
+To consume webhooks safely:
+
+- Expose a reliable HTTP endpoint
+- Verify each request
+- Process events idempotently
+- Respond quickly
+- Use background processing when needed
+
+This makes your integration safer, more reliable, and easier to debug.

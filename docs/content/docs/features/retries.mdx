@@ -1,0 +1,195 @@
+---
+title: Retries
+description: Understand how Whooks handles failed webhook deliveries.
+---
+
+# Retries
+
+Webhook delivery depends on external systems, networks, and customer endpoints.
+
+Because these systems can fail, Whooks includes retry handling to help ensure events are not lost when temporary issues happen.
+
+---
+
+## Why retries are needed
+
+Webhook requests may fail for several reasons:
+
+- The endpoint is temporarily unavailable
+- The endpoint returns an error
+- The request times out
+- A network issue occurs
+- The receiving system is under high load
+
+Retries allow Whooks to attempt delivery again instead of dropping the event immediately.
+
+---
+
+## When Whooks retries a delivery
+
+Whooks treats a delivery as failed when the endpoint returns anything other than a `2xx` status code.
+
+Retries may happen when:
+
+- The endpoint returns a `4xx` response
+- The endpoint returns a `5xx` response
+- The endpoint does not respond before the timeout
+- A network error prevents the request from completing
+
+---
+
+## Successful delivery
+
+A delivery is considered successful when the endpoint returns a `2xx` response.
+
+Examples:
+
+```http
+HTTP/1.1 200 OK
+```
+
+```http
+HTTP/1.1 204 No Content
+```
+
+Once a delivery succeeds, Whooks does not retry that delivery again.
+
+---
+
+## Failed delivery
+
+A delivery is considered failed when the endpoint does not confirm that the event was accepted.
+
+Examples:
+
+```http
+HTTP/1.1 400 Bad Request
+```
+
+```http
+HTTP/1.1 500 Internal Server Error
+```
+
+If a delivery fails, Whooks can retry it according to the retry policy.
+
+---
+
+## Retry strategy
+
+Whooks retries failed deliveries using a backoff strategy.
+
+This means retries are spaced out over time instead of happening all at once.
+
+A backoff strategy helps:
+
+- Avoid overwhelming customer systems
+- Give temporary failures time to recover
+- Improve delivery reliability
+- Reduce unnecessary traffic during incidents
+
+---
+
+## At-least-once delivery
+
+Whooks follows an `at-least-once` delivery model.
+
+This means an event should be delivered at least once, but it may be delivered more than once.
+
+Duplicate deliveries can happen when:
+
+- The endpoint processes the event but does not return a response in time
+- The response is lost due to a network issue
+- The endpoint returns an error after partially processing the event
+- Whooks retries a delivery after a timeout
+
+Because of this, webhook consumers should always handle duplicate events safely.
+
+---
+
+## Handling duplicate events
+
+Your system should be idempotent.
+
+To handle duplicates safely:
+
+- Store processed event IDs
+- Check whether an event was already processed
+- Ignore duplicate events
+- Avoid operations that create repeated side effects
+
+Example flow:
+
+```txt
+Receive event
+Check event_id
+If already processed, return 2xx
+If not processed, process event
+Store event_id
+Return 2xx
+```
+
+---
+
+## Recommended endpoint behavior
+
+Your endpoint should respond quickly after accepting the event.
+
+Recommended flow:
+
+```txt
+Receive webhook
+Verify signature
+Validate payload
+Store or enqueue event
+Return 2xx response
+Process asynchronously
+```
+
+This prevents timeouts and reduces unnecessary retries.
+
+---
+
+## What not to do
+
+Avoid these patterns:
+
+- Running slow business logic before returning a response
+- Returning non-2xx responses after accepting the event
+- Ignoring duplicate delivery handling
+- Treating every retry as a new event
+- Depending on a single delivery attempt
+
+---
+
+## Monitoring retries
+
+Retries are useful for reliability, but repeated retries may indicate a problem.
+
+You should monitor:
+
+- Failed deliveries
+- Endpoint latency
+- Timeout rates
+- Response status codes
+- Repeated failures for the same endpoint
+
+Monitoring retry behavior helps identify integration issues before they affect customers.
+
+---
+
+## Best practices
+
+- Return a `2xx` response as soon as the event is accepted
+- Use background jobs for long-running tasks
+- Verify webhook signatures before processing
+- Handle duplicate events with idempotency
+- Monitor failed deliveries and retry attempts
+- Keep endpoints highly available
+
+---
+
+## Summary
+
+Retries help Whooks recover from temporary delivery failures.
+
+Because retries can cause duplicate deliveries, webhook consumers should always process events idempotently and respond quickly after accepting an event.
