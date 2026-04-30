@@ -1,6 +1,210 @@
 ---
-title: Admin backoffice
-description: Start using Whooks in minutes
+title: Backoffice
+description: Monitor and manage webhook operations from the Whooks backoffice.
 ---
 
-# Whooks is a webhooks management system.
+# Backoffice
+
+The Whooks backoffice provides an operational interface for monitoring and managing webhook activity.
+
+It helps teams understand what is happening across applications, endpoints, events, and deliveries.
+
+---
+
+## What the backoffice is used for
+
+The backoffice is designed for internal teams that need visibility into webhook operations.
+
+It can be used to:
+
+- Monitor webhook delivery status
+- Inspect failed deliveries
+- Review application and endpoint configuration
+- Investigate integration issues
+- Support customers during webhook incidents
+- Understand delivery performance over time
+
+---
+
+## Operational visibility
+
+Webhook systems can fail for many reasons.
+
+An endpoint may be offline, a customer system may return errors, or a network timeout may occur.
+
+The backoffice helps teams identify these situations by showing delivery behavior and failure patterns.
+
+---
+
+## Applications
+
+Applications represent customers, tenants, or external consumers.
+
+In the backoffice, applications can be used to understand:
+
+- Which customer owns the webhook configuration
+- Which endpoints are configured
+- Which events were sent
+- Which deliveries succeeded or failed
+
+This helps support and operations teams investigate issues at the customer level.
+
+---
+
+## Endpoints
+
+Endpoints are the URLs where webhook events are delivered.
+
+The backoffice can help teams inspect endpoint information such as:
+
+- Endpoint URL
+- Associated application
+- Delivery status
+- Failure history
+- Response behavior
+- Last delivery attempt
+
+This makes it easier to identify unstable or misconfigured endpoints.
+
+---
+
+## Events
+
+Events represent actions that happened in your system.
+
+In the backoffice, events can be reviewed to understand:
+
+- What event was created
+- Which application it was sent to
+- Which endpoints received it
+- Whether delivery was successful
+- Whether retries were triggered
+
+---
+
+## Deliveries
+
+A delivery represents an attempt to send an event to an endpoint.
+
+Each delivery may include operational details such as:
+
+- Delivery status
+- Endpoint response code
+- Attempt timestamp
+- Error message
+- Retry count
+- Response time
+
+This information helps teams debug delivery failures and understand endpoint behavior.
+
+---
+
+## Failed deliveries
+
+Failed deliveries are one of the most important areas of the backoffice.
+
+A delivery may fail when:
+
+- The endpoint returns a non-2xx response
+- The endpoint times out
+- A network error occurs
+- The receiving system is unavailable
+
+The backoffice should make these failures visible so the team can investigate quickly.
+
+---
+
+## Retry visibility
+
+When retries happen, teams need to understand what happened and why.
+
+The backoffice can help answer questions like:
+
+- How many attempts were made?
+- When was the last attempt?
+- What response did the endpoint return?
+- Did the delivery eventually succeed?
+- Is the endpoint still failing?
+
+This is important for support, incident response, and customer communication.
+
+---
+
+## Searching and filtering
+
+A useful backoffice should allow teams to search and filter webhook data.
+
+Common filters include:
+
+- Application
+- Endpoint
+- Event type
+- Event ID
+- Delivery status
+- Response code
+- Date range
+
+These filters help teams quickly find relevant events during debugging.
+
+---
+
+## Manual actions
+
+Depending on the product configuration, the backoffice may support manual operational actions.
+
+Examples:
+
+- Retry a failed delivery
+- Disable an unstable endpoint
+- Inspect event payloads
+- Review endpoint configuration
+- Check recent delivery attempts
+
+Manual actions should be used carefully and should be logged for auditability.
+
+---
+
+## Auditability
+
+Operational actions should be traceable.
+
+When users perform actions in the backoffice, the system should be able to track:
+
+- Who performed the action
+- What action was performed
+- When it happened
+- Which application or endpoint was affected
+
+This helps with compliance, support, and internal accountability.
+
+---
+
+## Best practices
+
+- Use the backoffice to investigate delivery failures before escalating issues
+- Filter by application or endpoint when debugging customer-specific problems
+- Review response codes and error messages before retrying manually
+- Monitor repeated failures for the same endpoint
+- Avoid exposing sensitive payload data unnecessarily
+- Keep operational actions auditable
+
+---
+
+## Common use cases
+
+The backoffice is commonly used to:
+
+- Investigate why a customer did not receive a webhook
+- Confirm whether an event was delivered successfully
+- Identify failing endpoints
+- Review retry attempts
+- Support customers during integration setup
+- Monitor webhook health across the platform
+
+---
+
+## Summary
+
+The Whooks backoffice provides visibility and control over webhook operations.
+
+It helps teams monitor deliveries, investigate failures, support customers, and manage webhook infrastructure with more confidence.

@@ -1,6 +1,198 @@
 ---
 title: Endpoints
-description: Endpoints of Whooks
+description: Configure where webhook events are delivered.
 ---
 
-# Endpoints of Whooks
+# Endpoints
+
+Endpoints are the destinations where webhook events are sent.
+
+They are typically HTTP URLs exposed by your system or by your customer's system.
+
+---
+
+## What is an endpoint
+
+An endpoint is a URL that can receive HTTP `POST` requests.
+
+Example:
+
+```txt
+https://api.yourapp.com/webhooks
+```
+
+Whooks sends webhook events to this URL whenever an event needs to be delivered.
+
+---
+
+## How endpoints work
+
+Each application can have one or more endpoints.
+
+When an event is sent:
+
+- Whooks identifies the target application
+- Whooks finds the endpoints configured for that application
+- Whooks delivers the event to each endpoint
+- Each endpoint receives its own delivery attempt
+
+This means a single event can generate multiple deliveries if an application has multiple endpoints.
+
+---
+
+## Multiple endpoints
+
+You can configure multiple endpoints for the same application.
+
+This is useful when you need to send events to different services, environments, or workflows.
+
+Examples:
+
+- Production webhook endpoint
+- Staging webhook endpoint
+- Internal automation endpoint
+- External integration endpoint
+
+---
+
+## Endpoint requirements
+
+Your endpoint must:
+
+- Accept HTTP `POST` requests
+- Support JSON payloads
+- Return a `2xx` status code when the event is accepted
+- Be reachable from the public internet or from the configured network
+- Respond quickly to avoid timeouts and unnecessary retries
+
+---
+
+## Example endpoint
+
+A basic endpoint may look like this:
+
+```txt
+https://api.customer.com/webhooks/whooks
+```
+
+Whooks will send an HTTP request similar to this:
+
+```http
+POST /webhooks/whooks HTTP/1.1
+Host: api.customer.com
+Content-Type: application/json
+Whooks-Signature: t=timestamp,v1=signature
+```
+
+With a JSON payload:
+
+```json
+{
+  "event": "payment.created",
+  "event_id": "evt_123",
+  "data": {
+    "id": "txn_123",
+    "amount": 1000,
+    "currency": "BRL",
+    "status": "created"
+  }
+}
+```
+
+---
+
+## Delivery success
+
+Whooks considers an endpoint delivery successful when the endpoint returns a `2xx` status code.
+
+Examples:
+
+```http
+HTTP/1.1 200 OK
+```
+
+```http
+HTTP/1.1 204 No Content
+```
+
+Any non-2xx response is treated as a failed delivery.
+
+---
+
+## Failed deliveries
+
+A delivery can fail when:
+
+- The endpoint returns a non-2xx status code
+- The endpoint times out
+- A network error occurs
+- The endpoint is unavailable
+
+When a delivery fails, Whooks can retry the event according to the retry policy.
+
+---
+
+## Endpoint security
+
+Endpoints should verify that incoming requests are actually coming from Whooks.
+
+Recommended security practices:
+
+- Use HTTPS
+- Verify webhook signatures
+- Reject invalid signatures
+- Keep signing secrets secure
+- Avoid exposing unnecessary data in webhook responses
+
+---
+
+## Processing recommendations
+
+Webhook endpoints should respond quickly.
+
+Avoid running heavy business logic directly inside the request handler.
+
+Recommended flow:
+
+```txt
+Receive webhook
+Verify signature
+Store or enqueue event
+Return 2xx response
+Process event asynchronously
+```
+
+This reduces timeout risk and avoids unnecessary retries.
+
+---
+
+## Best practices
+
+- Keep endpoints highly available
+- Use HTTPS for all webhook endpoints
+- Respond with a `2xx` status code as soon as the event is accepted
+- Use background jobs or queues for long-running work
+- Handle duplicate events safely
+- Monitor failed deliveries and endpoint latency
+- Validate incoming payloads before processing them
+
+---
+
+## Common mistakes
+
+Avoid these common issues:
+
+- Returning a non-2xx response after successfully receiving an event
+- Processing events without verifying signatures
+- Running slow business logic before responding
+- Assuming events will only be delivered once
+- Using unstable or temporary URLs in production
+- Not monitoring failed deliveries
+
+---
+
+## Summary
+
+Endpoints define where webhook events are delivered.
+
+A reliable endpoint should be secure, fast, available, and prepared to handle retries or duplicate deliveries.
