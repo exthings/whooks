@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Meta, Event, Topic, Consumer, DeliveryAttempt } from "$types";
+  import type { Meta, Event, Topic, Consumer, Attempt } from "$types";
   import {
     type ColumnDef,
     type VisibilityState,
@@ -35,7 +35,7 @@
   type EventWithTopicAndConsumer = Event & {
     topic: Topic;
     consumer: Consumer;
-    attempts: DeliveryAttempt[];
+    attempts: Attempt[];
   };
 
   let {

@@ -4,12 +4,15 @@ defmodule WhooksWeb.UI.Admin.EventController do
   alias Whooks.Events
   alias Whooks.Serializer
 
+  action_fallback WhooksWeb.UI.FallbackController
+
   require Logger
 
   def index(conn, params) do
     events_params = Map.get(params, "events_params", %{}) |> Map.put_new("page_size", 20)
 
-    with {:ok, {events, meta}} <-
+    with :ok <- Bodyguard.permit(Events, :list, conn.assigns.current_scope, []),
+         {:ok, {events, meta}} <-
            Events.list(events_params, organization_id: params["organization_id"]) do
       conn
       |> assign_prop(:events, %{data: Serializer.to_map(events), meta: Serializer.to_map(meta)})
@@ -18,7 +21,8 @@ defmodule WhooksWeb.UI.Admin.EventController do
   end
 
   def show(conn, params) do
-    with {:ok, event} <- Events.get(params["id"], organization_id: params["organization_id"]) do
+    with :ok <- Bodyguard.permit(Events, :get, conn.assigns.current_scope, []),
+         {:ok, event} <- Events.get(params["id"], organization_id: params["organization_id"]) do
       conn
       |> assign_prop(:event, Serializer.to_map(event))
       |> render_inertia("events/show")
@@ -26,7 +30,8 @@ defmodule WhooksWeb.UI.Admin.EventController do
   end
 
   def resend(conn, params) do
-    with {:ok, event} <- Events.get(params["id"], organization_id: params["organization_id"]) do
+    with :ok <- Bodyguard.permit(Events, :resend, conn.assigns.current_scope, []),
+         {:ok, event} <- Events.get(params["id"], organization_id: params["organization_id"]) do
       Events.enqueue_event(event)
       |> case do
         {:ok, _} ->

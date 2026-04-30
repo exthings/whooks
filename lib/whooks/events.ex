@@ -2,6 +2,7 @@ defmodule Whooks.Events do
   @moduledoc """
   The Events context.
   """
+  @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
   alias Whooks.Repo
@@ -13,6 +14,7 @@ defmodule Whooks.Events do
   alias Whooks.Consumers.Consumer
   alias Whooks.Subscriptions.Subscription
   alias Whooks.DeliveryAttempts.DeliveryAttempt
+  alias Whooks.Auth.Scope
 
   require Logger
 
@@ -283,5 +285,29 @@ defmodule Whooks.Events do
           {:error, :not_found}
       end
     end
+  end
+
+  def authorize(:get, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:list, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:resend, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:create, %Scope{user: _user}, _opts) do
+    false
+  end
+
+  def authorize(:update, %Scope{user: _user}, _opts) do
+    false
+  end
+
+  def authorize(:delete, %Scope{user: _user}, _opts) do
+    false
   end
 end

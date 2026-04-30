@@ -11,6 +11,13 @@ defmodule Whooks.Auth do
 
   require Logger
 
+  def build_root_user do
+    %User{
+      name: "root",
+      role: :root
+    }
+  end
+
   def list_users(params \\ %{}) do
     User
     |> Flop.validate_and_run(params, for: User)

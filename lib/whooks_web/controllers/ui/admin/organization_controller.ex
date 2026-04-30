@@ -3,14 +3,20 @@ defmodule WhooksWeb.UI.Admin.OrganizationController do
 
   alias Whooks.Organizations
   alias Whooks.Organizations.Organization
+  alias Whooks.Serializer
+
+  action_fallback WhooksWeb.UI.FallbackController
 
   require Logger
 
   def index(conn, params) do
-    with {:ok, {organizations, meta}} <- Organizations.list(params) do
+    with :ok <- Bodyguard.permit(Organizations, :list, conn.assigns.current_scope, []),
+         {:ok, {organizations, meta}} <- Organizations.list(params) do
       conn
-      |> assign_prop(:organizations, organizations)
-      |> assign_prop(:meta, meta)
+      |> assign_prop(:organizations, %{
+        data: Serializer.to_map(organizations),
+        meta: Serializer.to_map(meta)
+      })
       |> assign_prop(:id, params["id"])
       |> render_inertia("organizations/index")
     end
@@ -19,7 +25,8 @@ defmodule WhooksWeb.UI.Admin.OrganizationController do
   def create(conn, params) do
     Logger.info("Creating organization with params: #{inspect(params)}")
 
-    with {:ok, %Organization{} = organization} <-
+    with :ok <- Bodyguard.permit(Organizations, :create, conn.assigns.current_scope, []),
+         {:ok, %Organization{} = _organization} <-
            Organizations.create_organization(params) do
       conn
       |> put_flash(:info, "Organization created successfully")

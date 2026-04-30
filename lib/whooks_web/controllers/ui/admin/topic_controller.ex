@@ -4,6 +4,8 @@ defmodule WhooksWeb.UI.Admin.TopicController do
   alias Whooks.Topics
   alias Whooks.Topics.Topic
 
+  action_fallback WhooksWeb.UI.FallbackController
+
   require Logger
 
   def create(conn, params) do

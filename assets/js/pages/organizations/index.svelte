@@ -14,14 +14,15 @@
   import { useDebounce } from "runed";
 
   type Props = {
-    organizations: Organization[];
-    meta: Meta;
+    organizations: { data: Organization[]; meta: Meta };
     id: string | null;
   };
 
-  const { organizations, meta, id }: Props = $props();
+  const { organizations, id }: Props = $props();
 
-  let searchName = $derived(getFilterValue(meta.filters, "name")[0]?.value);
+  let searchName = $derived(
+    getFilterValue(organizations.meta.filters, "name")[0]?.value,
+  );
 
   let formIsOpen = $state(false);
 
@@ -60,7 +61,7 @@
 
   <div class="grow overflow-y-scroll">
     <div class="flex flex-col">
-      {#each organizations as org (org.id)}
+      {#each organizations.data as org (org.id)}
         <Link
           href={`/ui/admin/organizations/${org.id}`}
           only={["organization", "id"]}
@@ -68,7 +69,7 @@
             "flex items-center gap-2 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors text-left",
             id === org.id && "bg-gray-100",
           )}
-          data={{ filters: meta.filters }}
+          data={{ filters: organizations.meta.filters }}
           preserveState={true}
           preserveScroll={true}
         >

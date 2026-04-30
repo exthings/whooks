@@ -2,6 +2,7 @@ defmodule Whooks.Endpoints do
   @moduledoc """
   The Endpoints context.
   """
+  @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
   alias Whooks.Repo
@@ -14,6 +15,7 @@ defmodule Whooks.Endpoints do
   alias Whooks.Endpoints.Endpoint
   alias Whooks.Endpoints.Payloads.CreateEndpoint
   alias Whooks.Subscriptions.Subscription
+  alias Whooks.Auth.Scope
 
   @doc """
   Returns the list of endpoints.
@@ -149,5 +151,25 @@ defmodule Whooks.Endpoints do
   """
   def change_endpoint(%Endpoint{} = endpoint, attrs \\ %{}) do
     Endpoint.changeset(endpoint, attrs)
+  end
+
+  def authorize(:get, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:list, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:create, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin]
+  end
+
+  def authorize(:update, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin]
+  end
+
+  def authorize(:delete, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin]
   end
 end

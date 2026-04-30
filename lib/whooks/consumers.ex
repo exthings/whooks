@@ -2,11 +2,12 @@ defmodule Whooks.Consumers do
   @moduledoc """
   The Consumers context.
   """
+  @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
   alias Whooks.Repo
-
   alias Whooks.Consumers.Consumer
+  alias Whooks.Auth.Scope
 
   @doc """
   Returns the list of consumers.
@@ -122,5 +123,29 @@ defmodule Whooks.Consumers do
       {:organization_id, id}, q -> where(q, [p], p.organization_id == ^id)
       _, q -> q
     end)
+  end
+
+  def authorize(:get, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:list, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:create, %Scope{user: user}, _opts) do
+    user.role == :root
+  end
+
+  def authorize(:create_portal_link, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:update, %Scope{user: user}, _opts) do
+    user.role == :root
+  end
+
+  def authorize(:delete, %Scope{user: user}, _opts) do
+    user.role == :root
   end
 end

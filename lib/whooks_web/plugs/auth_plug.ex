@@ -91,15 +91,51 @@ defmodule WhooksWeb.Plugs.Auth do
     Logger.info("PLUG: fetching scope for consumer")
 
     with {token, conn} <- ensure_user_token(conn),
-         {consumer, token_inserted_at} <- Auth.get_consumer_by_token(token) do
-      Logger.info("Consumer Token: #{inspect(token)}")
-      Logger.info("Current Scope Consumer: #{inspect(consumer)}")
-
+         {consumer, _token_inserted_at} <- Auth.get_consumer_by_token(token) do
       conn
       |> assign(:current_scope, Scope.for_consumer(consumer))
       |> assign_prop(:current_scope, Whooks.Serializer.to_map(Scope.for_consumer(consumer)))
     else
       nil -> assign(conn, :current_scope, Scope.for_consumer(nil))
+    end
+  end
+
+  @doc """
+  Plug to validate that the request has a Bearer token matching the API_KEY env variable.
+  """
+  def require_api_key(conn, _opts) do
+    Logger.info("PLUG: require API key")
+
+    with {:ok, token} <- validate_bearer_token(conn),
+         true <- validate_api_key_from_env(token) do
+      user = Auth.build_root_user()
+      conn |> assign(:current_scope, Scope.for_user(user))
+    else
+      _ ->
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{error: "Unauthorized"})
+        |> halt()
+    end
+  end
+
+  defp validate_bearer_token(conn) do
+    with [<<bearer::binary-size(6), " ", token::binary>>] <- get_req_header(conn, "authorization"),
+         true <- String.downcase(bearer) == "bearer" do
+      {:ok, token}
+    else
+      _ ->
+        {:error, :invalid_bearer_token}
+    end
+  end
+
+  defp validate_api_key_from_env(api_key) do
+    expected_key = System.get_env("API_KEY")
+
+    if is_binary(expected_key) and Plug.Crypto.secure_compare(api_key, expected_key) do
+      true
+    else
+      false
     end
   end
 
@@ -243,20 +279,6 @@ defmodule WhooksWeb.Plugs.Auth do
     else
       conn
       |> put_flash(:error, "You must log in to access this page.")
-      |> maybe_store_return_to()
-      |> redirect(to: ~p"/ui/auth/login")
-      |> halt()
-    end
-  end
-
-  def require_manager_user(conn, _opts) do
-    user = conn.assigns.current_scope.user
-
-    if user.role in [:root, :admin, :support] do
-      conn
-    else
-      conn
-      |> put_flash(:error, "You must be an admin to access this page.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/ui/auth/login")
       |> halt()
