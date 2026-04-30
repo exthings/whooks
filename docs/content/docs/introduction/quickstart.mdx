@@ -1,6 +1,200 @@
 ---
 title: Quickstart
-description: Start using Whooks in minutes
+description: Learn how to send your first webhook with Whooks.
 ---
 
-# Whooks is a webhooks management system.
+# Quickstart
+
+Learn how to send your first webhook event using Whooks.
+
+This guide introduces the basic flow of sending an event, routing it through Whooks, and delivering it to your customer's endpoints.
+
+---
+
+## How Whooks works
+
+Whooks acts as your webhook delivery infrastructure.
+
+You send events using a single API call, and Whooks handles the delivery process for you.
+
+Whooks helps with:
+
+- Reliable delivery
+- Automatic retries
+- Failure handling
+- Event routing
+- Delivery observability
+- Scalable webhook distribution
+
+Instead of building and maintaining your own webhook system, you can use Whooks as the delivery layer between your product and your customers.
+
+---
+
+## Core concepts
+
+Whooks is based on three main concepts:
+
+- Applications
+- Endpoints
+- Events
+
+### Applications
+
+Applications represent your customers or external consumers.
+
+In most systems, each customer should have their own application. This keeps their endpoints, events, and configuration isolated from other customers.
+
+### Endpoints
+
+Endpoints are the URLs where webhook events are delivered.
+
+Each application can have one or more endpoints.
+
+### Events
+
+Events are messages created by your system when something happens.
+
+Examples:
+
+- `payment.created`
+- `payment.completed`
+- `payout.failed`
+- `user.updated`
+
+---
+
+## Information flow
+
+A typical webhook flow looks like this:
+
+1. Something happens in your system
+2. Your backend creates an event
+3. The event is sent to Whooks
+4. Whooks routes the event to the correct application
+5. Whooks delivers the event to the configured endpoints
+6. Failed deliveries are retried automatically
+
+This keeps your system focused on creating events while Whooks handles delivery reliability.
+
+---
+
+## Prerequisites
+
+Before sending your first webhook event, you need:
+
+- An API key
+- An application
+- At least one endpoint configured for that application
+
+Your API key is used to authenticate requests to Whooks.
+
+The application represents the customer or consumer that should receive the event.
+
+The endpoint is the URL where the event will be delivered.
+
+---
+
+## Send your first event
+
+Use the API to send an event to Whooks:
+
+```bash
+curl -X POST https://api.whooks.dev/events \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "application_id": "app_123",
+    "event": "payment.created",
+    "event_id": "evt_123",
+    "data": {
+      "id": "txn_123",
+      "amount": 1000,
+      "currency": "BRL",
+      "status": "created"
+    }
+  }'
+```
+
+---
+
+## Event payload
+
+A webhook event usually contains:
+
+- The application that should receive the event
+- The event name
+- A unique event ID
+- A payload with relevant data
+
+Example:
+
+```json
+{
+  "application_id": "app_123",
+  "event": "payment.created",
+  "event_id": "evt_123",
+  "data": {
+    "id": "txn_123",
+    "amount": 1000,
+    "currency": "BRL",
+    "status": "created"
+  }
+}
+```
+
+---
+
+## What happens next
+
+After Whooks receives the event:
+
+1. The event is validated
+2. The event is stored and queued for delivery
+3. Whooks identifies the target application
+4. Whooks delivers the event to all configured endpoints
+5. Delivery attempts are tracked
+6. Failed deliveries are retried automatically
+
+---
+
+## Example delivery
+
+Your customer's endpoint will receive an HTTP POST request similar to this:
+
+```http
+POST /webhooks HTTP/1.1
+Host: api.customer.com
+Content-Type: application/json
+Whooks-Signature: t=timestamp,v1=signature
+```
+
+With a JSON payload:
+
+```json
+{
+  "event": "payment.created",
+  "event_id": "evt_123",
+  "data": {
+    "id": "txn_123",
+    "amount": 1000,
+    "currency": "BRL",
+    "status": "created"
+  }
+}
+```
+
+---
+
+## Handling successful delivery
+
+Whooks considers a webhook delivery successful when the endpoint returns a `2xx` status code.
+
+Example:
+
+```http
+HTTP/1.1 200 OK
+```
+
+If the endpoint returns a non-2xx response or times out, Whooks will treat the delivery as failed and retry it according to the retry policy.
+
+---

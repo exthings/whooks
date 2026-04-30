@@ -1,8 +1,9 @@
 ---
 title: Idempotency
-description: Idempotency of webhooks
+description: Learn how to safely handle duplicate webhook events.
 ---
 
+<<<<<<< HEAD
 Whooks implements [idempotency](https://en.wikipedia.org/wiki/Idempotence) to allow you to retry requests safely without the risk of duplicating operations. This feature becomes particularly valuable when network disruptions occur and you are unsure if an API request was successfully processed.
 
 <Callout type="info">
@@ -54,3 +55,190 @@ Whooks guarantees "at least once" delivery for webhooks. Consequently, transient
 For many applications, processing duplicate events is harmless. However, if your system strictly requires "exactly once" processing, your webhook consumers must implement their own deduplication logic.
 
 To facilitate this, Whooks attaches a `webhook-id` header to every outgoing webhook. This identifier remains consistent across all retry attempts for a given message. Endpoint implementations can use this `webhook-id` to filter out duplicates—for instance, by caching the ID in Redis with a 24-hour expiration and verifying that the incoming `webhook-id` hasn't been processed recently.
+=======
+# Idempotency
+
+Webhook systems should be designed to handle duplicate events safely.
+
+Because Whooks follows an `at-least-once` delivery model, the same event may be delivered more than once.
+
+Idempotency ensures that repeated delivery attempts do not create repeated side effects in your system.
+
+---
+
+## What is idempotency
+
+Idempotency means that the same operation can be executed multiple times without changing the final result after the first successful execution.
+
+For example:
+
+```txt
+Processing a payment once → correct
+Processing the same payment twice → incorrect
+```
+
+If a webhook event is delivered twice, your system should recognize that it already processed the event and avoid running the same business logic again.
+
+---
+
+## Why duplicate events happen
+
+Duplicate deliveries can happen for several reasons:
+
+- The endpoint times out after processing the event
+- A network error happens before Whooks receives the response
+- The endpoint returns a non-2xx response
+- The receiving system partially processes the event and then fails
+- Whooks retries a failed delivery
+
+This does not necessarily mean something is wrong.
+
+It is a normal behavior in reliable webhook systems.
+
+---
+
+## At-least-once delivery
+
+Whooks is designed around an `at-least-once` delivery model.
+
+This means:
+
+- Whooks attempts to deliver each event at least once
+- Temporary failures may trigger retries
+- A single event may be delivered multiple times
+
+Because of this, consumers must not assume that every delivery is unique.
+
+---
+
+## Use event IDs
+
+Every event should include a unique identifier.
+
+Example:
+
+```json
+{
+  "event": "payment.created",
+  "event_id": "evt_123",
+  "data": {
+    "id": "txn_123",
+    "amount": 1000,
+    "currency": "BRL",
+    "status": "created"
+  }
+}
+```
+
+Use `event_id` to determine whether the event has already been processed.
+
+---
+
+## Recommended processing flow
+
+A safe webhook processing flow looks like this:
+
+```txt
+Receive webhook
+Verify signature
+Read event_id
+Check if event_id was already processed
+If already processed, return 2xx
+If not processed, run business logic
+Store event_id as processed
+Return 2xx
+```
+
+This prevents duplicate side effects while still allowing Whooks to retry failed deliveries safely.
+
+---
+
+## Store processed events
+
+Your system should keep a record of processed event IDs.
+
+This can be stored in:
+
+- A database table
+- A cache with expiration
+- A dedicated event processing store
+- A queue processing system
+
+The important part is that the check must happen before running business logic.
+
+---
+
+## Example database model
+
+A simple table for processed webhook events could include:
+
+```txt
+id
+event_id
+event_type
+processed_at
+status
+```
+
+This allows your system to detect duplicates and track processing history.
+
+---
+
+## Idempotent business logic
+
+In addition to storing processed event IDs, your business logic should also be safe to repeat.
+
+Examples:
+
+- Do not create duplicate records
+- Do not charge a customer twice
+- Do not send the same notification multiple times
+- Do not overwrite data incorrectly
+- Use unique constraints when possible
+
+---
+
+## Returning success for duplicates
+
+If your system receives an event that was already processed, it should usually return a `2xx` response.
+
+Example:
+
+```http
+HTTP/1.1 200 OK
+```
+
+This tells Whooks that the event was accepted and prevents unnecessary retries.
+
+---
+
+## Common mistakes
+
+Avoid these common issues:
+
+- Assuming events are delivered only once
+- Processing the event before checking `event_id`
+- Using only timestamps to detect duplicates
+- Returning an error for already processed events
+- Running non-idempotent business logic
+- Not storing processing history
+
+---
+
+## Best practices
+
+- Always assume webhook events may be duplicated
+- Use a unique event ID for every event
+- Store processed event IDs before or during processing
+- Return `2xx` for events that were already processed
+- Make your business logic safe to repeat
+- Monitor duplicate and failed delivery behavior
+
+---
+
+## Summary
+
+Idempotency protects your system from duplicate webhook deliveries.
+
+By tracking processed events and making operations safe to repeat, you can handle retries without creating duplicate transactions, records, or side effects.
+>>>>>>> e5e3d1e (Atualiza documentação inicial)

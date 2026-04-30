@@ -1,6 +1,226 @@
 ---
 title: Concepts
-description: Whooks concepts
+description: Understand the core building blocks of Whooks.
 ---
 
-# Whooks is a webhooks management system.
+# Concepts
+
+To use Whooks effectively, it is important to understand its core building blocks.
+
+Whooks is designed around a simple model:
+
+- Your system creates events
+- Whooks routes and delivers those events
+- Your customers receive them through webhook endpoints
+
+---
+
+## Overview
+
+Whooks is built around four main concepts:
+
+- Applications
+- Endpoints
+- Events
+- Deliveries
+
+Together, these concepts define who receives an event, where it is delivered, what data is sent, and how each delivery attempt is tracked.
+
+---
+
+## Applications
+
+Applications represent your customers, tenants, or external consumers.
+
+In most products, each customer should have their own application.
+
+This allows Whooks to isolate:
+
+- Endpoints
+- Events
+- Delivery history
+- Configuration
+
+For example, if your platform has multiple customers, each one can be represented as a separate application in Whooks.
+
+```txt
+Customer A → Application A
+Customer B → Application B
+Customer C → Application C
+```
+
+This prevents one customer from accessing another customer's webhook configuration or delivery data.
+
+---
+
+## Endpoints
+
+Endpoints are the destinations where webhook events are delivered.
+
+An endpoint is usually an HTTP URL exposed by your customer's system.
+
+Example:
+
+```txt
+https://api.customer.com/webhooks
+```
+
+Each application can have one or more endpoints.
+
+When an event is sent to an application, Whooks delivers that event to the configured endpoints for that application.
+
+---
+
+## Events
+
+Events represent actions that happen in your system.
+
+Examples:
+
+- `payment.created`
+- `payment.completed`
+- `payout.failed`
+- `user.updated`
+- `invoice.paid`
+
+An event usually contains:
+
+- An event name
+- A unique event ID
+- A payload with business data
+
+Example:
+
+```json
+{
+  "event": "payment.created",
+  "event_id": "evt_123",
+  "data": {
+    "id": "txn_123",
+    "amount": 1000,
+    "currency": "BRL",
+    "status": "created"
+  }
+}
+```
+
+Events are created by your backend and sent to Whooks for delivery.
+
+---
+
+## Deliveries
+
+A delivery represents an attempt to send an event to an endpoint.
+
+For example, if an application has three endpoints, Whooks may create three deliveries for the same event.
+
+```txt
+Event → Endpoint A → Delivery A
+Event → Endpoint B → Delivery B
+Event → Endpoint C → Delivery C
+```
+
+Each delivery can have its own status, response, and retry history.
+
+This allows Whooks to track what happened for each endpoint individually.
+
+---
+
+## How everything connects
+
+A typical flow looks like this:
+
+1. Your backend creates an event
+2. The event is sent to Whooks
+3. Whooks identifies the target application
+4. Whooks finds the configured endpoints
+5. Whooks creates a delivery for each endpoint
+6. Whooks sends the event to each endpoint
+7. Failed deliveries are retried automatically
+
+---
+
+## Mental model
+
+Think of Whooks as a delivery layer between your system and your customers.
+
+```txt
+Your system → Whooks → Customer endpoints
+```
+
+Your system only needs to create events.
+
+Whooks handles routing, delivery, retries, observability, and security.
+
+---
+
+## Why applications matter
+
+Applications help you model customers safely.
+
+They ensure each customer has isolated:
+
+- Endpoints
+- Event subscriptions
+- Delivery attempts
+- Logs and configuration
+
+This is especially important for multi-tenant systems, where multiple customers use the same platform.
+
+---
+
+## Why endpoints matter
+
+Endpoints define where events are delivered.
+
+A customer may use multiple endpoints for different systems, environments, or workflows.
+
+For example:
+
+- Production endpoint
+- Staging endpoint
+- Internal automation endpoint
+- External integration endpoint
+
+---
+
+## Why events matter
+
+Events are the contract between your system and your customers.
+
+A clear event structure helps consumers understand:
+
+- What happened
+- When it happened
+- Which object changed
+- What action they should take
+
+Good event naming and payload consistency are essential for reliable integrations.
+
+---
+
+## Why deliveries matter
+
+Deliveries make webhook behavior observable.
+
+Instead of only knowing that an event was created, you can understand:
+
+- Which endpoint received it
+- Whether the delivery succeeded
+- What response was returned
+- Whether retries were needed
+
+This helps teams debug integrations and monitor webhook health.
+
+---
+
+## Summary
+
+Whooks is built on a simple structure:
+
+- Applications define who receives events
+- Endpoints define where events are delivered
+- Events define what happened
+- Deliveries track each delivery attempt
+
+Understanding these concepts will make the rest of the documentation easier to follow.
