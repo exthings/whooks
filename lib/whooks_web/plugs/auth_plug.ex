@@ -92,9 +92,6 @@ defmodule WhooksWeb.Plugs.Auth do
 
     with {token, conn} <- ensure_user_token(conn),
          {consumer, _token_inserted_at} <- Auth.get_consumer_by_token(token) do
-      Logger.info("Consumer Token: #{inspect(token)}")
-      Logger.info("Current Scope Consumer: #{inspect(consumer)}")
-
       conn
       |> assign(:current_scope, Scope.for_consumer(consumer))
       |> assign_prop(:current_scope, Whooks.Serializer.to_map(Scope.for_consumer(consumer)))
@@ -107,11 +104,12 @@ defmodule WhooksWeb.Plugs.Auth do
   Plug to validate that the request has a Bearer token matching the API_KEY env variable.
   """
   def require_api_key(conn, _opts) do
-    Logger.info("PLUG: requiring API key")
+    Logger.info("PLUG: require API key")
 
     with {:ok, token} <- validate_bearer_token(conn),
          true <- validate_api_key_from_env(token) do
-      conn
+      user = Auth.build_root_user()
+      conn |> assign(:current_scope, Scope.for_user(user))
     else
       _ ->
         conn
