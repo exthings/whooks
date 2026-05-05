@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -64,6 +65,12 @@ const featureCards = [
     icon: ShieldCheck,
   },
 ];
+
+export const metadata: Metadata = {
+  title: "Whooks - Open source webhooks delivery platform",
+  description:
+    "Whooks is 100% open source and self-hosted. Configure topics, endpoints, retries, idempotency, and monitoring with ease from day one.",
+};
 
 export default function HomePage() {
   return (
