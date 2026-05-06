@@ -101,16 +101,22 @@ const coreFeatureCards = [
 
 const platformCapabilities = [
   {
-    title: "Consumer portal",
+    title: "Consumer portal and dashboards",
     description:
       "Give consumers a dedicated experience to inspect and manage webhook flows.",
     href: "/docs/features/consumer-portal",
   },
   {
-    title: "Backoffice",
+    title: "Backoffice for internal teams",
     description:
-      "Support internal teams with operational visibility over webhook activity.",
+      "Operational visibility over operations and dashboards for delivery health, statuses, and issue identification.",
     href: "/docs/features/backoffice",
+  },
+  {
+    title: "Fine-grained subscriptions",
+    description:
+      "Your consumers can subscribe to projects topics by setting up a endpoint.",
+    href: "/docs/features/consumer-portal",
   },
   {
     title: "Retention",
@@ -119,20 +125,22 @@ const platformCapabilities = [
     href: "/docs/security/retention",
   },
   {
-    title: "Quickstart",
-    description: "Start from the basics and create your first webhook flow.",
-    href: "/docs/introduction/quickstart",
-  },
-  {
-    title: "Concepts",
-    description: "Learn the core ideas behind Whooks before going deeper.",
-    href: "/docs/introduction/concepts",
-  },
-  {
     title: "Consuming webhooks",
     description:
       "Understand how to receive, verify, and process webhook events.",
     href: "/docs/introduction/consuming-webhooks",
+  },
+  {
+    title: "Attempts & responses persistence",
+    description:
+      "Whooks keeps track of every attempt and responses. This can help you debug your integration or act as an audit log!",
+    href: "/docs/features/persistence",
+  },
+  {
+    title: "High availability",
+    description:
+      "Whooks is a distributed system designed to run in a high availability cluster.",
+    href: "/docs/features/high-availability",
   },
 ];
 
@@ -146,9 +154,9 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-background">
       {/* SECTION: HERO */}
-      <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-16 md:pt-24">
-        <div className="grid items-center gap-12 md:grid-cols-[0.95fr_1.05fr]">
-          <div>
+      <section className="mx-auto container px-6 pb-20 pt-16 ">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
             <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-zinc-950 md:text-5xl lg:text-[54px] lg:leading-[1.02] dark:text-zinc-50">
               Open source webhooks{" "}
               <span className="text-orange-500">delivery platform</span>
@@ -287,7 +295,7 @@ export default function HomePage() {
 
       {/* SECTION: CORE FEATURES */}
       <section className="border-y border-zinc-200 bg-zinc-50/70 dark:border-zinc-800 dark:bg-zinc-950/40">
-        <div className="mx-auto w-full max-w-6xl px-6 py-20">
+        <div className="mx-auto container px-6 py-20">
           <div className="mx-auto mb-12 max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500">
               Core features
@@ -338,17 +346,21 @@ export default function HomePage() {
 
       {/* SECTION: PORTAL / DASHBOARD SHOWCASE */}
       <section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto w-full max-w-6xl px-6 py-20">
+        <div className="mx-auto container px-6 py-20">
           {/* SHOWCASE CTA BAR */}
-          <div className="mb-8 rounded-[28px] bg-zinc-950 px-8 py-8 text-white shadow-xl shadow-zinc-300/20 dark:shadow-none md:px-10">
+          <div className="mb-8 rounded-2xl bg-zinc-950 px-8 py-8 text-white shadow-xl shadow-zinc-300/20 dark:shadow-none md:px-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <h2 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-[44px] lg:leading-[1.08]">
-                  Manage webhook delivery with a few lines of code
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold tracking-tight">
+                  Simple integration with SDK{" "}
+                  <span className="font-normal text-zinc-500">
+                    (coming soon)
+                  </span>{" "}
+                  or through REST API{" "}
                 </h2>
 
                 <p className="mt-4 font-mono text-base text-zinc-300 md:text-lg">
-                  whooks.delivery.manage({"<your_endpoints />"})
+                  whooks.events.create({"{your event}"})
                 </p>
               </div>
 
@@ -374,7 +386,7 @@ export default function HomePage() {
           <div className="grid items-stretch gap-5 lg:grid-cols-[0.68fr_1.32fr]">
             {/* LEFT SUPPORT CARDS */}
             <div className="grid gap-5">
-              <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
                 <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
                   <Users className="h-5 w-5" />
                 </div>
@@ -384,11 +396,12 @@ export default function HomePage() {
                 </h3>
 
                 <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
-                  Give users a clear place to inspect endpoints and delivery activity.
+                  Give users a clear place to inspect endpoints and delivery
+                  activity.
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
                 <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
                   <Clock3 className="h-5 w-5" />
                 </div>
@@ -398,11 +411,12 @@ export default function HomePage() {
                 </h3>
 
                 <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
-                  Track delivery health, review statuses, and identify issues faster.
+                  Track delivery health, review statuses, and identify issues
+                  faster.
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
                 <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
                   <Rocket className="h-5 w-5" />
                 </div>
@@ -426,8 +440,8 @@ export default function HomePage() {
                   </h3>
 
                   <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400 md:text-base">
-                    Inspect endpoints, monitor delivery health, and support webhook
-                    operations from a clearer interface.
+                    Inspect endpoints, monitor delivery health, and support
+                    webhook operations from a clearer interface.
                   </p>
                 </div>
 
@@ -440,7 +454,7 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-[24px] border border-orange-200 bg-white shadow-sm dark:border-orange-500/20 dark:bg-zinc-950">
+              <div className="mt-6 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm dark:border-orange-500/20 dark:bg-zinc-950">
                 <Image
                   src="/img/whooks-dashboard-preview.png"
                   alt="Preview of the Whooks webhook dashboard interface"
@@ -456,19 +470,20 @@ export default function HomePage() {
 
       {/* SECTION: ALL-IN-ONE PLATFORM */}
       <section className="bg-zinc-950 text-white">
-        <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="mx-auto grid container gap-12 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr]">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-400">
               Complete solution
             </p>
 
             <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-5xl">
-              All-in-one webhook platform.
+              All-in-one webhook platform
             </h2>
 
             <p className="mt-5 max-w-md text-base leading-7 text-zinc-400">
-              Whooks combines event organization, delivery control, retries,
-              security, and operational visibility in one workflow.
+              Whooks combines organizations, events, endpoints, delivery
+              control, retries, security, and operational visibility in one
+              workflow.
             </p>
 
             <Link
