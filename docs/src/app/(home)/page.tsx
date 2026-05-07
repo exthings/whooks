@@ -4,12 +4,17 @@ import Link from "next/link";
 import {
   ArrowRight,
   Boxes,
+  Building2,
   CheckCircle2,
   Clock3,
+  Gamepad2,
   KeyRound,
+  Landmark,
   RefreshCcw,
   Rocket,
+  ServerCog,
   ShieldCheck,
+  ShoppingCart,
   Tags,
   Users,
   Webhook,
@@ -101,51 +106,172 @@ const coreFeatureCards = [
 
 const platformCapabilities = [
   {
-    title: "Consumer portal and dashboards",
-    description:
-      "Give consumers a dedicated portal and dashboard to manage and inspect.",
+    title: "Consumer portal",
+    description: "Give consumers a dedicated interface to manage webhook flows.",
     href: "/docs/features/consumer-portal",
   },
   {
-    title: "Backoffice for internal teams",
-    description:
-      "Operational visibility over operations and dashboards for delivery health, statuses, and issue identification.",
+    title: "Backoffice",
+    description: "Monitor delivery health and support internal operations.",
     href: "/docs/features/backoffice",
   },
   {
-    title: "Fine-grained subscriptions",
-    description:
-      "Your consumers can subscribe to projects topics by setting up a endpoint.",
-    href: "/docs/features/consumer-portal",
+    title: "Event tags",
+    description: "Classify events with more context and operational clarity.",
+    href: "/docs/features/event-tags",
   },
   {
     title: "Retention",
-    description: "Configure how long webhook data should be retained.",
+    description: "Understand how webhook data is retained and managed.",
     href: "/docs/security/retention",
   },
   {
     title: "Consuming webhooks",
-    description:
-      "Understand how to receive, verify, and process webhook events.",
+    description: "Learn how to receive, verify, and process webhook events.",
     href: "/docs/introduction/consuming-webhooks",
   },
   {
-    title: "Attempts & responses persistence",
-    description:
-      "Keep track of every attempt and responses. This can help you debug or act as an audit log!",
-    href: "/docs/features/persistence",
-  },
-  {
-    title: "High availability",
-    description:
-      "Whooks is a distributed system designed to run in a high availability cluster.",
-    href: "/docs/features/high-availability",
-  },
-  {
-    title: "Security",
-    description:
-      "Webhooks come with a myriad of security implications, such as SSRF, replay attacks and unauthenticated webhook events.",
+    title: "Authentication",
+    description: "Protect webhook communication with safer request validation.",
     href: "/docs/security/authentication",
+  },
+  {
+    title: "Idempotency",
+    description: "Prevent duplicate processing from repeated event deliveries.",
+    href: "/docs/features/idempotency",
+  },
+  {
+    title: "Retries",
+    description: "Handle temporary failures with safer delivery attempts.",
+    href: "/docs/features/retries",
+  },
+];
+
+const industryUseCases = [
+  {
+    id: "fintech",
+    label: "Fintech",
+    icon: Landmark,
+    title: "Financial events need reliable delivery",
+    description:
+      "Whooks helps fintech teams deliver payment, account, onboarding, compliance, and operational events with more control.",
+    items: [
+      {
+        title: "Payment events",
+        description:
+          "Publish payment lifecycle updates such as created, approved, failed, refunded, and settled.",
+      },
+      {
+        title: "Operational alerts",
+        description:
+          "Give teams better visibility into failed deliveries, retries, and endpoint health.",
+      },
+      {
+        title: "Compliance workflows",
+        description:
+          "Support critical event flows with authentication, retention, and delivery traceability.",
+      },
+    ],
+  },
+  {
+    id: "igaming",
+    label: "iGaming",
+    icon: Gamepad2,
+    title: "Real-time events for gaming operations",
+    description:
+      "Use Whooks to support wallet, player, transaction, risk, and lifecycle events across gaming platforms.",
+    items: [
+      {
+        title: "Wallet updates",
+        description:
+          "Deliver deposit, withdrawal, balance, and transaction events to internal and external systems.",
+      },
+      {
+        title: "Player lifecycle",
+        description:
+          "Notify services when player accounts, verification states, or activity events change.",
+      },
+      {
+        title: "Risk operations",
+        description:
+          "Route risk, fraud, and monitoring events with stronger delivery control.",
+      },
+    ],
+  },
+  {
+    id: "saas",
+    label: "SaaS",
+    icon: Building2,
+    title: "Customer-facing webhooks for SaaS products",
+    description:
+      "Let customers receive product updates, lifecycle events, and integration notifications from your platform.",
+    items: [
+      {
+        title: "Product events",
+        description:
+          "Send account, user, subscription, billing, and workspace updates to customer endpoints.",
+      },
+      {
+        title: "Integration workflows",
+        description:
+          "Help customers connect your product to their internal tools and automations.",
+      },
+      {
+        title: "Developer experience",
+        description:
+          "Give developers clearer event documentation, retries, and endpoint management.",
+      },
+    ],
+  },
+  {
+    id: "marketplaces",
+    label: "Marketplaces",
+    icon: ShoppingCart,
+    title: "Coordinate events across buyers, sellers, and services",
+    description:
+      "Use Whooks to connect order, seller, payment, refund, logistics, and notification flows.",
+    items: [
+      {
+        title: "Order lifecycle",
+        description:
+          "Publish order created, paid, shipped, canceled, refunded, and delivered events.",
+      },
+      {
+        title: "Seller operations",
+        description:
+          "Notify seller systems about inventory, payouts, disputes, and fulfillment events.",
+      },
+      {
+        title: "Service coordination",
+        description:
+          "Connect payments, logistics, notifications, and internal operations through event flows.",
+      },
+    ],
+  },
+  {
+    id: "platforms",
+    label: "Internal platforms",
+    icon: ServerCog,
+    title: "Infrastructure for event-driven operations",
+    description:
+      "Support engineering and operations teams with webhook infrastructure, monitoring, and delivery control.",
+    items: [
+      {
+        title: "Internal integrations",
+        description:
+          "Connect services and teams through consistent event publishing and delivery patterns.",
+      },
+      {
+        title: "Backoffice visibility",
+        description:
+          "Give support and operations teams a clearer view of webhook delivery health.",
+      },
+      {
+        title: "Audit-friendly flows",
+        description:
+          "Keep delivery attempts, responses, retries, and event history easier to inspect.",
+      },
+    ],
   },
 ];
 
@@ -325,7 +451,7 @@ export default function HomePage() {
                 <Link
                   key={card.title}
                   href={card.href}
-                  className="group min-h-[280px] rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-100/60 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-orange-500/40 dark:hover:shadow-none"
+                  className="group min-h-72 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-100/60 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-orange-500/40 dark:hover:shadow-none"
                 >
                   <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 text-zinc-800 transition-colors duration-300 group-hover:border-orange-200 group-hover:bg-orange-50 group-hover:text-orange-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:group-hover:border-orange-500/40 dark:group-hover:bg-orange-500/10 dark:group-hover:text-orange-300">
                     <Icon className="h-5 w-5" />
@@ -529,6 +655,264 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* SECTION: USE CASES BY INDUSTRY */}
+      <section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-7xl px-6 py-20">
+          <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
+                Use cases
+              </p>
+
+              <h2 className="mt-4 max-w-3xl text-3xl font-bold tracking-tight text-zinc-950 md:text-5xl dark:text-zinc-50">
+                Built for teams that rely on event delivery
+              </h2>
+            </div>
+
+            <p className="max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-400">
+              Whooks supports product and engineering teams across financial
+              services, platforms, SaaS, marketplaces, and event-driven
+              operations.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            {industryUseCases.map((industry, index) => (
+              <input
+                key={industry.id}
+                id={`industry-${industry.id}`}
+                name="industry"
+                type="radio"
+                defaultChecked={index === 0}
+                className="peer hidden"
+              />
+            ))}
+
+            <div className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950">
+              {industryUseCases.map((industry) => {
+                const Icon = industry.icon;
+
+                return (
+                  <label
+                    key={industry.id}
+                    htmlFor={`industry-${industry.id}`}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-zinc-400 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {industry.label}
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-950">
+              {industryUseCases.map((industry) => {
+                const Icon = industry.icon;
+
+                return (
+                  <div
+                    key={industry.id}
+                    className="hidden border border-zinc-200 p-6 dark:border-zinc-800 md:p-8"
+                  >
+                    <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+                      <div>
+                        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
+                          <Icon className="h-6 w-6" />
+                        </div>
+
+                        <h3 className="max-w-xl text-3xl font-bold tracking-tight text-zinc-950 md:text-4xl dark:text-zinc-50">
+                          {industry.title}
+                        </h3>
+
+                        <p className="mt-5 max-w-xl text-base leading-8 text-zinc-600 dark:text-zinc-400">
+                          {industry.description}
+                        </p>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
+                        {industry.items.map((item) => (
+                          <div
+                            key={item.title}
+                            className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900"
+                          >
+                            <h4 className="font-semibold text-zinc-950 dark:text-zinc-50">
+                              {item.title}
+                            </h4>
+
+                            <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+                              {item.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <style>{`
+              #industry-fintech:checked ~ div:nth-of-type(2) > div:nth-child(1),
+              #industry-igaming:checked ~ div:nth-of-type(2) > div:nth-child(2),
+              #industry-saas:checked ~ div:nth-of-type(2) > div:nth-child(3),
+              #industry-marketplaces:checked ~ div:nth-of-type(2) > div:nth-child(4),
+              #industry-platforms:checked ~ div:nth-of-type(2) > div:nth-child(5) {
+                display: block;
+              }
+
+              #industry-fintech:checked ~ div:nth-of-type(1) label[for="industry-fintech"],
+              #industry-igaming:checked ~ div:nth-of-type(1) label[for="industry-igaming"],
+              #industry-saas:checked ~ div:nth-of-type(1) label[for="industry-saas"],
+              #industry-marketplaces:checked ~ div:nth-of-type(1) label[for="industry-marketplaces"],
+              #industry-platforms:checked ~ div:nth-of-type(1) label[for="industry-platforms"] {
+                background: rgb(249 115 22 / 0.12);
+                color: rgb(234 88 12);
+              }
+            `}</style>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION: FOOTER */}
+      <footer className="bg-white dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-7xl px-6 py-14">
+          <div className="grid gap-10 border-b border-zinc-200 pb-10 dark:border-zinc-800 md:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-lg font-bold text-zinc-950 dark:text-zinc-50"
+              >
+                <Image
+                  src="/img/logo.svg"
+                  alt="Whooks"
+                  width={120}
+                  height={32}
+                  className="h-7 w-auto"
+                />
+              </Link>
+
+              <p className="mt-4 max-w-sm text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+                Open source webhook delivery infrastructure for teams that need
+                reliable events, safer retries, and operational visibility.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                Introduction
+              </h3>
+
+              <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
+                <Link
+                  href="/docs/introduction/quickstart"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Quickstart
+                </Link>
+
+                <Link
+                  href="/docs/introduction/concepts"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Concepts
+                </Link>
+
+                <Link
+                  href="/docs/introduction/consuming-webhooks"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Consuming webhooks
+                </Link>
+
+                <Link
+                  href="/docs/introduction/self-hosting"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Self-hosting
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                Features
+              </h3>
+
+              <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
+                <Link
+                  href="/docs/features/topics"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Topics
+                </Link>
+
+                <Link
+                  href="/docs/features/endpoints"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Endpoints
+                </Link>
+
+                <Link
+                  href="/docs/features/retries"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Retries
+                </Link>
+
+                <Link
+                  href="/docs/features/idempotency"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Idempotency
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                Security
+              </h3>
+
+              <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
+                <Link
+                  href="/docs/security/authentication"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Authentication
+                </Link>
+
+                <Link
+                  href="/docs/security/retention"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Retention
+                </Link>
+
+                <Link
+                  href="/docs/features/backoffice"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Backoffice
+                </Link>
+
+                <Link
+                  href="/docs/features/consumer-portal"
+                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                >
+                  Consumer portal
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 pt-8 text-sm text-zinc-500 dark:text-zinc-500 md:flex-row md:items-center md:justify-between">
+            <p>© 2026 Whooks. Open source webhook delivery infrastructure.</p>
+
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
