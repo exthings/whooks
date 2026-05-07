@@ -12,8 +12,10 @@ FROM node:${NODE_VERSION} AS dependencies
 # Set working directory
 WORKDIR /app
 
+ENV CI=true
+
 # Copy package-related files first to leverage Docker's caching mechanism
-COPY package.json pnpm-lock.yaml* .npmrc* source.config.ts next.config.* ./
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* source.config.ts next.config.* pnpm-workspace.yaml ./
 
 # Install project dependencies with frozen lockfile for reproducible builds
 RUN --mount=type=cache,target=/root/.npm \
@@ -45,7 +47,7 @@ COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
 ENV NODE_ENV=production
-
+ENV CI=true
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
