@@ -103,7 +103,7 @@ const platformCapabilities = [
   {
     title: "Consumer portal and dashboards",
     description:
-      "Give consumers a dedicated experience to inspect and manage webhook flows.",
+      "Give consumers a dedicated portal and dashboard to manage and inspect.",
     href: "/docs/features/consumer-portal",
   },
   {
@@ -120,8 +120,7 @@ const platformCapabilities = [
   },
   {
     title: "Retention",
-    description:
-      "Understand how webhook data can be retained and managed safely.",
+    description: "Configure how long webhook data should be retained.",
     href: "/docs/security/retention",
   },
   {
@@ -133,7 +132,7 @@ const platformCapabilities = [
   {
     title: "Attempts & responses persistence",
     description:
-      "Whooks keeps track of every attempt and responses. This can help you debug your integration or act as an audit log!",
+      "Keep track of every attempt and responses. This can help you debug or act as an audit log!",
     href: "/docs/features/persistence",
   },
   {
@@ -141,6 +140,12 @@ const platformCapabilities = [
     description:
       "Whooks is a distributed system designed to run in a high availability cluster.",
     href: "/docs/features/high-availability",
+  },
+  {
+    title: "Security",
+    description:
+      "Webhooks come with a myriad of security implications, such as SSRF, replay attacks and unauthenticated webhook events.",
+    href: "/docs/security/authentication",
   },
 ];
 
@@ -154,7 +159,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-background">
       {/* SECTION: HERO */}
-      <section className="mx-auto container px-6 pb-20 pt-16 ">
+      <section className="mx-auto w-7xl px-6 pb-20 pt-16 ">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-zinc-950 md:text-5xl lg:text-[54px] lg:leading-[1.02] dark:text-zinc-50">
@@ -295,19 +300,20 @@ export default function HomePage() {
 
       {/* SECTION: CORE FEATURES */}
       <section className="border-y border-zinc-200 bg-zinc-50/70 dark:border-zinc-800 dark:bg-zinc-950/40">
-        <div className="mx-auto container px-6 py-20">
+        <div className="mx-auto w-7xl px-6 py-20">
           <div className="mx-auto mb-12 max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500">
               Core features
             </p>
 
             <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 md:text-5xl dark:text-zinc-50">
-              Webhooks are harder than they seem.
+              Webhooks made simple
             </h2>
 
             <p className="mt-5 text-base leading-7 text-zinc-600 dark:text-zinc-400">
               Whooks gives teams the building blocks to organize, deliver,
-              secure, and monitor webhook operations with more confidence.
+              secure, and monitor webhook operations with more confidence and
+              ease.
             </p>
           </div>
 
@@ -346,7 +352,7 @@ export default function HomePage() {
 
       {/* SECTION: PORTAL / DASHBOARD SHOWCASE */}
       <section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto container px-6 py-20">
+        <div className="mx-auto w-7xl px-6 py-20">
           {/* SHOWCASE CTA BAR */}
           <div className="mb-8 rounded-2xl bg-zinc-950 px-8 py-8 text-white shadow-xl shadow-zinc-300/20 dark:shadow-none md:px-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -356,11 +362,13 @@ export default function HomePage() {
                   <span className="font-normal text-zinc-500">
                     (coming soon)
                   </span>{" "}
+                  <br />
                   or through REST API{" "}
                 </h2>
 
                 <p className="mt-4 font-mono text-base text-zinc-300 md:text-lg">
-                  whooks.events.create({"{your event}"})
+                  whooks.events.create
+                  <span className="text-orange-500">{"({your event})"}</span>
                 </p>
               </div>
 
@@ -383,9 +391,43 @@ export default function HomePage() {
           </div>
 
           {/* SHOWCASE CONTENT */}
-          <div className="grid items-stretch gap-5 lg:grid-cols-[0.68fr_1.32fr]">
-            {/* LEFT SUPPORT CARDS */}
-            <div className="grid gap-5">
+          <div className="grid items-stretch gap-5">
+            {/* APP PORTAL PANEL */}
+            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-7">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="max-w-2xl">
+                  <h3 className="text-2xl font-semibold tracking-tight text-zinc-950 md:text-[34px] md:leading-[1.12] dark:text-zinc-50">
+                    Webhook management portal
+                  </h3>
+
+                  <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400 md:text-base">
+                    Inspect endpoints, monitor delivery health, and support
+                    webhook operations from a clearer interface.
+                  </p>
+                </div>
+
+                <Link
+                  href="/docs/features/backoffice"
+                  className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-zinc-950 transition hover:text-orange-600 dark:text-zinc-50 dark:hover:text-orange-300"
+                >
+                  Learn more
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <div className="mt-6 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm dark:border-orange-500/20 dark:bg-zinc-950">
+                <Image
+                  src="/img/whooks-dashboard-preview.png"
+                  alt="Preview of the Whooks webhook dashboard interface"
+                  width={1448}
+                  height={1086}
+                  className="h-auto w-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* BOTTOM SUPPORT CARDS */}
+            <div className="grid grid-cols-3 gap-5">
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
                 <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
                   <Users className="h-5 w-5" />
@@ -422,46 +464,13 @@ export default function HomePage() {
                 </div>
 
                 <h3 className="text-xl font-semibold leading-tight tracking-tight text-zinc-950 dark:text-zinc-50">
-                  Backoffice ready
+                  Full featured UI
                 </h3>
 
                 <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
-                  Support internal teams as webhook volume and complexity grow.
+                  Support internal teams and consumers with dashboards and
+                  delivery attempts.
                 </p>
-              </div>
-            </div>
-
-            {/* RIGHT MAIN PANEL */}
-            <div className="rounded-[28px] border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-7">
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="max-w-2xl">
-                  <h3 className="text-2xl font-semibold tracking-tight text-zinc-950 md:text-[34px] md:leading-[1.12] dark:text-zinc-50">
-                    Webhook management portal
-                  </h3>
-
-                  <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400 md:text-base">
-                    Inspect endpoints, monitor delivery health, and support
-                    webhook operations from a clearer interface.
-                  </p>
-                </div>
-
-                <Link
-                  href="/docs/features/backoffice"
-                  className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-zinc-950 transition hover:text-orange-600 dark:text-zinc-50 dark:hover:text-orange-300"
-                >
-                  Learn more
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-
-              <div className="mt-6 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm dark:border-orange-500/20 dark:bg-zinc-950">
-                <Image
-                  src="/img/whooks-dashboard-preview.png"
-                  alt="Preview of the Whooks webhook dashboard interface"
-                  width={1448}
-                  height={1086}
-                  className="h-auto w-full object-cover"
-                />
               </div>
             </div>
           </div>
@@ -470,7 +479,7 @@ export default function HomePage() {
 
       {/* SECTION: ALL-IN-ONE PLATFORM */}
       <section className="bg-zinc-950 text-white">
-        <div className="mx-auto grid container gap-12 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="mx-auto grid w-7xl gap-12 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr]">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-400">
               Complete solution
@@ -500,14 +509,14 @@ export default function HomePage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="group flex gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition hover:-translate-y-0.5 hover:border-orange-400/40 hover:bg-white/[0.06]"
+                className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-white/4 p-5 transition hover:-translate-y-0.5 hover:border-orange-400/40 hover:bg-white/6"
               >
-                <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 transition group-hover:bg-orange-500/10 group-hover:text-orange-300">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 transition group-hover:bg-orange-500/10 group-hover:text-orange-300">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-white transition group-hover:text-orange-200">
+                  <h3 className="font-semibold text-white transition group-hover:text-orange-200 h-11">
                     {item.title}
                   </h3>
 
