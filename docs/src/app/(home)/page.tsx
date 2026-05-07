@@ -159,10 +159,10 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-background">
       {/* SECTION: HERO */}
-      <section className="mx-auto w-7xl px-6 pb-20 pt-16 ">
-        <div className="flex items-center justify-between">
+      <section className="mx-auto w-full max-w-7xl px-6 pb-20 pt-16">
+        <div className="flex flex-col items-center justify-between gap-12 lg:flex-row">
           <div className="flex-1">
-            <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-zinc-950 md:text-5xl lg:text-[54px] lg:leading-[1.02] dark:text-zinc-50">
+            <h1 className="max-w-2xl text-4xl font-bold leading-tight tracking-tight text-zinc-950 md:text-5xl lg:text-6xl dark:text-zinc-50">
               Open source webhooks{" "}
               <span className="text-orange-500">delivery platform</span>
             </h1>
@@ -223,12 +223,12 @@ export default function HomePage() {
           </div>
 
           {/* SECTION: HERO CODE CARD */}
-          <div className="relative mx-auto w-full max-w-[560px] overflow-hidden rounded-[32px] bg-zinc-950 p-8 shadow-xl shadow-zinc-600/30 dark:border-zinc-800 dark:shadow-none">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(249,115,22,0.30),transparent_32%),radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.10),transparent_34%)]" />
+          <div className="relative mx-auto w-full max-w-xl overflow-hidden rounded-3xl bg-zinc-950 p-8 shadow-xl shadow-zinc-600/30 dark:border-zinc-800 dark:shadow-none">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-zinc-950 to-zinc-900" />
 
             <div className="relative z-10 flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-400">
+                <p className="text-xs font-semibold uppercase tracking-widest text-orange-400">
                   Simple API
                 </p>
                 <p className="text-sm text-zinc-400">For publishing events</p>
@@ -243,7 +243,7 @@ export default function HomePage() {
                 <span className="ml-3 text-zinc-500">POST /v1/events</span>
               </div>
 
-              <pre className="leading-4 [tab-size:2]">
+              <pre className="leading-4">
                 {`{
   "topic": "payment.created",
   "uid": "01KQX0KC863YV5T2D9GEQC93JP",
@@ -264,7 +264,7 @@ export default function HomePage() {
             </div>
 
             <div className="relative z-10 grid grid-cols-3 gap-4">
-              <div className="animate-[pulse_2.4s_ease-in-out_infinite] rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="animate-[pulse_2.4s_ease-in-out_infinite] rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p className="text-xs text-zinc-500">Topic</p>
                 <p className="mt-2 text-xs font-semibold text-white">
                   payment.created
@@ -300,9 +300,9 @@ export default function HomePage() {
 
       {/* SECTION: CORE FEATURES */}
       <section className="border-y border-zinc-200 bg-zinc-50/70 dark:border-zinc-800 dark:bg-zinc-950/40">
-        <div className="mx-auto w-7xl px-6 py-20">
+        <div className="mx-auto w-full max-w-7xl px-6 py-20">
           <div className="mx-auto mb-12 max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500">
+            <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
               Core features
             </p>
 
@@ -352,7 +352,7 @@ export default function HomePage() {
 
       {/* SECTION: PORTAL / DASHBOARD SHOWCASE */}
       <section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto w-7xl px-6 py-20">
+        <div className="mx-auto w-full max-w-7xl px-6 py-20">
           {/* SHOWCASE CTA BAR */}
           <div className="mb-8 rounded-2xl bg-zinc-950 px-8 py-8 text-white shadow-xl shadow-zinc-300/20 dark:shadow-none md:px-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -375,14 +375,14 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/docs/introduction/quickstart"
-                  className="inline-flex h-11 min-w-[136px] items-center justify-center whitespace-nowrap rounded-xl bg-orange-500 px-5 text-sm font-semibold text-white transition hover:bg-orange-600"
+                  className="inline-flex h-11 min-w-36 items-center justify-center whitespace-nowrap rounded-xl bg-orange-500 px-5 text-sm font-semibold text-white transition hover:bg-orange-600"
                 >
                   Get started
                 </Link>
 
                 <Link
                   href="/docs/introduction"
-                  className="inline-flex h-11 min-w-[136px] items-center justify-center whitespace-nowrap rounded-xl border border-white/15 px-5 text-sm font-semibold text-white transition hover:border-orange-400 hover:bg-white/5"
+                  className="inline-flex h-11 min-w-36 items-center justify-center whitespace-nowrap rounded-xl border border-white/15 px-5 text-sm font-semibold text-white transition hover:border-orange-400 hover:bg-white/5"
                 >
                   Read the docs
                 </Link>
@@ -396,7 +396,7 @@ export default function HomePage() {
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-7">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="max-w-2xl">
-                  <h3 className="text-2xl font-semibold tracking-tight text-zinc-950 md:text-[34px] md:leading-[1.12] dark:text-zinc-50">
+                  <h3 className="text-2xl font-semibold leading-tight tracking-tight text-zinc-950 md:text-4xl dark:text-zinc-50">
                     Webhook management portal
                   </h3>
 
@@ -427,7 +427,7 @@ export default function HomePage() {
             </div>
 
             {/* BOTTOM SUPPORT CARDS */}
-            <div className="grid grid-cols-3 gap-5">
+            <div className="grid gap-5 md:grid-cols-3">
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
                 <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
                   <Users className="h-5 w-5" />
@@ -479,9 +479,9 @@ export default function HomePage() {
 
       {/* SECTION: ALL-IN-ONE PLATFORM */}
       <section className="bg-zinc-950 text-white">
-        <div className="mx-auto grid w-7xl gap-12 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-20 lg:grid-cols-2">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-400">
+            <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">
               Complete solution
             </p>
 
@@ -509,14 +509,14 @@ export default function HomePage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-white/4 p-5 transition hover:-translate-y-0.5 hover:border-orange-400/40 hover:bg-white/6"
+                className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:-translate-y-0.5 hover:border-orange-400/40 hover:bg-white/10"
               >
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 transition group-hover:bg-orange-500/10 group-hover:text-orange-300">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-white transition group-hover:text-orange-200 h-11">
+                  <h3 className="h-11 font-semibold text-white transition group-hover:text-orange-200">
                     {item.title}
                   </h3>
 
