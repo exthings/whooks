@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -20,7 +22,62 @@ import {
   Webhook,
 } from "lucide-react";
 
-const coreFeatureCards = [
+type FeatureCard = {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  description: ReactNode;
+};
+
+type PlatformCapability = {
+  title: string;
+  description: string;
+  href: string;
+};
+
+type PortalSlide = {
+  title: string;
+  description: string;
+  image: string;
+  alt: string;
+};
+
+type SupportCard = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  highlighted?: boolean;
+};
+
+type IndustryUseCase = {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  items: {
+    title: string;
+    description: string;
+  }[];
+};
+
+type FooterColumn = {
+  title: string;
+  links: {
+    label: string;
+    href: string;
+  }[];
+};
+
+const heroHighlights = [
+  "Consumers",
+  "Topics",
+  "Endpoints",
+  "Retries",
+  "Monitoring",
+];
+
+const coreFeatureCards: FeatureCard[] = [
   {
     title: "Topics",
     href: "/docs/features/topics",
@@ -104,7 +161,50 @@ const coreFeatureCards = [
   },
 ];
 
-const platformCapabilities = [
+const portalSlides: PortalSlide[] = [
+  {
+    title: "Projects",
+    description: "Project overview, topics and latest events",
+    image: "/img/whooks-project-overview.png",
+    alt: "Whooks project overview dashboard",
+  },
+  {
+    title: "Events",
+    description: "Attempts, requests, responses and delivery details",
+    image: "/img/whooks-event-detail.png",
+    alt: "Whooks event detail dashboard",
+  },
+  {
+    title: "Consumers",
+    description: "Success rate, endpoint health and delivery metrics",
+    image: "/img/whooks-consumer-metrics.png",
+    alt: "Whooks consumer metrics dashboard",
+  },
+];
+
+const supportCards: SupportCard[] = [
+  {
+    title: "Consumer visibility",
+    description:
+      "Give users a clear place to inspect endpoints and delivery activity.",
+    icon: Users,
+  },
+  {
+    title: "Faster troubleshooting",
+    description:
+      "Track delivery health, review statuses, and identify issues faster.",
+    icon: Clock3,
+  },
+  {
+    title: "Full featured UI",
+    description:
+      "Support internal teams and consumers with dashboards and delivery attempts.",
+    icon: Rocket,
+    highlighted: true,
+  },
+];
+
+const platformCapabilities: PlatformCapability[] = [
   {
     title: "Consumer portal",
     description: "Give consumers a dedicated interface to manage webhook flows.",
@@ -147,7 +247,7 @@ const platformCapabilities = [
   },
 ];
 
-const industryUseCases = [
+const industryUseCases: IndustryUseCase[] = [
   {
     id: "fintech",
     label: "Fintech",
@@ -275,6 +375,72 @@ const industryUseCases = [
   },
 ];
 
+const footerColumns: FooterColumn[] = [
+  {
+    title: "Introduction",
+    links: [
+      {
+        label: "Quickstart",
+        href: "/docs/introduction/quickstart",
+      },
+      {
+        label: "Concepts",
+        href: "/docs/introduction/concepts",
+      },
+      {
+        label: "Consuming webhooks",
+        href: "/docs/introduction/consuming-webhooks",
+      },
+      {
+        label: "Self-hosting",
+        href: "/docs/introduction/self-hosting",
+      },
+    ],
+  },
+  {
+    title: "Features",
+    links: [
+      {
+        label: "Topics",
+        href: "/docs/features/topics",
+      },
+      {
+        label: "Endpoints",
+        href: "/docs/features/endpoints",
+      },
+      {
+        label: "Retries",
+        href: "/docs/features/retries",
+      },
+      {
+        label: "Idempotency",
+        href: "/docs/features/idempotency",
+      },
+    ],
+  },
+  {
+    title: "Security",
+    links: [
+      {
+        label: "Authentication",
+        href: "/docs/security/authentication",
+      },
+      {
+        label: "Retention",
+        href: "/docs/security/retention",
+      },
+      {
+        label: "Backoffice",
+        href: "/docs/features/backoffice",
+      },
+      {
+        label: "Consumer portal",
+        href: "/docs/features/consumer-portal",
+      },
+    ],
+  },
+];
+
 export const metadata: Metadata = {
   title: "Whooks - Open source webhooks delivery platform",
   description:
@@ -321,28 +487,24 @@ export default function HomePage() {
             </div>
 
             <div className="mt-7 flex flex-col gap-3 text-sm text-zinc-500 dark:text-zinc-400 sm:flex-row sm:items-center">
-              {["Consumers", "Topics", "Endpoints", "Retries", "Monitoring"].map(
-                (item) => (
-                  <span key={item} className="inline-flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                    {item}
-                  </span>
-                ),
-              )}
+              {heroHighlights.map((item) => (
+                <span key={item} className="inline-flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  {item}
+                </span>
+              ))}
             </div>
           </div>
 
           {/* SECTION: HERO CODE CARD */}
-          <div className="relative mx-auto w-full max-w-xl overflow-hidden rounded-3xl bg-zinc-950 p-8 shadow-xl shadow-zinc-600/30 dark:border-zinc-800 dark:shadow-none">
+          <div className="relative mx-auto w-full max-w-xl overflow-hidden rounded-3xl bg-zinc-950 p-8 shadow-xl shadow-zinc-600/30 dark:border dark:border-zinc-800 dark:shadow-none">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-zinc-950 to-zinc-900" />
 
-            <div className="relative z-10 flex items-start justify-between gap-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-orange-400">
-                  Simple API
-                </p>
-                <p className="text-sm text-zinc-400">For publishing events</p>
-              </div>
+            <div className="relative z-10">
+              <p className="text-xs font-semibold uppercase tracking-widest text-orange-400">
+                Simple API
+              </p>
+              <p className="text-sm text-zinc-400">For publishing events</p>
             </div>
 
             <div className="relative z-10 mt-6 rounded-3xl border border-white/10 bg-white/5 p-6 font-mono text-xs text-zinc-300 shadow-2xl shadow-black/20">
@@ -353,7 +515,7 @@ export default function HomePage() {
                 <span className="ml-3 text-zinc-500">POST /v1/events</span>
               </div>
 
-              <pre className="leading-4">
+              <pre className="overflow-x-auto leading-4">
                 {`{
   "topic": "payment.created",
   "uid": "01KQX0KC863YV5T2D9GEQC93JP",
@@ -370,40 +532,31 @@ export default function HomePage() {
             </div>
 
             <div className="relative z-10 my-4 h-px overflow-hidden bg-white/10">
-              <div className="h-full w-1/3 animate-[delivery-line_2.8s_ease-in-out_infinite] bg-orange-400" />
+              <div className="delivery-line h-full w-1/3 bg-orange-400" />
             </div>
 
-            <div className="relative z-10 grid grid-cols-3 gap-4">
-              <div className="animate-[pulse_2.4s_ease-in-out_infinite] rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="relative z-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="delivery-pulse rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p className="text-xs text-zinc-500">Topic</p>
                 <p className="mt-2 text-xs font-semibold text-white">
                   payment.created
                 </p>
               </div>
 
-              <div className="animate-[pulse_2.4s_ease-in-out_infinite_0.4s] rounded-2xl border border-orange-400/30 bg-orange-400/10 p-4">
+              <div className="delivery-pulse delay-400 rounded-2xl border border-orange-400/30 bg-orange-400/10 p-4">
                 <p className="text-xs text-orange-300/80">Retry</p>
                 <p className="mt-2 text-xs font-semibold text-orange-200">
                   Exponential backoff
                 </p>
               </div>
 
-              <div className="animate-[pulse_2.4s_ease-in-out_infinite_0.8s] rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-4">
+              <div className="delivery-pulse delay-800 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-4">
                 <p className="text-xs text-emerald-300/80">Response</p>
                 <p className="mt-2 text-xs font-semibold text-emerald-200">
                   200 OK
                 </p>
               </div>
             </div>
-
-            <style>{`
-              @keyframes delivery-line {
-                0% { transform: translateX(-120%); opacity: 0; }
-                20% { opacity: 1; }
-                70% { opacity: 1; }
-                100% { transform: translateX(320%); opacity: 0; }
-              }
-            `}</style>
           </div>
         </div>
       </section>
@@ -460,7 +613,7 @@ export default function HomePage() {
         </div>
       </section>
 
-            {/* SECTION: PORTAL / DASHBOARD SHOWCASE */}
+      {/* SECTION: PORTAL / DASHBOARD SHOWCASE */}
       <section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-7xl px-6 py-20">
           {/* SHOWCASE CTA BAR */}
@@ -473,7 +626,7 @@ export default function HomePage() {
                     (coming soon)
                   </span>{" "}
                   <br />
-                  or through REST API{" "}
+                  or through REST API
                 </h2>
 
                 <p className="mt-4 font-mono text-base text-zinc-300 md:text-lg">
@@ -501,241 +654,112 @@ export default function HomePage() {
           </div>
 
           {/* SHOWCASE CONTENT */}
-          <div className="grid items-stretch gap-5">
-            {/* APP PORTAL PANEL */}
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-7">
-              <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-start">
-                <div className="max-w-3xl">
-                  <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
-                    Operational visibility
-                  </p>
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-7">
+            <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-start">
+              <div className="max-w-3xl">
+                <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
+                  Operational visibility
+                </p>
 
-                  <h3 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-zinc-950 md:text-3xl dark:text-zinc-50">
-                    Manage webhook operations from one place
+                <h3 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-zinc-950 md:text-3xl dark:text-zinc-50">
+                  Manage webhook operations from one place
+                </h3>
+
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600 dark:text-zinc-400 md:text-base">
+                  Inspect projects, consumers, events, attempts, requests, and
+                  responses through a clearer operational interface.
+                </p>
+              </div>
+
+              <Link
+                href="/docs/features/backoffice"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-950 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:border-orange-500/40 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
+              >
+                Learn more
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="mt-8">
+              <div className="relative aspect-video overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                {portalSlides.map((slide, index) => (
+                  <div
+                    key={slide.title}
+                    className="portal-slide absolute inset-0 flex items-center justify-center p-2"
+                    style={{ animationDelay: `${index * 5}s` }}
+                  >
+                    <Image
+                      src={slide.image}
+                      alt={slide.alt}
+                      width={1920}
+                      height={1080}
+                      className="h-full w-full rounded-lg object-contain"
+                      priority={index === 0}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="relative min-h-16 w-full max-w-xl">
+                  {portalSlides.map((slide, index) => (
+                    <div
+                      key={slide.title}
+                      className="portal-copy absolute inset-0"
+                      style={{ animationDelay: `${index * 5}s` }}
+                    >
+                      <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
+                        {slide.title}
+                      </p>
+
+                      <p className="mt-1 text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                        {slide.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-3 md:pb-2">
+                  {portalSlides.map((slide, index) => (
+                    <span
+                      key={slide.title}
+                      className="portal-indicator h-2 w-14 rounded-full border border-orange-200 bg-zinc-200 dark:border-orange-500/30 dark:bg-zinc-700"
+                      style={{ animationDelay: `${index * 5}s` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BOTTOM SUPPORT CARDS */}
+          <div className="mt-5 grid gap-5 md:grid-cols-3">
+            {supportCards.map((card) => {
+              const Icon = card.icon;
+
+              return (
+                <div
+                  key={card.title}
+                  className={
+                    card.highlighted
+                      ? "rounded-2xl border border-orange-200 bg-orange-50/40 p-6 transition hover:bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/5 dark:hover:bg-orange-500/10"
+                      : "rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5"
+                  }
+                >
+                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
+                    <Icon className="h-5 w-5" />
+                  </div>
+
+                  <h3 className="text-xl font-semibold leading-tight tracking-tight text-zinc-950 dark:text-zinc-50">
+                    {card.title}
                   </h3>
 
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600 dark:text-zinc-400 md:text-base">
-                    Inspect projects, consumers, events, attempts, requests, and
-                    responses through a clearer operational interface.
+                  <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+                    {card.description}
                   </p>
                 </div>
-
-                <Link
-                  href="/docs/features/backoffice"
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-950 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:border-orange-500/40 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
-                >
-                  Learn more
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-
-              {/* DASHBOARD AUTO SLIDER */}
-              <div className="mt-8 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm dark:border-orange-500/20 dark:bg-zinc-950">
-                <div className="relative aspect-video overflow-hidden bg-white dark:bg-zinc-950">
-                  <div className="portal-slide absolute inset-0 flex items-center justify-center p-2">
-                    <Image
-                      src="/img/whooks-project-overview.png"
-                      alt="Whooks project overview dashboard"
-                      width={1920}
-                      height={1080}
-                      className="h-full w-full object-contain"
-                      priority
-                    />
-
-                    <div className="absolute bottom-3 left-3 rounded-xl border border-white/60 bg-white/90 px-3 py-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-orange-500">
-                        Projects
-                      </p>
-                      <p className="mt-1 text-xs font-semibold text-zinc-950 dark:text-zinc-50">
-                        Project overview, topics and latest events
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="portal-slide absolute inset-0 flex items-center justify-center p-2">
-                    <Image
-                      src="/img/whooks-event-detail.png"
-                      alt="Whooks event detail dashboard"
-                      width={1920}
-                      height={1080}
-                      className="h-full w-full object-contain"
-                    />
-
-                    <div className="absolute bottom-3 left-3 rounded-xl border border-white/60 bg-white/90 px-3 py-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-orange-500">
-                        Events
-                      </p>
-                      <p className="mt-1 text-xs font-semibold text-zinc-950 dark:text-zinc-50">
-                        Attempts, requests, responses and delivery details
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="portal-slide absolute inset-0 flex items-center justify-center p-2">
-                    <Image
-                      src="/img/whooks-consumer-metrics.png"
-                      alt="Whooks consumer metrics dashboard"
-                      width={1920}
-                      height={1080}
-                      className="h-full w-full object-contain"
-                    />
-
-                    <div className="absolute bottom-3 left-3 rounded-xl border border-white/60 bg-white/90 px-3 py-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-orange-500">
-                        Consumers
-                      </p>
-                      <p className="mt-1 text-xs font-semibold text-zinc-950 dark:text-zinc-50">
-                        Success rate, endpoint health and delivery metrics
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-3 right-3 flex gap-2">
-                    <span className="portal-indicator h-2 w-8 rounded-full bg-white/70" />
-                    <span className="portal-indicator h-2 w-8 rounded-full bg-white/70" />
-                    <span className="portal-indicator h-2 w-8 rounded-full bg-white/70" />
-                  </div>
-                </div>
-              </div>
-
-              <style>{`
-                .portal-slide {
-                  opacity: 0;
-                  animation: portal-slide 15s infinite;
-                }
-
-                .portal-slide:nth-child(1) {
-                  animation-delay: 0s;
-                }
-
-                .portal-slide:nth-child(2) {
-                  animation-delay: 5s;
-                }
-
-                .portal-slide:nth-child(3) {
-                  animation-delay: 10s;
-                }
-
-                .portal-indicator {
-                  opacity: 0.45;
-                  animation: portal-indicator 15s infinite;
-                }
-
-                .portal-indicator:nth-child(1) {
-                  animation-delay: 0s;
-                }
-
-                .portal-indicator:nth-child(2) {
-                  animation-delay: 5s;
-                }
-
-                .portal-indicator:nth-child(3) {
-                  animation-delay: 10s;
-                }
-
-                @keyframes portal-slide {
-                  0% {
-                    opacity: 0;
-                    transform: scale(1.01);
-                  }
-
-                  5% {
-                    opacity: 1;
-                    transform: scale(1);
-                  }
-
-                  30% {
-                    opacity: 1;
-                    transform: scale(1);
-                  }
-
-                  36% {
-                    opacity: 0;
-                    transform: scale(1.01);
-                  }
-
-                  100% {
-                    opacity: 0;
-                    transform: scale(1.01);
-                  }
-                }
-
-                @keyframes portal-indicator {
-                  0% {
-                    opacity: 0.45;
-                    background: rgb(255 255 255 / 0.7);
-                  }
-
-                  5% {
-                    opacity: 1;
-                    background: rgb(249 115 22);
-                  }
-
-                  30% {
-                    opacity: 1;
-                    background: rgb(249 115 22);
-                  }
-
-                  36% {
-                    opacity: 0.45;
-                    background: rgb(255 255 255 / 0.7);
-                  }
-
-                  100% {
-                    opacity: 0.45;
-                    background: rgb(255 255 255 / 0.7);
-                  }
-                }
-              `}</style>
-            </div>
-
-            {/* BOTTOM SUPPORT CARDS */}
-            <div className="grid gap-5 md:grid-cols-3">
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
-                <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
-                  <Users className="h-5 w-5" />
-                </div>
-
-                <h3 className="text-xl font-semibold leading-tight tracking-tight text-zinc-950 dark:text-zinc-50">
-                  Consumer visibility
-                </h3>
-
-                <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
-                  Give users a clear place to inspect endpoints and delivery
-                  activity.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
-                <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
-                  <Clock3 className="h-5 w-5" />
-                </div>
-
-                <h3 className="text-xl font-semibold leading-tight tracking-tight text-zinc-950 dark:text-zinc-50">
-                  Faster troubleshooting
-                </h3>
-
-                <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
-                  Track delivery health, review statuses, and identify issues
-                  faster.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/30 dark:hover:bg-orange-500/5">
-                <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300">
-                  <Rocket className="h-5 w-5" />
-                </div>
-
-                <h3 className="text-xl font-semibold leading-tight tracking-tight text-zinc-950 dark:text-zinc-50">
-                  Full featured UI
-                </h3>
-
-                <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
-                  Support internal teams and consumers with dashboards and
-                  delivery attempts.
-                </p>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -779,7 +803,7 @@ export default function HomePage() {
                 </div>
 
                 <div>
-                  <h3 className="h-11 font-semibold text-white transition group-hover:text-orange-200">
+                  <h3 className="min-h-11 font-semibold text-white transition group-hover:text-orange-200">
                     {item.title}
                   </h3>
 
@@ -826,7 +850,7 @@ export default function HomePage() {
               />
             ))}
 
-            <div className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="industry-tabs mb-6 flex flex-wrap gap-2 rounded-2xl border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950">
               {industryUseCases.map((industry) => {
                 const Icon = industry.icon;
 
@@ -843,7 +867,7 @@ export default function HomePage() {
               })}
             </div>
 
-            <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-950">
+            <div className="industry-panels relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-950">
               {industryUseCases.map((industry) => {
                 const Icon = industry.icon;
 
@@ -888,25 +912,6 @@ export default function HomePage() {
                 );
               })}
             </div>
-
-            <style>{`
-              #industry-fintech:checked ~ div:nth-of-type(2) > div:nth-child(1),
-              #industry-igaming:checked ~ div:nth-of-type(2) > div:nth-child(2),
-              #industry-saas:checked ~ div:nth-of-type(2) > div:nth-child(3),
-              #industry-marketplaces:checked ~ div:nth-of-type(2) > div:nth-child(4),
-              #industry-platforms:checked ~ div:nth-of-type(2) > div:nth-child(5) {
-                display: block;
-              }
-
-              #industry-fintech:checked ~ div:nth-of-type(1) label[for="industry-fintech"],
-              #industry-igaming:checked ~ div:nth-of-type(1) label[for="industry-igaming"],
-              #industry-saas:checked ~ div:nth-of-type(1) label[for="industry-saas"],
-              #industry-marketplaces:checked ~ div:nth-of-type(1) label[for="industry-marketplaces"],
-              #industry-platforms:checked ~ div:nth-of-type(1) label[for="industry-platforms"] {
-                background: rgb(249 115 22 / 0.12);
-                color: rgb(234 88 12);
-              }
-            `}</style>
           </div>
         </div>
       </section>
@@ -935,113 +940,25 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div>
-              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                Introduction
-              </h3>
+            {footerColumns.map((column) => (
+              <div key={column.title}>
+                <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                  {column.title}
+                </h3>
 
-              <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
-                <Link
-                  href="/docs/introduction/quickstart"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Quickstart
-                </Link>
-
-                <Link
-                  href="/docs/introduction/concepts"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Concepts
-                </Link>
-
-                <Link
-                  href="/docs/introduction/consuming-webhooks"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Consuming webhooks
-                </Link>
-
-                <Link
-                  href="/docs/introduction/self-hosting"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Self-hosting
-                </Link>
+                <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
+                  {column.links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="block transition hover:text-orange-600 dark:hover:text-orange-300"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                Features
-              </h3>
-
-              <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
-                <Link
-                  href="/docs/features/topics"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Topics
-                </Link>
-
-                <Link
-                  href="/docs/features/endpoints"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Endpoints
-                </Link>
-
-                <Link
-                  href="/docs/features/retries"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Retries
-                </Link>
-
-                <Link
-                  href="/docs/features/idempotency"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Idempotency
-                </Link>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                Security
-              </h3>
-
-              <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
-                <Link
-                  href="/docs/security/authentication"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Authentication
-                </Link>
-
-                <Link
-                  href="/docs/security/retention"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Retention
-                </Link>
-
-                <Link
-                  href="/docs/features/backoffice"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Backoffice
-                </Link>
-
-                <Link
-                  href="/docs/features/consumer-portal"
-                  className="block transition hover:text-orange-600 dark:hover:text-orange-300"
-                >
-                  Consumer portal
-                </Link>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="flex flex-col gap-4 pt-8 text-sm text-zinc-500 dark:text-zinc-500 md:flex-row md:items-center md:justify-between">
@@ -1057,6 +974,145 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      <style>{`
+        .delivery-line {
+          animation: delivery-line 2.8s ease-in-out infinite;
+        }
+
+        .delivery-pulse {
+          animation: delivery-pulse 2.4s ease-in-out infinite;
+        }
+
+        .delay-400 {
+          animation-delay: 0.4s;
+        }
+
+        .delay-800 {
+          animation-delay: 0.8s;
+        }
+
+        .portal-slide,
+        .portal-copy {
+          opacity: 0;
+          animation-name: portal-slide;
+          animation-duration: 15s;
+          animation-iteration-count: infinite;
+          animation-timing-function: ease-in-out;
+        }
+
+        .portal-indicator {
+          opacity: 0.45;
+          animation-name: portal-indicator;
+          animation-duration: 15s;
+          animation-iteration-count: infinite;
+          animation-timing-function: ease-in-out;
+        }
+
+        #industry-fintech:checked ~ .industry-panels > div:nth-child(1),
+        #industry-igaming:checked ~ .industry-panels > div:nth-child(2),
+        #industry-saas:checked ~ .industry-panels > div:nth-child(3),
+        #industry-marketplaces:checked ~ .industry-panels > div:nth-child(4),
+        #industry-platforms:checked ~ .industry-panels > div:nth-child(5) {
+          display: block;
+        }
+
+        #industry-fintech:checked ~ .industry-tabs label[for="industry-fintech"],
+        #industry-igaming:checked ~ .industry-tabs label[for="industry-igaming"],
+        #industry-saas:checked ~ .industry-tabs label[for="industry-saas"],
+        #industry-marketplaces:checked ~ .industry-tabs label[for="industry-marketplaces"],
+        #industry-platforms:checked ~ .industry-tabs label[for="industry-platforms"] {
+          background: rgb(249 115 22 / 0.12);
+          color: rgb(234 88 12);
+        }
+
+        @keyframes delivery-line {
+          0% {
+            transform: translateX(-120%);
+            opacity: 0;
+          }
+
+          20% {
+            opacity: 1;
+          }
+
+          70% {
+            opacity: 1;
+          }
+
+          100% {
+            transform: translateX(320%);
+            opacity: 0;
+          }
+        }
+
+        @keyframes delivery-pulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.9;
+          }
+
+          50% {
+            transform: scale(1.015);
+            opacity: 1;
+          }
+        }
+
+        @keyframes portal-slide {
+          0% {
+            opacity: 0;
+          }
+
+          5% {
+            opacity: 1;
+          }
+
+          30% {
+            opacity: 1;
+          }
+
+          36% {
+            opacity: 0;
+          }
+
+          100% {
+            opacity: 0;
+          }
+        }
+
+        @keyframes portal-indicator {
+          0% {
+            opacity: 0.45;
+            background: rgb(228 228 231);
+            border-color: rgb(254 215 170);
+          }
+
+          5% {
+            opacity: 1;
+            background: rgb(249 115 22);
+            border-color: rgb(249 115 22);
+          }
+
+          30% {
+            opacity: 1;
+            background: rgb(249 115 22);
+            border-color: rgb(249 115 22);
+          }
+
+          36% {
+            opacity: 0.45;
+            background: rgb(228 228 231);
+            border-color: rgb(254 215 170);
+          }
+
+          100% {
+            opacity: 0.45;
+            background: rgb(228 228 231);
+            border-color: rgb(254 215 170);
+          }
+        }
+      `}</style>
     </main>
   );
 }
