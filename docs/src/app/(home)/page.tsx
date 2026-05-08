@@ -654,12 +654,22 @@ export default function HomePage() {
           </div>
 
           {/* SHOWCASE CONTENT */}
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-7">
-            <div className="relative aspect-video overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl shadow-zinc-300/70 dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-black/30">
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900 md:p-4">
+            <div className="relative overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl shadow-zinc-300/70 dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-black/30">
+              <Image
+                src={portalSlides[0].image}
+                alt=""
+                width={1920}
+                height={1080}
+                className="invisible block h-auto w-full"
+                aria-hidden="true"
+                priority
+              />
+
               {portalSlides.map((slide, index) => (
                 <div
                   key={slide.title}
-                  className="portal-slide absolute inset-0 flex items-center justify-center p-3"
+                  className="portal-slide absolute inset-0"
                   style={{ animationDelay: `${index * 5}s` }}
                 >
                   <Image
@@ -667,7 +677,7 @@ export default function HomePage() {
                     alt={slide.alt}
                     width={1920}
                     height={1080}
-                    className="h-full w-full rounded-lg object-contain"
+                    className="block h-auto w-full"
                     priority={index === 0}
                   />
                 </div>
