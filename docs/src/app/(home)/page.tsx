@@ -655,79 +655,52 @@ export default function HomePage() {
 
           {/* SHOWCASE CONTENT */}
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-7">
-            <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-start">
-              <div className="max-w-3xl">
-                <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
-                  Operational visibility
-                </p>
-
-                <h3 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-zinc-950 md:text-3xl dark:text-zinc-50">
-                  Manage webhook operations from one place
-                </h3>
-
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600 dark:text-zinc-400 md:text-base">
-                  Inspect projects, consumers, events, attempts, requests, and
-                  responses through a clearer operational interface.
-                </p>
-              </div>
-
-              <Link
-                href="/docs/features/backoffice"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-950 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:border-orange-500/40 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
-              >
-                Learn more
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+            <div className="relative aspect-video overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl shadow-zinc-300/70 dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-black/30">
+              {portalSlides.map((slide, index) => (
+                <div
+                  key={slide.title}
+                  className="portal-slide absolute inset-0 flex items-center justify-center p-3"
+                  style={{ animationDelay: `${index * 5}s` }}
+                >
+                  <Image
+                    src={slide.image}
+                    alt={slide.alt}
+                    width={1920}
+                    height={1080}
+                    className="h-full w-full rounded-lg object-contain"
+                    priority={index === 0}
+                  />
+                </div>
+              ))}
             </div>
 
-            <div className="mt-8">
-              <div className="relative aspect-video overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="relative min-h-16 w-full max-w-xl">
                 {portalSlides.map((slide, index) => (
                   <div
                     key={slide.title}
-                    className="portal-slide absolute inset-0 flex items-center justify-center p-2"
+                    className="portal-copy absolute inset-0"
                     style={{ animationDelay: `${index * 5}s` }}
                   >
-                    <Image
-                      src={slide.image}
-                      alt={slide.alt}
-                      width={1920}
-                      height={1080}
-                      className="h-full w-full rounded-lg object-contain"
-                      priority={index === 0}
-                    />
+                    <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
+                      {slide.title}
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                      {slide.description}
+                    </p>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div className="relative min-h-16 w-full max-w-xl">
-                  {portalSlides.map((slide, index) => (
-                    <div
-                      key={slide.title}
-                      className="portal-copy absolute inset-0"
-                      style={{ animationDelay: `${index * 5}s` }}
-                    >
-                      <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
-                        {slide.title}
-                      </p>
-
-                      <p className="mt-1 text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                        {slide.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-3 md:pb-2">
-                  {portalSlides.map((slide, index) => (
-                    <span
-                      key={slide.title}
-                      className="portal-indicator h-2 w-14 rounded-full border border-orange-200 bg-zinc-200 dark:border-orange-500/30 dark:bg-zinc-700"
-                      style={{ animationDelay: `${index * 5}s` }}
-                    />
-                  ))}
-                </div>
+              <div className="flex items-center gap-3 md:pb-2">
+                {portalSlides.map((slide, index) => (
+                  <span
+                    key={slide.title}
+                    className="portal-indicator h-2 w-14 rounded-full border border-orange-200 bg-zinc-200 dark:border-orange-500/30 dark:bg-zinc-700"
+                    style={{ animationDelay: `${index * 5}s` }}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -765,7 +738,7 @@ export default function HomePage() {
       </section>
 
       {/* SECTION: ALL-IN-ONE PLATFORM */}
-      <section className="bg-zinc-950 text-white">
+      < section className="bg-zinc-950 text-white" >
         <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-20 lg:grid-cols-2">
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">
@@ -815,10 +788,10 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* SECTION: USE CASES BY INDUSTRY */}
-      <section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      < section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950" >
         <div className="mx-auto w-full max-w-7xl px-6 py-20">
           <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -914,10 +887,10 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* SECTION: FOOTER */}
-      <footer className="bg-white dark:bg-zinc-950">
+      < footer className="bg-white dark:bg-zinc-950" >
         <div className="mx-auto w-full max-w-7xl px-6 py-14">
           <div className="grid gap-10 border-b border-zinc-200 pb-10 dark:border-zinc-800 md:grid-cols-2 lg:grid-cols-4">
             <div>
@@ -973,7 +946,7 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </footer>
+      </footer >
 
       <style>{`
         .delivery-line {
@@ -1113,6 +1086,6 @@ export default function HomePage() {
           }
         }
       `}</style>
-    </main>
+    </main >
   );
 }
