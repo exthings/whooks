@@ -321,30 +321,14 @@ export default function HomePage() {
             </div>
 
             <div className="mt-7 flex flex-col gap-3 text-sm text-zinc-500 dark:text-zinc-400 sm:flex-row sm:items-center">
-              <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                Consumers
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                Topics
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                Endpoints
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                Retries
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                Monitoring
-              </span>
+              {["Consumers", "Topics", "Endpoints", "Retries", "Monitoring"].map(
+                (item) => (
+                  <span key={item} className="inline-flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                    {item}
+                  </span>
+                ),
+              )}
             </div>
           </div>
 
@@ -476,7 +460,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION: PORTAL / DASHBOARD SHOWCASE */}
+            {/* SECTION: PORTAL / DASHBOARD SHOWCASE */}
       <section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-7xl px-6 py-20">
           {/* SHOWCASE CTA BAR */}
@@ -520,36 +504,189 @@ export default function HomePage() {
           <div className="grid items-stretch gap-5">
             {/* APP PORTAL PANEL */}
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900 md:p-7">
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="max-w-2xl">
-                  <h3 className="text-2xl font-semibold leading-tight tracking-tight text-zinc-950 md:text-4xl dark:text-zinc-50">
-                    Webhook management portal
+              <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-start">
+                <div className="max-w-3xl">
+                  <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
+                    Operational visibility
+                  </p>
+
+                  <h3 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-zinc-950 md:text-3xl dark:text-zinc-50">
+                    Manage webhook operations from one place
                   </h3>
 
-                  <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400 md:text-base">
-                    Inspect endpoints, monitor delivery health, and support
-                    webhook operations from a clearer interface.
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600 dark:text-zinc-400 md:text-base">
+                    Inspect projects, consumers, events, attempts, requests, and
+                    responses through a clearer operational interface.
                   </p>
                 </div>
 
                 <Link
                   href="/docs/features/backoffice"
-                  className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-zinc-950 transition hover:text-orange-600 dark:text-zinc-50 dark:hover:text-orange-300"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-950 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:border-orange-500/40 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
                 >
                   Learn more
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm dark:border-orange-500/20 dark:bg-zinc-950">
-                <Image
-                  src="/img/whooks-dashboard-preview.png"
-                  alt="Preview of the Whooks webhook dashboard interface"
-                  width={1448}
-                  height={1086}
-                  className="h-auto w-full object-cover"
-                />
+              {/* DASHBOARD AUTO SLIDER */}
+              <div className="mt-8 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm dark:border-orange-500/20 dark:bg-zinc-950">
+                <div className="relative aspect-video overflow-hidden bg-white dark:bg-zinc-950">
+                  <div className="portal-slide absolute inset-0 flex items-center justify-center p-2">
+                    <Image
+                      src="/img/whooks-project-overview.png"
+                      alt="Whooks project overview dashboard"
+                      width={1920}
+                      height={1080}
+                      className="h-full w-full object-contain"
+                      priority
+                    />
+
+                    <div className="absolute bottom-3 left-3 rounded-xl border border-white/60 bg-white/90 px-3 py-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-orange-500">
+                        Projects
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                        Project overview, topics and latest events
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="portal-slide absolute inset-0 flex items-center justify-center p-2">
+                    <Image
+                      src="/img/whooks-event-detail.png"
+                      alt="Whooks event detail dashboard"
+                      width={1920}
+                      height={1080}
+                      className="h-full w-full object-contain"
+                    />
+
+                    <div className="absolute bottom-3 left-3 rounded-xl border border-white/60 bg-white/90 px-3 py-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-orange-500">
+                        Events
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                        Attempts, requests, responses and delivery details
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="portal-slide absolute inset-0 flex items-center justify-center p-2">
+                    <Image
+                      src="/img/whooks-consumer-metrics.png"
+                      alt="Whooks consumer metrics dashboard"
+                      width={1920}
+                      height={1080}
+                      className="h-full w-full object-contain"
+                    />
+
+                    <div className="absolute bottom-3 left-3 rounded-xl border border-white/60 bg-white/90 px-3 py-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-orange-500">
+                        Consumers
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                        Success rate, endpoint health and delivery metrics
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="absolute bottom-3 right-3 flex gap-2">
+                    <span className="portal-indicator h-2 w-8 rounded-full bg-white/70" />
+                    <span className="portal-indicator h-2 w-8 rounded-full bg-white/70" />
+                    <span className="portal-indicator h-2 w-8 rounded-full bg-white/70" />
+                  </div>
+                </div>
               </div>
+
+              <style>{`
+                .portal-slide {
+                  opacity: 0;
+                  animation: portal-slide 15s infinite;
+                }
+
+                .portal-slide:nth-child(1) {
+                  animation-delay: 0s;
+                }
+
+                .portal-slide:nth-child(2) {
+                  animation-delay: 5s;
+                }
+
+                .portal-slide:nth-child(3) {
+                  animation-delay: 10s;
+                }
+
+                .portal-indicator {
+                  opacity: 0.45;
+                  animation: portal-indicator 15s infinite;
+                }
+
+                .portal-indicator:nth-child(1) {
+                  animation-delay: 0s;
+                }
+
+                .portal-indicator:nth-child(2) {
+                  animation-delay: 5s;
+                }
+
+                .portal-indicator:nth-child(3) {
+                  animation-delay: 10s;
+                }
+
+                @keyframes portal-slide {
+                  0% {
+                    opacity: 0;
+                    transform: scale(1.01);
+                  }
+
+                  5% {
+                    opacity: 1;
+                    transform: scale(1);
+                  }
+
+                  30% {
+                    opacity: 1;
+                    transform: scale(1);
+                  }
+
+                  36% {
+                    opacity: 0;
+                    transform: scale(1.01);
+                  }
+
+                  100% {
+                    opacity: 0;
+                    transform: scale(1.01);
+                  }
+                }
+
+                @keyframes portal-indicator {
+                  0% {
+                    opacity: 0.45;
+                    background: rgb(255 255 255 / 0.7);
+                  }
+
+                  5% {
+                    opacity: 1;
+                    background: rgb(249 115 22);
+                  }
+
+                  30% {
+                    opacity: 1;
+                    background: rgb(249 115 22);
+                  }
+
+                  36% {
+                    opacity: 0.45;
+                    background: rgb(255 255 255 / 0.7);
+                  }
+
+                  100% {
+                    opacity: 0.45;
+                    background: rgb(255 255 255 / 0.7);
+                  }
+                }
+              `}</style>
             </div>
 
             {/* BOTTOM SUPPORT CARDS */}
@@ -910,6 +1047,13 @@ export default function HomePage() {
           <div className="flex flex-col gap-4 pt-8 text-sm text-zinc-500 dark:text-zinc-500 md:flex-row md:items-center md:justify-between">
             <p>© 2026 Whooks. Open source webhook delivery infrastructure.</p>
 
+            <Link
+              href="/docs/introduction/quickstart"
+              className="inline-flex items-center gap-2 font-semibold text-zinc-700 transition hover:text-orange-600 dark:text-zinc-300 dark:hover:text-orange-300"
+            >
+              Start building
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </footer>
