@@ -7,6 +7,7 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
   alias Whooks.Events
   alias Whooks.StandardWebhooks
   alias Whooks.Repo
+  alias Whooks.Serializer
 
   require Logger
 
@@ -21,11 +22,10 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
       StandardWebhooks.build_body(data["topic"], timestamp, data["data"])
       |> Jason.encode!()
 
-    headers = build_headers(id, timestamp, payload_data, data)
+    headers = build_headers(event.id, timestamp, payload_data, data)
     request = %{url: data["url"], data: payload_data, headers: headers}
 
-    with {:ok, event} <- Events.update_to_processing(event),
-         {:ok, response} <- Sender.post(request) do
+    with {:ok, response} <- Sender.post(request) do
       handle_success(id, response, event, headers, data)
     else
       {:error, error} ->
@@ -50,15 +50,49 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
     }
 
     Repo.transact(fn ->
-      {:ok, _attempt} = DeliveryAttempts.create_success(attempt_params)
-      {:ok, _} = Events.update_to_success(event)
-
-      Logger.info("Event sent successfully: #{inspect(event.id)}")
-      {:ok, :sent}
+      with {:ok, attempt} <- DeliveryAttempts.create_success(attempt_params) do
+        Logger.info("Event sent successfully: #{inspect(event.id)}")
+        {:ok, Serializer.to_map(attempt)}
+      end
     end)
   end
 
+  defp handle_failure(id, %Req.Response{} = response, event, headers, data) do
+    Logger.info("Event attempt delivery failed: #{data["event_id"]}")
+    # Logger.info(Exception.message(error))
+
+    attempt_params = %{
+      id: id,
+      req_headers: headers,
+      res_status: response.status,
+      res_body: parse_res_body(response.body),
+      res_headers: response.headers,
+      latency_ms: response.private[:latency_ms],
+      event_id: data["event_id"],
+      subscription_id: data["subscription_id"]
+    }
+
+    Repo.transact(fn ->
+      with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
+        {:ok, {attempt, event}}
+      end
+    end)
+    |> case do
+      {:ok, {attempt, event}} ->
+        Logger.info("Event failed: #{inspect(event.id)}")
+        Logger.info("Attempt failed: #{inspect(attempt.id)}")
+        {:error, response}
+
+      other ->
+        Logger.info("Unknown response type: #{inspect(other)}")
+        {:error, response}
+    end
+  end
+
   defp handle_failure(id, error, event, headers, data) do
+    Logger.info("Event attempt delivery failed: #{data["event_id"]}")
+    # Logger.info(Exception.message(error))
+
     attempt_params = %{
       id: id,
       req_headers: headers,
@@ -69,12 +103,20 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
     }
 
     Repo.transact(fn ->
-      {:ok, _attempt} = DeliveryAttempts.create_failed(attempt_params)
-      {:ok, _} = Events.update_to_retry(event)
-
-      Logger.info("Event failed: #{inspect(event.id)}")
-      {:error, error}
+      with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
+        {:ok, {attempt, event}}
+      end
     end)
+    |> case do
+      {:ok, {attempt, event}} ->
+        Logger.info("Event failed: #{inspect(event.id)}")
+        Logger.info("Attempt failed: #{inspect(attempt.id)}")
+        {:error, error}
+
+      other ->
+        Logger.info("Unknown response type: #{inspect(other)}")
+        {:error, other}
+    end
   end
 
   defp build_headers(id, timestamp, payload_data, data) do
@@ -99,7 +141,7 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
   defp parse_res_body(body) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, parsed} -> parsed
-      {:error, _} -> body
+      {:error, _} -> %{generic: body}
     end
   end
 
