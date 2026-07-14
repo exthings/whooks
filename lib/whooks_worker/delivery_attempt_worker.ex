@@ -6,7 +6,6 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
   alias Whooks.DeliveryAttempts.DeliveryAttempt
   alias Whooks.Events
   alias Whooks.StandardWebhooks
-  alias Whooks.Repo
   alias Whooks.Serializer
 
   require Logger
@@ -49,12 +48,10 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
       subscription_id: data["subscription_id"]
     }
 
-    Repo.transact(fn ->
-      with {:ok, attempt} <- DeliveryAttempts.create_success(attempt_params) do
-        Logger.info("Event sent successfully: #{inspect(event.id)}")
-        {:ok, Serializer.to_map(attempt)}
-      end
-    end)
+    with {:ok, attempt} <- DeliveryAttempts.create_success(attempt_params) do
+      Logger.info("Event sent successfully: #{inspect(event.id)}")
+      {:ok, Serializer.to_map(attempt)}
+    end
   end
 
   defp handle_failure(id, %Req.Response{} = response, event, headers, data) do
@@ -72,11 +69,9 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
       subscription_id: data["subscription_id"]
     }
 
-    Repo.transact(fn ->
-      with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
-        {:ok, {attempt, event}}
-      end
-    end)
+    with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
+      {:ok, {attempt, event}}
+    end
     |> case do
       {:ok, {attempt, event}} ->
         Logger.info("Event failed: #{inspect(event.id)}")
@@ -102,11 +97,9 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
       subscription_id: data["subscription_id"]
     }
 
-    Repo.transact(fn ->
-      with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
-        {:ok, {attempt, event}}
-      end
-    end)
+    with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
+      {:ok, {attempt, event}}
+    end
     |> case do
       {:ok, {attempt, event}} ->
         Logger.info("Event failed: #{inspect(event.id)}")

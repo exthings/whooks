@@ -30,4 +30,8 @@ defmodule WhooksWeb.V1.EventJSON do
       consumer_id: event.consumer_id
     }
   end
+
+  defp data(event) do
+    event
+  end
 end

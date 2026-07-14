@@ -5,65 +5,60 @@ defmodule WhooksWorker.EventsWorker do
   alias Whooks.Events.Event
   alias Whooks.Subscriptions
   alias Whooks.Topics
-  alias Whooks.Topics.Topic
   alias Whooks.Repo
 
   require Logger
 
   def process(%Job{name: "create", data: data}) do
-    Logger.info("Create event: #{inspect(data)}")
+    Logger.info("[EventsWorker.create] creating: #{inspect(data)}")
 
-    event_data =
-      with {:ok, topic} <- get_topic(data["topic"], data["project_id"]) do
-        data |> Map.put("topic_id", topic.id)
-      end
-
-    with {:ok, event} <- insert_event(event_data),
+    with {:ok, topic} <- get_topic(data["topic"], data["project_id"]),
+         {:ok, event} <- insert_event(Map.put(data, "topic_id", topic.id)),
          {:ok, subscriptions} <- list_subscriptions(event),
          {:ok, flow} <- add_flow(event, subscriptions),
          {:ok, event} <- Events.update_to_processing(event) do
-      Logger.info("Flow added: #{inspect(flow)}")
+      Logger.info("[events.create] Flow added: #{inspect(flow)}")
       {:ok, %{event_id: event.id, status: event.status}}
     end
   end
 
   def process(%Job{name: "update_status", data: %{"id" => id}} = job) do
-    Logger.info("Update status event: #{inspect(id)}")
+    Logger.info("[EventsWorker.update_status] updating event id: #{inspect(id)}")
 
-    {:ok, children_values} = BullMQ.Job.get_children_values(job)
+    with {:ok, children_values} <- BullMQ.Job.get_children_values(job) do
+      delivery_results = Map.values(children_values)
+      total_deliveries = length(delivery_results)
 
-    delivery_results = Map.values(children_values)
-    total_deliveries = length(delivery_results)
+      failed_count =
+        Enum.count(delivery_results, fn
+          %{"status" => "success"} -> false
+          _ -> true
+        end)
 
-    event = Events.get_event!(id)
+      event = Events.get_event!(id)
 
-    failed_count =
-      Enum.count(delivery_results, fn
-        %{"status" => "success"} -> false
-        _ -> true
-      end)
-
-    cond do
-      failed_count == 0 ->
-        with {:ok, event} <- Events.update_to_success(event) do
-          {:ok, %{id: event.id}}
-        end
-
-      failed_count == total_deliveries ->
-        with {:ok, event} <- Events.update_to_failed(event) do
-          {:ok, %{id: event.id}}
-        end
-
-      true ->
-        with {:ok, event} <- Events.update_to_partial_success(event) do
-          {:ok, %{id: event.id}}
-        end
+      update_event_status(event, failed_count, total_deliveries)
     end
   end
 
   def process(%Job{name: name}) do
     {:error, "Unknown job type: #{name}"}
   end
+
+  defp update_event_status(event, 0, _total) do
+    event |> Events.update_to_success() |> format_status_result()
+  end
+
+  defp update_event_status(event, failed, total) when failed == total do
+    event |> Events.update_to_failed() |> format_status_result()
+  end
+
+  defp update_event_status(event, _failed, _total) do
+    event |> Events.update_to_partial_success() |> format_status_result()
+  end
+
+  defp format_status_result({:ok, event}), do: {:ok, %{id: event.id}}
+  defp format_status_result({:error, _} = error), do: error
 
   defp insert_event(attrs) do
     %Event{}
@@ -78,15 +73,18 @@ defmodule WhooksWorker.EventsWorker do
     )
   end
 
-  defp add_flow(%Event{} = event, subscription) do
+  defp add_flow(%Event{} = event, subscriptions) do
+    children = Enum.map(subscriptions, &build_delivery_attempt_job(&1, event))
+
     BullMQ.FlowProducer.add(
       %{
         queue_name: "events",
         name: "update_status",
-        data: %{
-          id: event.id
-        },
-        children: subscription |> Enum.map(&build_delivery_attempt_job(&1, event))
+        data: %{id: event.id},
+        children: children,
+        opts: %{
+          deduplication: %{id: event.id |> TypeID.to_string()}
+        }
       },
       connection: :bullmq_redis
     )
@@ -121,30 +119,20 @@ defmodule WhooksWorker.EventsWorker do
   end
 
   defp get_topic("topic_" <> _ = topic_id, project_id) do
-    with %Topic{} = topic <- Topics.get_by_id!(topic_id) do
-      (topic.project_id |> TypeID.to_string() ==
-         project_id)
-      |> case do
-        true ->
-          {:ok, topic}
+    topic = Topics.get_by_id!(topic_id)
 
-        false ->
-          {:error, :not_found}
-      end
+    if TypeID.to_string(topic.project_id) == project_id do
+      {:ok, topic}
+    else
+      {:error, :not_found}
     end
+  rescue
+    Ecto.NoResultsError -> {:error, :not_found}
   end
 
   defp get_topic(topic_name, project_id) do
-    with %Topic{} = topic <- Topics.get_by_name!(topic_name, project_id) do
-      (topic.project_id |> TypeID.to_string() ==
-         project_id)
-      |> case do
-        true ->
-          {:ok, topic}
-
-        false ->
-          {:error, :not_found}
-      end
-    end
+    {:ok, Topics.get_by_name!(topic_name, project_id)}
+  rescue
+    Ecto.NoResultsError -> {:error, :not_found}
   end
 end

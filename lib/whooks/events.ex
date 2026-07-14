@@ -159,29 +159,19 @@ defmodule Whooks.Events do
   """
   def get_event!(id), do: Repo.get!(Event, id)
 
-  @doc """
-  Creates a event.
-
-  ## Examples
-
-      iex> create_event(%{field: value})
-      {:ok, %Event{}}
-
-      iex> create_event(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_event(attrs) do
     Logger.info("Creating event: #{inspect(attrs)}")
 
-    event_data =
-      with {:ok, topic} <- get_topic(attrs["topic"], attrs["project_id"]) do
-        attrs |> Map.put("topic_id", topic.id)
-      end
+    event_id = Event.gen_id() |> TypeID.to_string()
+    attrs = Map.put(attrs, "id", event_id)
 
-    with {:ok, event} <- save_event(event_data),
-         {:ok, _} <- enqueue_event(event) do
-      {:ok, event}
+    with {:ok, job} <-
+           BullMQ.Queue.add("events", "create", attrs,
+             connection: :bullmq_redis,
+             deduplication: %{id: event_id}
+           ) do
+      Logger.info("BullMQ: queue 'events' with job 'create' added with id: #{inspect(job.id)}")
+      {:ok, %{id: event_id, job_id: job.id}}
     end
   end
 
@@ -226,6 +216,28 @@ defmodule Whooks.Events do
     |> Repo.update()
   end
 
+  def update_to_failed(%Event{} = event) do
+    event
+    |> Event.update_changeset(%{status: :failed})
+    |> Repo.update()
+  end
+
+  def update_to_failed(id) do
+    from(e in Event, where: e.id == ^id)
+    |> Repo.update_all(set: [status: :failed])
+  end
+
+  def update_to_partial_success(%Event{} = event) do
+    event
+    |> Event.update_changeset(%{status: :partial_success})
+    |> Repo.update()
+  end
+
+  def update_to_partial_success(id) do
+    from(e in Event, where: e.id == ^id)
+    |> Repo.update_all(set: [status: :partial_success])
+  end
+
   defp apply_filters(q, opts) do
     Enum.reduce(opts, q, fn
       {:consumer_id, consumer_id}, q ->
@@ -242,17 +254,14 @@ defmodule Whooks.Events do
     end)
   end
 
-  defp save_event(attrs) do
-    %Event{}
-    |> Event.create_changeset(attrs)
-    |> Repo.insert()
-  end
-
   def enqueue_event(%Event{} = event) do
     Logger.info("Enqueuing event: #{inspect(event.id)}")
 
     with {:ok, job} <-
-           BullMQ.Queue.add("events", "created", %{id: event.id}, connection: :bullmq_redis) do
+           BullMQ.Queue.add("events", "created", %{id: event.id},
+             connection: :bullmq_redis,
+             deduplication: %{id: event.id |> TypeID.to_string()}
+           ) do
       Logger.info("Job added: #{inspect(job.id)}")
 
       {:ok, event}
