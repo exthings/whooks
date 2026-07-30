@@ -32,7 +32,7 @@ defmodule WhooksWeb.UI.Admin.EventController do
   def resend(conn, params) do
     with :ok <- Bodyguard.permit(Events, :resend, conn.assigns.current_scope, []),
          {:ok, event} <- Events.get(params["id"], organization_id: params["organization_id"]) do
-      Events.enqueue_event(event)
+      Events.resend(event)
       |> case do
         {:ok, _} ->
           conn

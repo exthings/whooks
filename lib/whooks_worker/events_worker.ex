@@ -17,7 +17,17 @@ defmodule WhooksWorker.EventsWorker do
          {:ok, subscriptions} <- list_subscriptions(event),
          {:ok, _flow} <- add_flow(event, subscriptions),
          {:ok, event} <- Events.update_to_processing(event) do
-      # Logger.info("[EventsWorker.create] Flow added: #{inspect(flow)}")
+      {:ok, %{event_id: event.id, status: event.status}}
+    end
+  end
+
+  def process(%Job{name: "resend", data: data}) do
+    Logger.info("[EventsWorker.resend] resending: #{inspect(data)}")
+
+    with {:ok, event} <- Events.get(data["id"]),
+         {:ok, subscriptions} <- list_subscriptions(event),
+         {:ok, _flow} <- add_flow(event, subscriptions),
+         {:ok, event} <- Events.update_to_processing(event) do
       {:ok, %{event_id: event.id, status: event.status}}
     end
   end

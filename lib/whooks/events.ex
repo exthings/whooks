@@ -175,6 +175,16 @@ defmodule Whooks.Events do
     end
   end
 
+  def resend(%Event{} = event) do
+    Logger.info("Resending event: #{inspect(event)}")
+
+    with {:ok, job} <-
+           BullMQ.Queue.add("events", "resend", %{id: event.id}, connection: :bullmq_redis) do
+      Logger.info("[BullMQ] events.resend job added: #{inspect(job.id)}")
+      {:ok, %{id: event.id, job_id: job.id}}
+    end
+  end
+
   def update_to_scheduled(%Event{} = event) do
     event
     |> Event.update_changeset(%{status: :scheduled})
@@ -252,48 +262,6 @@ defmodule Whooks.Events do
       _, q ->
         q
     end)
-  end
-
-  def enqueue_event(%Event{} = event) do
-    Logger.info("Enqueuing event: #{inspect(event.id)}")
-
-    with {:ok, job} <-
-           BullMQ.Queue.add("events", "created", %{id: event.id},
-             connection: :bullmq_redis,
-             deduplication: %{id: event.id |> TypeID.to_string()}
-           ) do
-      Logger.info("Job added: #{inspect(job.id)}")
-
-      {:ok, event}
-    end
-  end
-
-  defp get_topic("topic_" <> _ = topic_id, project_id) do
-    with %Topic{} = topic <- Topics.get_by_id!(topic_id) do
-      (topic.project_id |> TypeID.to_string() ==
-         project_id)
-      |> case do
-        true ->
-          {:ok, topic}
-
-        false ->
-          {:error, :not_found}
-      end
-    end
-  end
-
-  defp get_topic(topic_name, project_id) do
-    with %Topic{} = topic <- Topics.get_by_name!(topic_name, project_id) do
-      (topic.project_id |> TypeID.to_string() ==
-         project_id)
-      |> case do
-        true ->
-          {:ok, topic}
-
-        false ->
-          {:error, :not_found}
-      end
-    end
   end
 
   def authorize(:get, %Scope{user: user}, _opts) do
