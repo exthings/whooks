@@ -226,7 +226,7 @@
             </Table.Body>
           </svelte:fragment>
           <Table.Body>
-            {#each table.getRowModel().rows as row (row.id)}
+            {#each table.getRowModel().rows as row (row.original.id)}
               <Table.Row data-state={row.getIsSelected() && "selected"}>
                 {#each row.getVisibleCells() as cell (cell.id)}
                   <Table.Cell class="[&:has([role=checkbox])]:ps-3">
