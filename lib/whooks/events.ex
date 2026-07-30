@@ -170,7 +170,7 @@ defmodule Whooks.Events do
              connection: :bullmq_redis,
              deduplication: %{id: event_id}
            ) do
-      Logger.info("BullMQ: queue 'events' with job 'create' added with id: #{inspect(job.id)}")
+      Logger.info("[BullMQ] events.create job added: #{inspect(job.id)}")
       {:ok, %{id: event_id, job_id: job.id}}
     end
   end

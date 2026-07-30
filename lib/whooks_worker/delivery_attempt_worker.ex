@@ -1,142 +1,64 @@
 defmodule WhooksWorker.DeliveryAttemptWorker do
   alias BullMQ.Job
 
-  alias Whooks.Sender
   alias Whooks.DeliveryAttempts
   alias Whooks.DeliveryAttempts.DeliveryAttempt
   alias Whooks.Events
-  alias Whooks.StandardWebhooks
   alias Whooks.Serializer
+  alias Whooks.Dispatcher.{Params, Result}
 
   require Logger
 
   def process(%Job{name: "attempt", data: data}) do
-    Logger.info("Processing event delivery_attempt: #{inspect(data)}")
+    Logger.info(
+      "[DeliveryAttemptWorker.attempt] Processing event delivery_attempt: #{inspect(data)}"
+    )
 
     event = Events.get_event!(data["event_id"])
-    id = DeliveryAttempt.gen_id()
     timestamp = DateTime.utc_now() |> DateTime.to_unix()
 
-    payload_data =
-      StandardWebhooks.build_body(data["topic"], timestamp, data["data"])
-      |> Jason.encode!()
+    dispatcher_module = Whooks.Dispatcher.get_dispatcher(:standard_webhooks)
 
-    headers = build_headers(event.id, timestamp, payload_data, data)
-    request = %{url: data["url"], data: payload_data, headers: headers}
+    dispatcher_module.dispatch(%Params{
+      event_id: data["event_id"],
+      topic: data["topic"],
+      timestamp: timestamp,
+      data: data["data"],
+      metadata: %{
+        url: data["url"],
+        secret: data["secret"]
+      }
+    })
+    |> case do
+      {:ok, %Result{} = result} ->
+        attempt_params =
+          dispatcher_module.result_to_attempt_params(result)
+          |> Map.put(:event_id, event.id)
+          |> Map.put(:subscription_id, data["subscription_id"])
 
-    with {:ok, response} <- Sender.post(request) do
-      handle_success(id, response, event, headers, data)
-    else
-      {:error, error} ->
-        handle_failure(id, error, event, headers, data)
+        with {:ok, %DeliveryAttempt{} = attempt} <-
+               DeliveryAttempts.create_success(attempt_params) do
+          Logger.info("Event sent successfully: #{inspect(event.id)}")
+          {:ok, Serializer.to_map(attempt)}
+        end
+
+      {:error, %Result{} = result} ->
+        Logger.info("[DeliveryAttemptWorker.attempt] delivery failed: #{inspect(result)}")
+
+        attempt_params =
+          dispatcher_module.result_to_attempt_params(result)
+          |> Map.put(:event_id, event.id)
+          |> Map.put(:subscription_id, data["subscription_id"])
+
+        with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
+          {:error, %{failed: true}}
+        else
+          _ -> {:error, %{failed: true}}
+        end
     end
   end
 
   def process(%Job{name: name}) do
     {:error, "Unknown job type: #{name}"}
   end
-
-  defp handle_success(id, %Req.Response{} = response, event, headers, data) do
-    attempt_params = %{
-      id: id,
-      req_headers: headers,
-      res_status: response.status,
-      res_body: parse_res_body(response.body),
-      res_headers: response.headers,
-      latency_ms: response.private[:latency_ms],
-      event_id: data["event_id"],
-      subscription_id: data["subscription_id"]
-    }
-
-    with {:ok, attempt} <- DeliveryAttempts.create_success(attempt_params) do
-      Logger.info("Event sent successfully: #{inspect(event.id)}")
-      {:ok, Serializer.to_map(attempt)}
-    end
-  end
-
-  defp handle_failure(id, %Req.Response{} = response, event, headers, data) do
-    Logger.info("Event attempt delivery failed: #{data["event_id"]}")
-    # Logger.info(Exception.message(error))
-
-    attempt_params = %{
-      id: id,
-      req_headers: headers,
-      res_status: response.status,
-      res_body: parse_res_body(response.body),
-      res_headers: response.headers,
-      latency_ms: response.private[:latency_ms],
-      event_id: data["event_id"],
-      subscription_id: data["subscription_id"]
-    }
-
-    with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
-      {:ok, {attempt, event}}
-    end
-    |> case do
-      {:ok, {attempt, event}} ->
-        Logger.info("Event failed: #{inspect(event.id)}")
-        Logger.info("Attempt failed: #{inspect(attempt.id)}")
-        {:error, response}
-
-      other ->
-        Logger.info("Unknown response type: #{inspect(other)}")
-        {:error, response}
-    end
-  end
-
-  defp handle_failure(id, error, event, headers, data) do
-    Logger.info("Event attempt delivery failed: #{data["event_id"]}")
-    # Logger.info(Exception.message(error))
-
-    attempt_params = %{
-      id: id,
-      req_headers: headers,
-      res_status: 500,
-      latency_ms: 0,
-      event_id: data["event_id"],
-      subscription_id: data["subscription_id"]
-    }
-
-    with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
-      {:ok, {attempt, event}}
-    end
-    |> case do
-      {:ok, {attempt, event}} ->
-        Logger.info("Event failed: #{inspect(event.id)}")
-        Logger.info("Attempt failed: #{inspect(attempt.id)}")
-        {:error, error}
-
-      other ->
-        Logger.info("Unknown response type: #{inspect(other)}")
-        {:error, other}
-    end
-  end
-
-  defp build_headers(id, timestamp, payload_data, data) do
-    id
-    |> TypeID.to_string()
-    |> build_standard_webhook_headers(timestamp, payload_data, data["secret"])
-    |> Map.merge(Map.get(data, "headers", %{}))
-  end
-
-  defp build_standard_webhook_headers(id, timestamp, payload, secret) do
-    Logger.info("Building standard webhook headers")
-
-    signature = StandardWebhooks.sign(id, timestamp, payload, secret)
-
-    %{
-      "webhook-id" => id,
-      "webhook-timestamp" => timestamp,
-      "webhook-signature" => signature
-    }
-  end
-
-  defp parse_res_body(body) when is_binary(body) do
-    case Jason.decode(body) do
-      {:ok, parsed} -> parsed
-      {:error, _} -> %{generic: body}
-    end
-  end
-
-  defp parse_res_body(body), do: body
 end

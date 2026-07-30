@@ -15,9 +15,9 @@ defmodule WhooksWorker.EventsWorker do
     with {:ok, topic} <- get_topic(data["topic"], data["project_id"]),
          {:ok, event} <- insert_event(Map.put(data, "topic_id", topic.id)),
          {:ok, subscriptions} <- list_subscriptions(event),
-         {:ok, flow} <- add_flow(event, subscriptions),
+         {:ok, _flow} <- add_flow(event, subscriptions),
          {:ok, event} <- Events.update_to_processing(event) do
-      Logger.info("[events.create] Flow added: #{inspect(flow)}")
+      # Logger.info("[EventsWorker.create] Flow added: #{inspect(flow)}")
       {:ok, %{event_id: event.id, status: event.status}}
     end
   end
@@ -25,19 +25,26 @@ defmodule WhooksWorker.EventsWorker do
   def process(%Job{name: "update_status", data: %{"id" => id}} = job) do
     Logger.info("[EventsWorker.update_status] updating event id: #{inspect(id)}")
 
-    with {:ok, children_values} <- BullMQ.Job.get_children_values(job) do
+    with {:ok, children_values} <- BullMQ.Job.get_children_values(job),
+         {:ok, ignored_failures} <- BullMQ.Job.get_ignored_children_failures(job),
+         {:ok, pending_count} <- BullMQ.Job.get_dependencies_count(job) do
       delivery_results = Map.values(children_values)
-      total_deliveries = length(delivery_results)
+      ignored_values = Map.values(ignored_failures)
+
+      completed_count = length(delivery_results)
+      ignored_count = length(ignored_values)
+      total = completed_count + ignored_count + pending_count
 
       failed_count =
         Enum.count(delivery_results, fn
           %{"status" => "success"} -> false
+          %{status: :success} -> false
           _ -> true
-        end)
+        end) + ignored_count
 
       event = Events.get_event!(id)
 
-      update_event_status(event, failed_count, total_deliveries)
+      update_event_status(event, failed_count, total)
     end
   end
 
@@ -45,15 +52,18 @@ defmodule WhooksWorker.EventsWorker do
     {:error, "Unknown job type: #{name}"}
   end
 
-  defp update_event_status(event, 0, _total) do
-    event |> Events.update_to_success() |> format_status_result()
-  end
-
-  defp update_event_status(event, failed, total) when failed == total do
+  defp update_event_status(event, failed, total) when total > 0 and failed >= total do
+    Logger.info("[EventsWorker.update_status] Event failed: #{inspect(event.id)}")
     event |> Events.update_to_failed() |> format_status_result()
   end
 
+  defp update_event_status(event, 0, _total) do
+    Logger.info("[EventsWorker.update_status] Event succeeded: #{inspect(event.id)}")
+    event |> Events.update_to_success() |> format_status_result()
+  end
+
   defp update_event_status(event, _failed, _total) do
+    Logger.info("[EventsWorker.update_status] Event partial success: #{inspect(event.id)}")
     event |> Events.update_to_partial_success() |> format_status_result()
   end
 
@@ -80,11 +90,9 @@ defmodule WhooksWorker.EventsWorker do
       %{
         queue_name: "events",
         name: "update_status",
-        data: %{id: event.id},
+        data: %{id: event.id |> TypeID.to_string()},
         children: children,
-        opts: %{
-          deduplication: %{id: event.id |> TypeID.to_string()}
-        }
+        opts: %{}
       },
       connection: :bullmq_redis
     )
@@ -94,14 +102,12 @@ defmodule WhooksWorker.EventsWorker do
          %Subscriptions.Subscription{} = subscription,
          %Events.Event{} = event
        ) do
-    id = "#{event.id}:#{subscription.id}"
-
     %{
       queue_name: "deliveries",
       name: "attempt",
       data: %{
-        event_id: event.id,
-        subscription_id: subscription.id,
+        event_id: event.id |> TypeID.to_string(),
+        subscription_id: subscription.id |> TypeID.to_string(),
         url: subscription.endpoint.url,
         headers: subscription.endpoint.headers,
         secret: subscription.endpoint.secret,
@@ -111,7 +117,6 @@ defmodule WhooksWorker.EventsWorker do
       opts: %{
         attempts: 3,
         backoff: %{type: :exponential, delay: 5_000},
-        deduplication: %{id: id},
         fail_parent_on_failure: false,
         ignore_dependency_on_failure: true
       }
