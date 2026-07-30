@@ -1,4 +1,4 @@
-import { paraglideVitePlugin } from "@inlang/paraglide-js";
+// import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
@@ -20,11 +20,11 @@ export default defineConfig(({ command }) => {
   return {
     // publicDir: "static",
     plugins: [
-      paraglideVitePlugin({
-        project: "./project.inlang",
-        outdir: "./js/paraglide",
-        strategy: ["preferredLanguage", "baseLocale"],
-      }),
+      // paraglideVitePlugin({
+      //   project: "./project.inlang",
+      //   outdir: "./js/paraglide",
+      //   strategy: ["preferredLanguage", "baseLocale"],
+      // }),
       svelte({
         compilerOptions: {
           css: "external",
