@@ -7,7 +7,7 @@ defmodule Whooks.Repo.Migrations.CreateEvents do
       add :uid, :string
       add :status, :string
       add :data, :map
-      add :tags, {:array, :string}
+      add :tags, :map
       add :metadata, :map
 
       add :topic_id,

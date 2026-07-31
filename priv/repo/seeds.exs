@@ -21,7 +21,7 @@ Logger.info("Root password: #{root_password}")
 
 if root_email && root_password do
   %Whooks.Auth.User{}
-  |> Whooks.Auth.User.create_changeset(%{
+  |> Whooks.Auth.User.full_changeset(%{
     email: root_email,
     password: root_password,
     role: "root"
