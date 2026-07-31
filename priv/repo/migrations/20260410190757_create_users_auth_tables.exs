@@ -21,7 +21,7 @@ defmodule Whooks.Repo.Migrations.CreateUsersAuthTables do
     create table(:users_tokens, primary_key: false) do
       add :id, :string, size: 90, primary_key: true
       add :user_id, references(:users, on_delete: :delete_all, type: :string), null: false
-      add :token, :binary, null: false
+      add :token, :binary, null: false, size: 64
       add :context, :string, null: false, size: 64
       add :sent_to, :string, size: 255
       add :authenticated_at, :utc_datetime
@@ -35,7 +35,7 @@ defmodule Whooks.Repo.Migrations.CreateUsersAuthTables do
     create table(:consumers_tokens, primary_key: false) do
       add :id, :string, size: 90, primary_key: true
       add :consumer_id, references(:consumers, on_delete: :delete_all, type: :string), null: false
-      add :token, :binary, null: false
+      add :token, :binary, null: false, size: 64
       add :context, :string, null: false, size: 64
       add :authenticated_at, :utc_datetime
 

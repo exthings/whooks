@@ -24,7 +24,7 @@ defmodule Whooks.Events.Event do
       default: :pending
 
     field :data, :map
-    field :tags, {:array, :string}
+    field :tags, {:array, :string}, default: []
     field :metadata, :map
 
     belongs_to :topic, Whooks.Topics.Topic
