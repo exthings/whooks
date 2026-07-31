@@ -29,8 +29,8 @@ defmodule Whooks.Projects.Project do
   @doc false
   def changeset(project, attrs) do
     project
-    |> cast(attrs, [:name, :metadata])
-    |> validate_required([:name])
+    |> cast(attrs, [:uid, :status, :name, :metadata, :organization_id])
+    |> validate_required([:name, :organization_id])
     |> foreign_key_constraint(:organization_id)
   end
 end

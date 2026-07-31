@@ -7,12 +7,18 @@ defmodule Whooks.ProjectsFixtures do
   @doc """
   Generate a project.
   """
+
+  require Logger
+
   def project_fixture(attrs \\ %{}) do
+    Logger.info("fixture  #{inspect(attrs)}")
+
     {:ok, project} =
       attrs
       |> Enum.into(%{
-        metadata: %{},
-        name: "some name"
+        organization_id: attrs[:organization_id],
+        name: "some name",
+        metadata: %{}
       })
       |> Whooks.Projects.create_project()
 
