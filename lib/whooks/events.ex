@@ -4,29 +4,25 @@ defmodule Whooks.Events do
   """
   @behaviour Bodyguard.Policy
 
+  use Nebulex.Caching
+
   import Ecto.Query, warn: false
+
   alias Whooks.Repo
-
   alias Whooks.Events.Event
-
   alias Whooks.Topics
   alias Whooks.Topics.Topic
   alias Whooks.Consumers.Consumer
   alias Whooks.Subscriptions.Subscription
   alias Whooks.DeliveryAttempts.DeliveryAttempt
   alias Whooks.Auth.Scope
+  alias Whooks.RedisCache
 
   require Logger
 
-  @doc """
-  Returns the list of events.
+  @idempotency_key_ttl :timer.hours(12)
+  @idempotency_key_prefix "event:idempotency:"
 
-  ## Examples
-
-      iex> list_events()
-      [%Event{}, ...]
-
-  """
   def list_events do
     Repo.all(Event)
   end
@@ -62,29 +58,6 @@ defmodule Whooks.Events do
     )
     |> Flop.validate_and_run(params, for: Event)
   end
-
-  # def get(id) do
-  #   from(e in Event,
-  #     where: e.id == ^id,
-  #     join: t in Topic,
-  #     on: e.topic_id == t.id,
-  #     join: p in Project,
-  #     on: e.project_id == p.id,
-  #     join: c in Consumer,
-  #     on: e.consumer_id == c.id,
-  #     join: d in DeliveryAttempt,
-  #     on: e.id == d.event_id,
-  #     preload: [:topic, :project, :consumer, :delivery_attempts]
-  #   )
-  #   |> Repo.one()
-  #   |> case do
-  #     nil ->
-  #       {:error, :not_found}
-
-  #     event ->
-  #       {:ok, event}
-  #   end
-  # end
 
   def get(id, opts \\ []) do
     from(e in Event,
@@ -143,20 +116,41 @@ defmodule Whooks.Events do
     |> Repo.one!()
   end
 
-  @doc """
-  Gets a single event.
+  @decorate cacheable(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
+  def get_by_uid(uid) do
+    from(e in Event,
+      where: e.uid == ^uid,
+      left_join: t in assoc(e, :topic),
+      as: :topic,
+      left_join: p in assoc(e, :project),
+      as: :project,
+      left_join: c in assoc(e, :consumer),
+      as: :consumer,
+      left_join: d in assoc(e, :delivery_attempts),
+      as: :delivery_attempt,
+      left_join: s in assoc(d, :subscription),
+      as: :subscription,
+      left_join: ep in assoc(s, :endpoint),
+      as: :endpoint,
+      order_by: [desc: d.inserted_at],
+      preload: [
+        topic: t,
+        project: p,
+        consumer: c,
+        delivery_attempts: {d, subscription: {s, endpoint: ep}}
+      ]
+    )
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      event -> {:ok, event}
+    end
+  end
 
-  Raises `Ecto.NoResultsError` if the Event does not exist.
-
-  ## Examples
-
-      iex> get_event!(123)
-      %Event{}
-
-      iex> get_event!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_event!(id), do: Repo.get!(Event, id)
 
   def create_event(attrs) do
@@ -165,13 +159,20 @@ defmodule Whooks.Events do
     event_id = Event.gen_id() |> TypeID.to_string()
     attrs = Map.put(attrs, "id", event_id)
 
-    with {:ok, job} <-
-           BullMQ.Queue.add("events", "create", attrs,
-             connection: :bullmq_redis,
-             deduplication: %{id: event_id}
-           ) do
-      Logger.info("[BullMQ] events.create job added: #{inspect(job.id)}")
-      {:ok, %{id: event_id, job_id: job.id}}
+    get_by_uid(attrs["uid"])
+    |> case do
+      {:ok, %Event{} = event} ->
+        {:ok, event}
+
+      {:error, :not_found} ->
+        with {:ok, job} <-
+               BullMQ.Queue.add("events", "create", attrs,
+                 connection: :bullmq_redis,
+                 deduplication: %{id: event_id}
+               ) do
+          Logger.info("[BullMQ] events.create job added: #{inspect(job.id)}")
+          {:ok, %{id: event_id, job_id: job.id}}
+        end
     end
   end
 
@@ -185,6 +186,11 @@ defmodule Whooks.Events do
     end
   end
 
+  @decorate cache_put(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
   def update_to_scheduled(%Event{} = event) do
     event
     |> Event.update_changeset(%{status: :scheduled})
@@ -196,56 +202,59 @@ defmodule Whooks.Events do
     |> Repo.update_all(set: [status: :scheduled])
   end
 
+  @decorate cache_put(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
   def update_to_processing(%Event{} = event) do
     event
     |> Event.update_changeset(%{status: :processing})
     |> Repo.update()
   end
 
-  def update_to_processing(id) do
-    from(e in Event, where: e.id == ^id)
-    |> Repo.update_all(set: [status: :processing])
-  end
-
+  @decorate cache_put(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
   def update_to_success(%Event{} = event) do
     event
     |> Event.update_changeset(%{status: :success})
     |> Repo.update()
   end
 
-  def update_to_success(id) do
-    Logger.info("update_to_success: #{inspect(id)}")
-
-    from(e in Event, where: e.id == ^id)
-    |> Repo.update_all(set: [status: :success])
-  end
-
+  @decorate cache_put(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
   def update_to_retry(%Event{} = event) do
     event
     |> Event.update_changeset(%{status: :retry})
     |> Repo.update()
   end
 
+  @decorate cache_put(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
   def update_to_failed(%Event{} = event) do
     event
     |> Event.update_changeset(%{status: :failed})
     |> Repo.update()
   end
 
-  def update_to_failed(id) do
-    from(e in Event, where: e.id == ^id)
-    |> Repo.update_all(set: [status: :failed])
-  end
-
+  @decorate cache_put(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
   def update_to_partial_success(%Event{} = event) do
     event
     |> Event.update_changeset(%{status: :partial_success})
     |> Repo.update()
-  end
-
-  def update_to_partial_success(id) do
-    from(e in Event, where: e.id == ^id)
-    |> Repo.update_all(set: [status: :partial_success])
   end
 
   defp apply_filters(q, opts) do
@@ -262,6 +271,18 @@ defmodule Whooks.Events do
       _, q ->
         q
     end)
+  end
+
+  defp cache_key_gen(%{args: args} = ctx) do
+    uid =
+      hd(args)
+      |> case do
+        id when is_binary(id) -> id
+        event when is_map(event) -> Map.get(event, :uid)
+        event when is_struct(event) -> event.uid
+      end
+
+    "#{@idempotency_key_prefix}#{uid}"
   end
 
   def authorize(:get, %Scope{user: user}, _opts) do
