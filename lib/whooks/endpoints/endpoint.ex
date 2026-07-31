@@ -16,7 +16,7 @@ defmodule Whooks.Endpoints.Endpoint do
   @foreign_key_type TypeID
   schema "endpoints" do
     field :uid, :string
-    field :status, :string
+    field :status, Ecto.Enum, values: [:enabled, :disabled], default: :enabled
     field :url, :string
     field :description, :string
     field :headers, :map
@@ -49,5 +49,16 @@ defmodule Whooks.Endpoints.Endpoint do
     |> unique_constraint(:uid)
     |> foreign_key_constraint(:consumer_id)
     |> foreign_key_constraint(:project_id)
+  end
+
+  def update_changeset(endpoint, attrs) do
+    endpoint
+    |> cast(attrs, [
+      :status,
+      :url,
+      :description,
+      :headers,
+      :metadata
+    ])
   end
 end
