@@ -7,7 +7,7 @@ defmodule Whooks.Repo.Migrations.CreateUsersAuthTables do
       add :external_id, :string, size: 64
       add :name, :string, size: 255
       add :email, :string, null: false, size: 255
-      add :role, :string, null: false, size: 32
+      add :role, :string, null: true, size: 32
       add :hashed_password, :string, size: 512
       add :confirmed_at, :utc_datetime
       add :disabled_at, :utc_datetime
