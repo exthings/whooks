@@ -6,7 +6,7 @@ defmodule Whooks.Auth do
   import Ecto.Query, warn: false
   alias Whooks.Repo
 
-  alias Whooks.Auth.{User, UserToken, ConsumerToken, UserNotifier}
+  alias Whooks.Auth.{User, AccessToken, UserNotifier}
   alias Whooks.Consumers.Consumer
 
   require Logger
@@ -78,7 +78,7 @@ defmodule Whooks.Auth do
   ## User registration
 
   @doc """
-  Registers a user.
+  Registers a user with name, email, password and optional role.
 
   ## Examples
 
@@ -91,7 +91,7 @@ defmodule Whooks.Auth do
   """
   def register_user(attrs, opts \\ []) do
     %User{}
-    |> User.full_changeset(attrs, opts)
+    |> User.register_changeset(attrs, opts)
     |> Repo.insert()
   end
 
@@ -146,11 +146,15 @@ defmodule Whooks.Auth do
     context = "change:#{user.email}"
 
     Repo.transact(fn ->
-      with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
-           %UserToken{sent_to: email} <- Repo.one(query),
+      with {:ok, query} <- AccessToken.verify_change_email_token_query(token, context),
+           %AccessToken{sent_to: email} <- Repo.one(query),
            {:ok, user} <- Repo.update(User.email_changeset(user, %{email: email})),
            {_count, _result} <-
-             Repo.delete_all(from(UserToken, where: [user_id: ^user.id, context: ^context])) do
+             Repo.delete_all(
+               from(AccessToken,
+                 where: [entity_id: ^TypeID.to_string(user.id), context: ^context]
+               )
+             ) do
         {:ok, user}
       else
         _ -> {:error, :transaction_aborted}
@@ -199,14 +203,17 @@ defmodule Whooks.Auth do
   Generates a session token.
   """
   def generate_user_session_token(user) do
-    {token, user_token} = UserToken.build_session_token(user)
+    {token, user_token} =
+      AccessToken.build_session_token(TypeID.to_string(user.id), :user, user.authenticated_at)
+
     Repo.insert!(user_token)
     token
   end
 
   def generate_consumer_session_token(consumer) do
-    Logger.info("Generating consumer session token for consumer: #{consumer.id}")
-    {token, consumer_token} = ConsumerToken.build_session_token(consumer)
+    {token, consumer_token} =
+      AccessToken.build_session_token(TypeID.to_string(consumer.id), :consumer)
+
     Repo.insert!(consumer_token)
     token
   end
@@ -217,24 +224,20 @@ defmodule Whooks.Auth do
   If the token is valid `{user, token_inserted_at}` is returned, otherwise `nil` is returned.
   """
   def get_user_by_session_token(token) do
-    {:ok, query} = UserToken.verify_session_token_query(token)
+    {:ok, query} = AccessToken.verify_user_session_token_query(token)
     Repo.one(query)
   end
 
-  def get_consumer_by_token(token) do
-    {:ok, query} = ConsumerToken.verify_session_token_query(token)
-    data = Repo.one(query)
-
-    Logger.info("Verifying consumer token: #{inspect(data)}")
-
-    data
+  def get_consumer_by_session_token(token) do
+    {:ok, query} = AccessToken.verify_consumer_session_token_query(token)
+    Repo.one(query)
   end
 
   @doc """
   Gets the user with the given magic link token.
   """
   def get_user_by_magic_link_token(token) do
-    with {:ok, query} <- UserToken.verify_magic_link_token_query(token),
+    with {:ok, query} <- AccessToken.verify_magic_link_token_query(token),
          {user, _token} <- Repo.one(query) do
       user
     else
@@ -261,7 +264,7 @@ defmodule Whooks.Auth do
      `mix help phx.gen.auth`.
   """
   def login_user_by_magic_link(token) do
-    {:ok, query} = UserToken.verify_magic_link_token_query(token)
+    {:ok, query} = AccessToken.verify_magic_link_token_query(token)
 
     case Repo.one(query) do
       # Prevent session fixation attacks by disallowing magic links for unconfirmed users with password
@@ -288,13 +291,13 @@ defmodule Whooks.Auth do
     end
   end
 
-  def login_consumer_by_token(token) do
-    {:ok, query} = ConsumerToken.verify_login_token_query(token)
+  def login_consumer_by_portal_link(token) do
+    {:ok, query} = AccessToken.verify_portal_link_token_query(token)
 
     case Repo.one(query) do
       {%Consumer{} = consumer, token} ->
         Repo.delete!(token)
-        {:ok, {consumer, []}}
+        {:ok, {consumer, token}}
 
       nil ->
         {:error, :not_found}
@@ -312,7 +315,7 @@ defmodule Whooks.Auth do
   """
   def deliver_user_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
       when is_function(update_email_url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
+    {encoded_token, user_token} = AccessToken.build_email_token(user, "change:#{current_email}")
 
     Repo.insert!(user_token)
     UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
@@ -323,13 +326,15 @@ defmodule Whooks.Auth do
   """
   def deliver_login_instructions(%User{} = user, magic_link_url_fun)
       when is_function(magic_link_url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+    {encoded_token, user_token} = AccessToken.build_email_token(user, "login")
     Repo.insert!(user_token)
     UserNotifier.deliver_login_instructions(user, magic_link_url_fun.(encoded_token))
   end
 
   def create_consumer_portal_link(%Consumer{} = consumer) do
-    {encoded_token, consumer_token} = ConsumerToken.build_token(consumer, "portal")
+    {encoded_token, consumer_token} =
+      AccessToken.build_consumer_portal_token(consumer, "consumer-portal")
+
     Repo.insert!(consumer_token)
     encoded_token
   end
@@ -338,7 +343,7 @@ defmodule Whooks.Auth do
   Deletes the signed token with the given context.
   """
   def delete_user_session_token(token) do
-    Repo.delete_all(from(UserToken, where: [token: ^token, context: "session"]))
+    Repo.delete_all(from(AccessToken, where: [token: ^token, context: "session"]))
     :ok
   end
 
@@ -347,9 +352,11 @@ defmodule Whooks.Auth do
   defp update_user_and_delete_all_tokens(changeset) do
     Repo.transact(fn ->
       with {:ok, user} <- Repo.update(changeset) do
-        tokens_to_expire = Repo.all_by(UserToken, user_id: user.id)
+        tokens_to_expire = Repo.all_by(AccessToken, entity_id: TypeID.to_string(user.id))
 
-        Repo.delete_all(from(t in UserToken, where: t.id in ^Enum.map(tokens_to_expire, & &1.id)))
+        Repo.delete_all(
+          from(t in AccessToken, where: t.id in ^Enum.map(tokens_to_expire, & &1.id))
+        )
 
         {:ok, {user, tokens_to_expire}}
       end

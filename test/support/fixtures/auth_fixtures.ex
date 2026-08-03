@@ -67,7 +67,7 @@ defmodule Whooks.AuthFixtures do
 
   def override_token_authenticated_at(token, authenticated_at) when is_binary(token) do
     Whooks.Repo.update_all(
-      from(t in Auth.UserToken,
+      from(t in Auth.AccessToken,
         where: t.token == ^token
       ),
       set: [authenticated_at: authenticated_at]
@@ -75,7 +75,7 @@ defmodule Whooks.AuthFixtures do
   end
 
   def generate_user_magic_link_token(user) do
-    {encoded_token, user_token} = Auth.UserToken.build_email_token(user, "login")
+    {encoded_token, user_token} = Auth.AccessToken.build_email_token(user, "login")
     Whooks.Repo.insert!(user_token)
     {encoded_token, user_token.token}
   end
@@ -84,7 +84,7 @@ defmodule Whooks.AuthFixtures do
     dt = DateTime.add(DateTime.utc_now(:second), amount_to_add, unit)
 
     Whooks.Repo.update_all(
-      from(ut in Auth.UserToken, where: ut.token == ^token),
+      from(ut in Auth.AccessToken, where: ut.token == ^token),
       set: [inserted_at: dt, authenticated_at: dt]
     )
   end

@@ -9,7 +9,7 @@ defmodule WhooksWeb.UI.Consumer.ConsumerSessionController do
   def confirm(conn, params) do
     Logger.info("Confirming consumer session for token: #{params["token"]}")
 
-    case Auth.login_consumer_by_token(params["token"]) do
+    case Auth.login_consumer_by_portal_link(params["token"]) do
       {:ok, {consumer, _expired_tokens}} ->
         conn
         |> Plugs.Auth.log_in_consumer(consumer, params)

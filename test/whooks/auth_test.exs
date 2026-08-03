@@ -3,8 +3,9 @@ defmodule Whooks.AuthTest do
 
   alias Whooks.Auth
 
+  import Whooks.ConsumersFixtures
   import Whooks.AuthFixtures
-  alias Whooks.Auth.{User, UserToken}
+  alias Whooks.Auth.{User, AccessToken}
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -125,8 +126,8 @@ defmodule Whooks.AuthTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
-      assert user_token.user_id == user.id
+      assert user_token = Repo.get_by(AccessToken, token: :crypto.hash(:sha256, token))
+      assert user_token.entity_id == TypeID.to_string(user.id)
       assert user_token.sent_to == user.email
       assert user_token.context == "change:current@example.com"
     end
@@ -150,7 +151,7 @@ defmodule Whooks.AuthTest do
       changed_user = Repo.get!(User, user.id)
       assert changed_user.email != user.email
       assert changed_user.email == email
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(AccessToken, entity_id: TypeID.to_string(user.id))
     end
 
     test "does not update email with invalid token", %{user: user} do
@@ -158,7 +159,7 @@ defmodule Whooks.AuthTest do
                {:error, :transaction_aborted}
 
       assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get_by(AccessToken, entity_id: TypeID.to_string(user.id))
     end
 
     test "does not update email if user email changed", %{user: user, token: token} do
@@ -166,17 +167,17 @@ defmodule Whooks.AuthTest do
                {:error, :transaction_aborted}
 
       assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get_by(AccessToken, entity_id: TypeID.to_string(user.id))
     end
 
     test "does not update email if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} = Repo.update_all(AccessToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
 
       assert Auth.update_user_email(user, token) ==
                {:error, :transaction_aborted}
 
       assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get_by(AccessToken, entity_id: TypeID.to_string(user.id))
     end
   end
 
@@ -248,7 +249,7 @@ defmodule Whooks.AuthTest do
           password: "new valid password"
         })
 
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(AccessToken, entity_id: TypeID.to_string(user.id))
     end
   end
 
@@ -259,15 +260,17 @@ defmodule Whooks.AuthTest do
 
     test "generates a token", %{user: user} do
       token = Auth.generate_user_session_token(user)
-      assert user_token = Repo.get_by(UserToken, token: token)
+      assert user_token = Repo.get_by(AccessToken, token: token)
       assert user_token.context == "session"
       assert user_token.authenticated_at != nil
+      assert user_token.entity_type == :user
 
       # Creating the same token for another user should fail
       assert_raise Ecto.ConstraintError, fn ->
-        Repo.insert!(%UserToken{
+        Repo.insert!(%AccessToken{
           token: user_token.token,
-          user_id: user_fixture().id,
+          entity_id: user_fixture().id |> TypeID.to_string(),
+          entity_type: :user,
           context: "session"
         })
       end
@@ -276,9 +279,23 @@ defmodule Whooks.AuthTest do
     test "duplicates the authenticated_at of given user in new token", %{user: user} do
       user = %{user | authenticated_at: DateTime.add(DateTime.utc_now(:second), -3600)}
       token = Auth.generate_user_session_token(user)
-      assert user_token = Repo.get_by(UserToken, token: token)
+      assert user_token = Repo.get_by(AccessToken, token: token)
       assert user_token.authenticated_at == user.authenticated_at
       assert DateTime.compare(user_token.inserted_at, user.authenticated_at) == :gt
+    end
+  end
+
+  describe "generate_consumer_session_token/1" do
+    setup do
+      %{consumer: consumer_fixture()}
+    end
+
+    test "generates a token", %{consumer: consumer} do
+      token = Auth.generate_consumer_session_token(consumer)
+      assert consumer_token = Repo.get_by(AccessToken, token: token)
+      assert consumer_token.context == "session"
+      assert consumer_token.authenticated_at != nil
+      assert consumer_token.entity_type == :consumer
     end
   end
 
@@ -302,8 +319,33 @@ defmodule Whooks.AuthTest do
 
     test "does not return user for expired token", %{token: token} do
       dt = ~N[2020-01-01 00:00:00]
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: dt, authenticated_at: dt])
+      {1, nil} = Repo.update_all(AccessToken, set: [inserted_at: dt, authenticated_at: dt])
       refute Auth.get_user_by_session_token(token)
+    end
+  end
+
+  describe "get_consumer_by_session_token/1" do
+    setup do
+      consumer = consumer_fixture()
+      token = Auth.generate_consumer_session_token(consumer)
+      %{consumer: consumer, token: token}
+    end
+
+    test "returns consumer by token", %{consumer: consumer, token: token} do
+      assert {session_consumer, token_inserted_at} = Auth.get_consumer_by_session_token(token)
+      assert session_consumer.id == consumer.id
+      # assert session_consumer.authenticated_at != nil
+      assert token_inserted_at != nil
+    end
+
+    test "does not return consumer for invalid token" do
+      refute Auth.get_consumer_by_session_token("oops")
+    end
+
+    test "does not return consumer for expired token", %{token: token} do
+      dt = ~N[2020-01-01 00:00:00]
+      {1, nil} = Repo.update_all(AccessToken, set: [inserted_at: dt, authenticated_at: dt])
+      refute Auth.get_consumer_by_session_token(token)
     end
   end
 
@@ -324,7 +366,7 @@ defmodule Whooks.AuthTest do
     end
 
     test "does not return user for expired token", %{token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} = Repo.update_all(AccessToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       refute Auth.get_user_by_magic_link_token(token)
     end
   end
@@ -361,6 +403,22 @@ defmodule Whooks.AuthTest do
     end
   end
 
+  describe "login_consumer_by_portal_link/1" do
+    test "confirms consumer and expires tokens" do
+      consumer = consumer_fixture()
+      encoded_token = Auth.create_consumer_portal_link(consumer)
+
+      assert {:ok, {consumer_portal, token}} =
+               Auth.login_consumer_by_portal_link(encoded_token)
+
+      assert consumer.id == consumer_portal.id
+      assert token.context == "consumer-portal"
+
+      assert {:error, :not_found} =
+               Auth.login_consumer_by_portal_link(encoded_token)
+    end
+  end
+
   describe "delete_user_session_token/1" do
     test "deletes the token" do
       user = user_fixture()
@@ -382,8 +440,8 @@ defmodule Whooks.AuthTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
-      assert user_token.user_id == user.id
+      assert user_token = Repo.get_by(AccessToken, token: :crypto.hash(:sha256, token))
+      assert user_token.entity_id == TypeID.to_string(user.id)
       assert user_token.sent_to == user.email
       assert user_token.context == "login"
     end
