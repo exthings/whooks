@@ -51,7 +51,7 @@ defmodule Whooks.EndpointsTest do
       assert Endpoints.get_endpoint!(endpoint.id) == endpoint
     end
 
-    test "create_endpoint/1 with valid data creates a endpoint", %{
+    test "create_endpoint/1 with valid and secret", %{
       consumer: consumer,
       project: project,
       topic: topic
@@ -77,7 +77,7 @@ defmodule Whooks.EndpointsTest do
       assert endpoint.uid == "fot2qfewgu57whtahnpnlq4s"
       assert endpoint.url == "some url"
       assert endpoint.headers == %{}
-      assert endpoint.secret == nil
+      assert String.starts_with?(endpoint.secret, "whsec_")
       assert endpoint.old_secrets == nil
     end
 

@@ -31,6 +31,26 @@ defmodule Whooks.Endpoints.Endpoint do
     timestamps(type: :utc_datetime)
   end
 
+  def create_changeset(endpoint, attrs) do
+    endpoint
+    |> cast(attrs, [
+      :uid,
+      :status,
+      :url,
+      :description,
+      :headers,
+      :metadata,
+      :project_id,
+      :consumer_id
+    ])
+    |> put_change(:secret, gen_secret())
+    |> cast_assoc(:subscriptions)
+    |> validate_required([:status, :url, :description, :project_id, :consumer_id])
+    |> unique_constraint(:uid)
+    |> foreign_key_constraint(:consumer_id)
+    |> foreign_key_constraint(:project_id)
+  end
+
   @doc false
   def changeset(endpoint, attrs) do
     endpoint
@@ -61,5 +81,9 @@ defmodule Whooks.Endpoints.Endpoint do
       :headers,
       :metadata
     ])
+  end
+
+  def gen_secret() do
+    TypeID.new("whsec") |> TypeID.to_string()
   end
 end

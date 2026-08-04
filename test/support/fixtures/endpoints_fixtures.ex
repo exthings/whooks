@@ -19,7 +19,6 @@ defmodule Whooks.EndpointsFixtures do
         headers: %{},
         metadata: %{},
         old_secrets: %{},
-        secret: "some secret",
         status: "enabled",
         url: "http://localhost:4001"
       })
