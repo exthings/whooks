@@ -42,7 +42,8 @@ defmodule Whooks.Endpoints.Endpoint do
       :headers,
       :metadata,
       :project_id,
-      :consumer_id
+      :consumer_id,
+      :secret
     ])
     |> cast_assoc(:subscriptions)
     |> validate_required([:status, :url, :description, :project_id, :consumer_id])
