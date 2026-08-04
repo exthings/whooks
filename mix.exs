@@ -76,7 +76,8 @@ defmodule Whooks.MixProject do
       {:req, "~> 0.5.17"},
       {:timescale, "~> 0.1.1"},
       {:swoosh, "~> 1.25"},
-      {:bodyguard, "~> 2.4"}
+      {:bodyguard, "~> 2.4"},
+      {:bypass, "~> 2.1", only: :test}
     ]
   end
 
