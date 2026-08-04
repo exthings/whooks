@@ -7,7 +7,13 @@ defmodule Whooks.Subscriptions do
   alias Whooks.Repo
 
   alias Whooks.Subscriptions.Subscription
-  alias Whooks.Endpoints.Endpoint
+  alias Whooks.Topics
+
+  require Logger
+
+  def get_subscription!(id) do
+    Repo.get!(Subscription, id)
+  end
 
   @doc """
   Returns the list of subscriptions.
@@ -69,9 +75,26 @@ defmodule Whooks.Subscriptions do
 
   """
   def create_subscription(attrs) do
-    %Subscription{}
-    |> Subscription.changeset(attrs)
-    |> Repo.insert()
+    topics = Map.get(attrs, :topics, [nil])
+
+    Repo.transact(fn ->
+      Enum.reduce_while(topics, [], fn topic, acc ->
+        %Subscription{}
+        |> Subscription.changeset(%{endpoint_id: attrs.endpoint_id, topic_id: topic})
+        |> Repo.insert()
+        |> case do
+          {:ok, subscription} ->
+            {:cont, [subscription | acc]}
+
+          {:error, changeset} ->
+            Repo.rollback(changeset)
+        end
+      end)
+      |> case do
+        data when is_list(data) -> {:ok, data}
+        error -> error
+      end
+    end)
   end
 
   @doc """
