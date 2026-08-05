@@ -12,11 +12,11 @@ defmodule WhooksWeb.V1.SubscriptionController do
   end
 
   def create(conn, %{"subscription" => subscription_params}) do
-    with {:ok, %Subscription{} = subscription} <-
+    with {:ok, subscription} <-
            Subscriptions.create_subscription(subscription_params) do
       conn
       |> put_status(:created)
-      |> render(:show, subscription: subscription)
+      |> render(:index, subscriptions: subscription)
     end
   end
 
