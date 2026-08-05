@@ -20,7 +20,7 @@ defmodule Whooks.ProjectsFixtures do
         name: "some name",
         metadata: %{}
       })
-      |> Whooks.Projects.create_project()
+      |> Whooks.Projects.create()
 
     project
   end

@@ -27,7 +27,7 @@ defmodule WhooksWeb.UI.Admin.OrganizationController do
 
     with :ok <- Bodyguard.permit(Organizations, :create, conn.assigns.current_scope, []),
          {:ok, %Organization{} = _organization} <-
-           Organizations.create_organization(params) do
+           Organizations.create(params) do
       conn
       |> put_flash(:info, "Organization created successfully")
       |> redirect(to: ~p"/ui/admin/home")

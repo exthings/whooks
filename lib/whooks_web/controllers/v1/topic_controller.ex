@@ -7,12 +7,12 @@ defmodule WhooksWeb.V1.TopicController do
   action_fallback WhooksWeb.FallbackController
 
   def index(conn, _params) do
-    topics = Topics.list_topics()
+    topics = Topics.list()
     render(conn, :index, topics: topics)
   end
 
   def create(conn, params) do
-    with {:ok, %Topic{} = topic} <- Topics.create_topic(params) do
+    with {:ok, %Topic{} = topic} <- Topics.create(params) do
       conn
       |> put_status(:created)
       |> render(:show, topic: topic)
@@ -20,7 +20,7 @@ defmodule WhooksWeb.V1.TopicController do
   end
 
   def show(conn, %{"id" => id}) do
-    topic = Topics.get_by_id!(id)
+    topic = Topics.get!(id)
     render(conn, :show, topic: topic)
   end
 end

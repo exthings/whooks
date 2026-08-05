@@ -1,7 +1,6 @@
 defmodule WhooksWeb.UI.Admin.ConsumerController do
   use WhooksWeb, :controller
 
-  alias Whooks.Common
   alias Whooks.Events
   alias Whooks.Consumers
   alias Whooks.Metrics
@@ -81,7 +80,7 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
 
   def create(conn, params) do
     with :ok <- Bodyguard.permit(Consumers, :create, conn.assigns.current_scope, []),
-         {:ok, consumer} <- Consumers.create_consumer(params) do
+         {:ok, consumer} <- Consumers.create(params) do
       conn
       |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/consumers/#{consumer.id}")
     else

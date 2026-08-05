@@ -7,7 +7,6 @@ defmodule Whooks.Subscriptions do
   alias Whooks.Repo
 
   alias Whooks.Subscriptions.Subscription
-  alias Whooks.Topics
 
   require Logger
 

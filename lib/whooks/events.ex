@@ -10,7 +10,6 @@ defmodule Whooks.Events do
 
   alias Whooks.Repo
   alias Whooks.Events.Event
-  alias Whooks.Topics
   alias Whooks.Topics.Topic
   alias Whooks.Consumers.Consumer
   alias Whooks.Subscriptions.Subscription

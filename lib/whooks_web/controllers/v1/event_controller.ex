@@ -2,7 +2,6 @@ defmodule WhooksWeb.V1.EventController do
   use WhooksWeb, :controller
 
   alias Whooks.Events
-  alias Whooks.Events.Event
 
   action_fallback WhooksWeb.FallbackController
 

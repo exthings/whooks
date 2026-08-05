@@ -15,7 +15,6 @@ defmodule WhooksWeb.UI.Auth.UserLoginController do
       conn
       |> put_flash(:info, "Welcome back!")
       |> Plugs.Auth.log_in_user(user, params)
-      |> redirect(to: ~p"/ui/admin/home")
     else
       conn
       |> put_flash(:error, "Invalid credentials.")

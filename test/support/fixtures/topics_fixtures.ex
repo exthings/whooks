@@ -17,7 +17,7 @@ defmodule Whooks.TopicsFixtures do
         status: "enabled",
         project_id: attrs[:project_id]
       })
-      |> Whooks.Topics.create_topic()
+      |> Whooks.Topics.create()
 
     topic
   end

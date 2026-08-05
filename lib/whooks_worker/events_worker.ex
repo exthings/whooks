@@ -5,7 +5,6 @@ defmodule WhooksWorker.EventsWorker do
   alias Whooks.Events.Event
   alias Whooks.Subscriptions
   alias Whooks.Topics
-  alias Whooks.Repo
 
   require Logger
 
@@ -128,7 +127,7 @@ defmodule WhooksWorker.EventsWorker do
   end
 
   defp get_topic("topic_" <> _ = topic_id, project_id) do
-    topic = Topics.get_by_id!(topic_id)
+    topic = Topics.get!(topic_id)
 
     if TypeID.to_string(topic.project_id) == project_id do
       {:ok, topic}

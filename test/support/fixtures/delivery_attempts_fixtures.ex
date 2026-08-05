@@ -4,7 +4,5 @@ defmodule Whooks.DeliveryAttemptsFixtures do
   entities via the `Whooks.DeliveryAttempts` context.
   """
 
-  @doc """
-  Generate a delivery_attempt.
-  """
+
 end

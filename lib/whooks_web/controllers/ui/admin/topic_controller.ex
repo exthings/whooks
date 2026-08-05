@@ -20,7 +20,7 @@ defmodule WhooksWeb.UI.Admin.TopicController do
 
     Logger.info("Create topic data: #{inspect(data)}")
 
-    with {:ok, %Topic{} = _topic} <- Topics.create_topic(data) do
+    with {:ok, %Topic{} = _topic} <- Topics.create(data) do
       conn
       |> put_flash(:info, "Topic created successfully")
       |> redirect(to: ~p"/ui/admin/projects/#{data.project_id}")

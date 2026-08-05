@@ -16,11 +16,11 @@ defmodule Whooks.Organizations do
 
   ## Examples
 
-      iex> list_organizations()
+      iex> list()
       [%Organization{}, ...]
 
   """
-  def list_organizations do
+  def list do
     Repo.all(Organization)
   end
 
@@ -36,28 +36,28 @@ defmodule Whooks.Organizations do
 
   ## Examples
 
-      iex> get_organization!(123)
+      iex> get!(123)
       %Organization{}
 
-      iex> get_organization!(456)
+      iex> get!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_organization!(id), do: Repo.get!(Organization, id)
+  def get!(id), do: Repo.get!(Organization, id)
 
   @doc """
   Creates a organization.
 
   ## Examples
 
-      iex> create_organization(%{field: value})
+      iex> create(%{field: value})
       {:ok, %Organization{}}
 
-      iex> create_organization(%{field: bad_value})
+      iex> create(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_organization(attrs) do
+  def create(attrs) do
     %Organization{}
     |> Organization.changeset(attrs)
     |> Repo.insert()
@@ -68,14 +68,14 @@ defmodule Whooks.Organizations do
 
   ## Examples
 
-      iex> update_organization(organization, %{field: new_value})
+      iex> update(organization, %{field: new_value})
       {:ok, %Organization{}}
 
-      iex> update_organization(organization, %{field: bad_value})
+      iex> update(organization, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_organization(%Organization{} = organization, attrs) do
+  def update(%Organization{} = organization, attrs) do
     organization
     |> Organization.changeset(attrs)
     |> Repo.update()
@@ -86,14 +86,14 @@ defmodule Whooks.Organizations do
 
   ## Examples
 
-      iex> delete_organization(organization)
+      iex> delete(organization)
       {:ok, %Organization{}}
 
-      iex> delete_organization(organization)
+      iex> delete(organization)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_organization(%Organization{} = organization) do
+  def delete(%Organization{} = organization) do
     Repo.delete(organization)
   end
 
@@ -102,11 +102,11 @@ defmodule Whooks.Organizations do
 
   ## Examples
 
-      iex> change_organization(organization)
+      iex> change(organization)
       %Ecto.Changeset{data: %Organization{}}
 
   """
-  def change_organization(%Organization{} = organization, attrs \\ %{}) do
+  def change(%Organization{} = organization, attrs \\ %{}) do
     Organization.changeset(organization, attrs)
   end
 

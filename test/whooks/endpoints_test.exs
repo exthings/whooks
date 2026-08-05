@@ -21,7 +21,7 @@ defmodule Whooks.EndpointsTest do
       %{org: org, consumer: consumer, project: project, topic: topic}
     end
 
-    test "list_endpoints/0 returns all endpoints", %{
+    test "list/0 returns all endpoints", %{
       consumer: consumer,
       project: project,
       topic: topic
@@ -33,10 +33,10 @@ defmodule Whooks.EndpointsTest do
           subscribe: [topic.name]
         })
 
-      assert Endpoints.list_endpoints() == [endpoint]
+      assert Endpoints.list() == [endpoint]
     end
 
-    test "get_endpoint!/1 returns the endpoint with given id", %{
+    test "get!/1 returns the endpoint with given id", %{
       consumer: consumer,
       project: project,
       topic: topic
@@ -48,10 +48,10 @@ defmodule Whooks.EndpointsTest do
           subscribe: [topic.name]
         })
 
-      assert Endpoints.get_endpoint!(endpoint.id) == endpoint
+      assert Endpoints.get!(endpoint.id) == endpoint
     end
 
-    test "create_endpoint/1 with valid and secret", %{
+    test "create/1 with valid and secret", %{
       consumer: consumer,
       project: project,
       topic: topic
@@ -70,7 +70,7 @@ defmodule Whooks.EndpointsTest do
         old_secrets: %{}
       }
 
-      assert {:ok, %Endpoint{} = endpoint} = Endpoints.create_endpoint(valid_attrs)
+      assert {:ok, %Endpoint{} = endpoint} = Endpoints.create(valid_attrs)
       assert endpoint.status == :enabled
       assert endpoint.description == "some description"
       assert endpoint.metadata == %{}
@@ -81,7 +81,7 @@ defmodule Whooks.EndpointsTest do
       assert endpoint.old_secrets == nil
     end
 
-    test "create_endpoint/1 with invalid data returns error changeset", %{
+    test "create/1 with invalid data returns error changeset", %{
       consumer: consumer,
       project: project,
       topic: topic
@@ -100,10 +100,10 @@ defmodule Whooks.EndpointsTest do
         old_secrets: nil
       }
 
-      assert {:error, %Ecto.Changeset{}} = Endpoints.create_endpoint(invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Endpoints.create(invalid_attrs)
     end
 
-    test "update_endpoint/2 with valid data updates the endpoint", %{
+    test "update/2 with valid data updates the endpoint", %{
       consumer: consumer,
       project: project,
       topic: topic
@@ -121,13 +121,13 @@ defmodule Whooks.EndpointsTest do
         metadata: %{"test" => "abc"}
       }
 
-      assert {:ok, %Endpoint{} = endpoint} = Endpoints.update_endpoint(endpoint, update_attrs)
+      assert {:ok, %Endpoint{} = endpoint} = Endpoints.update(endpoint, update_attrs)
       assert endpoint.status == :disabled
       assert endpoint.description == "some updated description"
       assert endpoint.metadata == %{"test" => "abc"}
     end
 
-    test "update_endpoint/2 with invalid data returns error changeset", %{
+    test "update/2 with invalid data returns error changeset", %{
       consumer: consumer,
       project: project,
       topic: topic
@@ -143,11 +143,11 @@ defmodule Whooks.EndpointsTest do
         status: "abc"
       }
 
-      assert {:error, %Ecto.Changeset{}} = Endpoints.update_endpoint(endpoint, invalid_attrs)
-      assert endpoint == Endpoints.get_endpoint!(endpoint.id)
+      assert {:error, %Ecto.Changeset{}} = Endpoints.update(endpoint, invalid_attrs)
+      assert endpoint == Endpoints.get!(endpoint.id)
     end
 
-    test "change_endpoint/1 returns a endpoint changeset", %{
+    test "change/1 returns a endpoint changeset", %{
       consumer: consumer,
       project: project,
       topic: topic
@@ -159,7 +159,7 @@ defmodule Whooks.EndpointsTest do
           subscribe: [topic.name]
         })
 
-      assert %Ecto.Changeset{} = Endpoints.change_endpoint(endpoint)
+      assert %Ecto.Changeset{} = Endpoints.change(endpoint)
     end
   end
 end
