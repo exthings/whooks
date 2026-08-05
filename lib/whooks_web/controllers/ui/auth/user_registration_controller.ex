@@ -31,7 +31,7 @@ defmodule WhooksWeb.UI.Auth.UserRegistrationController do
       {:error, changeset} ->
         conn
         |> assign_errors(changeset)
-        |> redirect(to: ~p"/ui/auth/register")
+        |> redirect(to: ~p"/ui/auth/registration")
     end
   end
 end

@@ -2,7 +2,6 @@ defmodule WhooksWeb.UI.Auth.UserLoginController do
   use WhooksWeb, :controller
 
   alias Whooks.Auth
-  alias Whooks.Auth.User
   alias WhooksWeb.Plugs
 
   def index(conn, _params) do

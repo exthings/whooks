@@ -29,7 +29,7 @@ defmodule Whooks.Application do
          queue: "events",
          connection: :bullmq_redis,
          processor: &WhooksWorker.EventsWorker.process/1,
-         concurrency: 5},
+         concurrency: 200},
         id: :events_worker
       ),
       Supervisor.child_spec(
@@ -38,7 +38,7 @@ defmodule Whooks.Application do
          queue: "deliveries",
          connection: :bullmq_redis,
          processor: &WhooksWorker.DeliveryAttemptWorker.process/1,
-         concurrency: 5},
+         concurrency: 200},
         id: :delivery_worker
       )
     ]

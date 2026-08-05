@@ -23,14 +23,14 @@ defmodule WhooksWeb.UI.Admin.TopicController do
     with {:ok, %Topic{} = _topic} <- Topics.create(data) do
       conn
       |> put_flash(:info, "Topic created successfully")
-      |> redirect(to: ~p"/ui/admin/projects/#{data.project_id}")
+      |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/projects/#{data.project_id}")
     else
       {:error, %Ecto.Changeset{} = changeset} ->
         Logger.info("Changeset: #{inspect(changeset)}")
 
         conn
         |> assign_errors(changeset)
-        |> redirect(to: ~p"/ui/admin/projects/#{data.project_id}")
+        |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/projects/#{data.project_id}")
     end
   end
 end

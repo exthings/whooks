@@ -3,7 +3,6 @@ defmodule Whooks.EventsTest do
   use ExUnit.Case, async: false
 
   alias Whooks.Events
-  alias Whooks.Events.Event
   import Whooks.OrganizationsFixtures
   import Whooks.ConsumersFixtures
   import Whooks.TopicsFixtures
@@ -32,19 +31,17 @@ defmodule Whooks.EventsTest do
   end
 
   describe "events" do
-    setup %{queue_events: queue_events, queue_deliveries: queue_deliveries, bypass: bypass} do
+    setup %{bypass: bypass} do
       org = organization_fixture()
       consumer = consumer_fixture(%{organization_id: org.id})
       project = project_fixture(%{organization_id: org.id})
       topic = topic_fixture(%{project_id: project.id})
 
-      res_data = %{status: "success"}
-
       endpoint =
         endpoint_fixture(%{
           consumer_id: consumer.id,
           project_id: project.id,
-          url: endpoint_url(5000),
+          url: endpoint_url(bypass.port),
           secret: "signsecret"
         })
 
@@ -62,14 +59,14 @@ defmodule Whooks.EventsTest do
     end
 
     test "list/2", data do
-      event =
+      _event =
         event_fixture(%{
           project_id: data.project.id,
           topic_id: data.topic.id,
           consumer_id: data.consumer.id
         })
 
-      assert {:ok, {[event], %Flop.Meta{} = metadata}} = Events.list(%{})
+      assert {:ok, {[_fetched_event], %Flop.Meta{} = _metadata}} = Events.list(%{})
     end
 
     test "get_by_uid/1", data do
@@ -80,7 +77,7 @@ defmodule Whooks.EventsTest do
           consumer_id: data.consumer.id
         })
 
-      assert {:ok, event} = Events.get_by_uid(event.uid)
+      assert {:ok, _fetched_event} = Events.get_by_uid(event.uid)
     end
 
     test "update_to_scheduled/1", data do
@@ -212,7 +209,7 @@ defmodule Whooks.EventsTest do
         ]
       }
 
-      assert {:ok, %{id: event_id, job_id: job_id}} = Events.create_event(valid_attrs)
+      assert {:ok, %{id: _event_id, job_id: job_id}} = Events.create_event(valid_attrs)
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
       assert_receive {:bullmq_event, :completed, %{"returnvalue" => delivery_return}}, 2000
 
@@ -240,7 +237,7 @@ defmodule Whooks.EventsTest do
         ]
       }
 
-      assert {:ok, %{id: event_id, job_id: job_id}} = Events.create_event(valid_attrs)
+      assert {:ok, %{id: _event_id, job_id: job_id}} = Events.create_event(valid_attrs)
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
       assert_receive {:bullmq_event, :completed, %{"returnvalue" => delivery_return}}, 2000
 

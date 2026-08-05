@@ -12,7 +12,7 @@ defmodule WhooksWeb.UI.Admin.HomeController do
 
     Plug.Conn.get_req_header(conn, "x-organization-id")
     |> case do
-      [organization_id] ->
+      [_organization_id] ->
         conn
         |> assign_prop(:organizations, %{
           data: Serializer.to_map(organizations),

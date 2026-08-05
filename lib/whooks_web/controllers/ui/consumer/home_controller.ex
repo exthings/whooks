@@ -3,7 +3,7 @@ defmodule WhooksWeb.UI.Consumer.HomeController do
 
   require Logger
 
-  def index(conn, params) do
+  def index(conn, _params) do
     conn
     |> render_inertia("consumers/home")
   end

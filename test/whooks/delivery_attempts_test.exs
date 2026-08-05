@@ -40,14 +40,6 @@ defmodule Whooks.DeliveryAttemptsTest do
   end
 
   describe "delivery_attempts" do
-    @invalid_attrs %{
-      status: nil,
-      req_headers: nil,
-      res_headers: nil,
-      res_status: nil,
-      latency_ms: nil
-    }
-
     setup data do
       event =
         event_fixture(%{

@@ -273,7 +273,7 @@ defmodule Whooks.Events do
     end)
   end
 
-  defp cache_key_gen(%{args: args} = ctx) do
+  defp cache_key_gen(%{args: args}) do
     Logger.info("args #{inspect(args)}")
 
     uid =

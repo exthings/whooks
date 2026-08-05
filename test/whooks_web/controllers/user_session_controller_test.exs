@@ -25,7 +25,7 @@ defmodule WhooksWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :access_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/ui/admin/home"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Welcome back!"
     end
 
@@ -40,7 +40,7 @@ defmodule WhooksWeb.UserSessionControllerTest do
         })
 
       assert conn.resp_cookies["_whooks_web_user_remember_me"]
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/ui/admin/home"
     end
 
     test "emits error message with invalid credentials", %{conn: conn, user: user} do

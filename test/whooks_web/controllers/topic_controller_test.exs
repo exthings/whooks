@@ -69,7 +69,10 @@ defmodule WhooksWeb.TopicControllerTest do
       assert %{
                "id" => ^id,
                "description" => "Transaction approved event",
-               "json_schema" => %{"properties" => %{"id" => %{"type" => "string"}}, "type" => "object"},
+               "json_schema" => %{
+                 "properties" => %{"id" => %{"type" => "string"}},
+                 "type" => "object"
+               },
                "name" => "transaction.approved",
                "status" => "enabled"
              } = json_response(conn, 200)["data"]

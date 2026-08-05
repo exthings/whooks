@@ -48,7 +48,7 @@ defmodule Whooks.Auth.User do
     |> validate_email(opts)
   end
 
-  def update_changeset(user, attrs, opts \\ []) do
+  def update_changeset(user, attrs, _opts \\ []) do
     user
     |> cast(attrs, [:name, :role])
   end

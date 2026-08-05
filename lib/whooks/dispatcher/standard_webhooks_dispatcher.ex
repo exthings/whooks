@@ -6,8 +6,6 @@ defmodule Whooks.Dispatcher.StandardWebhooksDispatcher do
 
   require Logger
 
-  @name :standard_webhooks
-
   @impl true
   def dispatch(%Params{} = params) do
     timestamp = DateTime.utc_now() |> DateTime.to_unix()

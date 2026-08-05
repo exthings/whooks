@@ -35,7 +35,9 @@ defmodule Whooks.OrganizationsTest do
       organization = organization_fixture()
       update_attrs = %{name: "some updated name"}
 
-      assert {:ok, %Organization{} = organization} = Organizations.update(organization, update_attrs)
+      assert {:ok, %Organization{} = organization} =
+               Organizations.update(organization, update_attrs)
+
       assert organization.name == "some updated name"
     end
 

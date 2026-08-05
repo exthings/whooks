@@ -32,7 +32,12 @@ defmodule WhooksWeb.EndpointControllerTest do
   end
 
   describe "create endpoint" do
-    test "renders endpoint when data is valid", %{conn: conn, project: project, consumer: consumer, topic: topic} do
+    test "renders endpoint when data is valid", %{
+      conn: conn,
+      project: project,
+      consumer: consumer,
+      topic: topic
+    } do
       create_attrs = %{
         consumer_id: consumer.id,
         project_id: project.id,
@@ -59,7 +64,12 @@ defmodule WhooksWeb.EndpointControllerTest do
              } = json_response(conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn, project: project, consumer: consumer, topic: topic} do
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      project: project,
+      consumer: consumer,
+      topic: topic
+    } do
       invalid_attrs = %{
         consumer_id: consumer.id,
         project_id: project.id,
