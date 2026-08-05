@@ -6,11 +6,13 @@ defmodule Whooks.TopicsTest do
   describe "topics" do
     alias Whooks.Topics.Topic
 
-    import Whooks.TopicsFixtures
+    import Whooks.OrganizationsFixtures
     import Whooks.ProjectsFixtures
+    import Whooks.TopicsFixtures
 
     setup do
-      project = project_fixture()
+      org = organization_fixture()
+      project = project_fixture(%{organization_id: org.id})
 
       %{project: project}
     end
