@@ -100,7 +100,7 @@ defmodule Whooks.DeliveryAttemptsTest do
       assert delivery_attempt.status == :failed
       assert delivery_attempt.req_headers == %{sample: "data"}
       assert delivery_attempt.res_headers == %{sample: "response"}
-      assert delivery_attempt.res_status == 200
+      assert delivery_attempt.res_status == 400
       assert delivery_attempt.res_body == %{sample: "response"}
       assert delivery_attempt.latency_ms == 50
     end
