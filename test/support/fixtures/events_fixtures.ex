@@ -16,12 +16,12 @@ defmodule Whooks.EventsFixtures do
     {:ok, event} =
       attrs
       |> Enum.into(%{
-        data: "some data",
-        metadata: %{},
-        tags: ["option1", "option2"],
-        uid: unique_event_uid()
+        uid: unique_event_uid(),
+        data: %{"name" => "event1"},
+        tags: ["tag1", "tag2"],
+        metadata: %{"meta" => "data"}
       })
-      |> Whooks.Events.create_event()
+      |> Whooks.Events.create()
 
     event
   end

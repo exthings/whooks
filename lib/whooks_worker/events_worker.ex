@@ -13,7 +13,7 @@ defmodule WhooksWorker.EventsWorker do
     Logger.info("[EventsWorker.create] creating: #{inspect(data)}")
 
     with {:ok, topic} <- get_topic(data["topic"], data["project_id"]),
-         {:ok, event} <- insert_event(Map.put(data, "topic_id", topic.id)),
+         {:ok, event} <- Events.create(Map.put(data, "topic_id", topic.id)),
          {:ok, subscriptions} <- list_subscriptions(event),
          {:ok, _flow} <- add_flow(event, subscriptions),
          {:ok, event} <- Events.update_to_processing(event) do
@@ -79,12 +79,6 @@ defmodule WhooksWorker.EventsWorker do
 
   defp format_status_result({:ok, event}), do: {:ok, %{id: event.id}}
   defp format_status_result({:error, _} = error), do: error
-
-  defp insert_event(attrs) do
-    %Event{}
-    |> Event.create_changeset(attrs)
-    |> Repo.insert()
-  end
 
   defp list_subscriptions(%Event{} = event) do
     Subscriptions.list_by_topic(event.topic_id,

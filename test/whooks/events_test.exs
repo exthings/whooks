@@ -31,7 +31,132 @@ defmodule Whooks.EventsTest do
     %{queue_events: queue_events, queue_deliveries: queue_deliveries, bypass: bypass}
   end
 
-  describe "events success to dispatch" do
+  describe "events" do
+    setup %{queue_events: queue_events, queue_deliveries: queue_deliveries, bypass: bypass} do
+      org = organization_fixture()
+      consumer = consumer_fixture(%{organization_id: org.id})
+      project = project_fixture(%{organization_id: org.id})
+      topic = topic_fixture(%{project_id: project.id})
+
+      res_data = %{status: "success"}
+
+      endpoint =
+        endpoint_fixture(%{
+          consumer_id: consumer.id,
+          project_id: project.id,
+          url: endpoint_url(5000),
+          secret: "signsecret"
+        })
+
+      [subscription] =
+        subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
+
+      %{
+        org: org,
+        consumer: consumer,
+        topic: topic,
+        endpoint: endpoint,
+        project: project,
+        subscription: subscription
+      }
+    end
+
+    test "list/2", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, {[event], %Flop.Meta{} = metadata}} = Events.list(%{})
+    end
+
+    test "get_by_uid/1", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, event} = Events.get_by_uid(event.uid)
+    end
+
+    test "update_to_scheduled/1", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, updated_event} = Events.update_to_scheduled(event)
+      assert updated_event.status == :scheduled
+    end
+
+    test "update_to_processing/1", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, updated_event} = Events.update_to_processing(event)
+      assert updated_event.status == :processing
+    end
+
+    test "update_to_success/1", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, updated_event} = Events.update_to_success(event)
+      assert updated_event.status == :success
+    end
+
+    test "update_to_retry/1", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, updated_event} = Events.update_to_retry(event)
+      assert updated_event.status == :retry
+    end
+
+    test "update_to_failed/1", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, updated_event} = Events.update_to_failed(event)
+      assert updated_event.status == :failed
+    end
+
+    test "update_to_partial_success/1", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, updated_event} = Events.update_to_partial_success(event)
+      assert updated_event.status == :partial_success
+    end
+  end
+
+  describe "events success dispatching" do
     setup %{queue_events: queue_events, queue_deliveries: queue_deliveries, bypass: bypass} do
       BullMQ.QueueEvents.subscribe(queue_events, self())
       BullMQ.QueueEvents.subscribe(queue_deliveries, self())
@@ -54,8 +179,6 @@ defmodule Whooks.EventsTest do
           url: endpoint_url(bypass.port),
           secret: "signsecret"
         })
-
-      Logger.info("Endpoint #{inspect(endpoint)}")
 
       [subscription] =
         subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
