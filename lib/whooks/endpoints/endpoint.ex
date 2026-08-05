@@ -16,7 +16,7 @@ defmodule Whooks.Endpoints.Endpoint do
   @foreign_key_type TypeID
   schema "endpoints" do
     field :uid, :string
-    field :status, :string
+    field :status, Ecto.Enum, values: [:enabled, :disabled], default: :enabled
     field :url, :string
     field :description, :string
     field :headers, :map
@@ -31,8 +31,7 @@ defmodule Whooks.Endpoints.Endpoint do
     timestamps(type: :utc_datetime)
   end
 
-  @doc false
-  def changeset(endpoint, attrs) do
+  def create_changeset(endpoint, attrs) do
     endpoint
     |> cast(attrs, [
       :uid,
@@ -44,10 +43,47 @@ defmodule Whooks.Endpoints.Endpoint do
       :project_id,
       :consumer_id
     ])
+    |> put_change(:secret, gen_secret())
     |> cast_assoc(:subscriptions)
     |> validate_required([:status, :url, :description, :project_id, :consumer_id])
     |> unique_constraint(:uid)
     |> foreign_key_constraint(:consumer_id)
     |> foreign_key_constraint(:project_id)
+  end
+
+  @doc false
+  def changeset(endpoint, attrs) do
+    endpoint
+    |> cast(attrs, [
+      :uid,
+      :status,
+      :url,
+      :description,
+      :headers,
+      :metadata,
+      :project_id,
+      :consumer_id,
+      :secret
+    ])
+    |> cast_assoc(:subscriptions)
+    |> validate_required([:status, :url, :description, :project_id, :consumer_id])
+    |> unique_constraint(:uid)
+    |> foreign_key_constraint(:consumer_id)
+    |> foreign_key_constraint(:project_id)
+  end
+
+  def update_changeset(endpoint, attrs) do
+    endpoint
+    |> cast(attrs, [
+      :status,
+      :url,
+      :description,
+      :headers,
+      :metadata
+    ])
+  end
+
+  def gen_secret() do
+    TypeID.new("whsec") |> TypeID.to_string()
   end
 end

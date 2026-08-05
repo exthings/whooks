@@ -176,6 +176,12 @@ defmodule Whooks.Events do
     end
   end
 
+  def create(attrs) do
+    %Event{}
+    |> Event.create_changeset(attrs)
+    |> Repo.insert()
+  end
+
   def resend(%Event{} = event) do
     Logger.info("Resending event: #{inspect(event)}")
 
@@ -195,11 +201,6 @@ defmodule Whooks.Events do
     event
     |> Event.update_changeset(%{status: :scheduled})
     |> Repo.update()
-  end
-
-  def update_to_scheduled(id) do
-    from(e in Event, where: e.id == ^id)
-    |> Repo.update_all(set: [status: :scheduled])
   end
 
   @decorate cache_put(
@@ -274,6 +275,8 @@ defmodule Whooks.Events do
   end
 
   defp cache_key_gen(%{args: args} = ctx) do
+    Logger.info("args #{inspect(args)}")
+
     uid =
       hd(args)
       |> case do

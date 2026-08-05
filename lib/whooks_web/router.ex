@@ -27,6 +27,7 @@ defmodule WhooksWeb.Router do
     resources "/topics", TopicController, only: [:index, :create, :show]
     resources "/endpoints", EndpointController, only: [:index, :create, :show]
     resources "/events", EventController, only: [:index, :create, :show]
+    resources "/subscriptions", SubscriptionController, only: [:index, :create, :show]
   end
 
   scope "/ui", WhooksWeb.UI do
@@ -94,31 +95,5 @@ defmodule WhooksWeb.Router do
 
       live_dashboard "/dashboard", metrics: WhooksWeb.Telemetry
     end
-  end
-
-  ## Authentication routes
-
-  scope "/", WhooksWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
-
-    get "/users/register", UserRegistrationController, :new
-    post "/users/register", UserRegistrationController, :create
-  end
-
-  scope "/", WhooksWeb do
-    pipe_through [:browser, :require_authenticated_user]
-
-    get "/users/settings", UserSettingsController, :edit
-    put "/users/settings", UserSettingsController, :update
-    get "/users/settings/confirm-email/:token", UserSettingsController, :confirm_email
-  end
-
-  scope "/", WhooksWeb do
-    pipe_through [:browser]
-
-    get "/users/log-in", UserSessionController, :new
-    get "/users/log-in/:token", UserSessionController, :confirm
-    post "/users/log-in", UserSessionController, :create
-    delete "/users/log-out", UserSessionController, :delete
   end
 end

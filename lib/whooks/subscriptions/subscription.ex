@@ -5,7 +5,7 @@ defmodule Whooks.Subscriptions.Subscription do
   @primary_key {:id, TypeID, autogenerate: true, prefix: "sub", type: :string}
   @foreign_key_type TypeID
   schema "subscriptions" do
-    field :status, :string
+    field :status, Ecto.Enum, values: [:enabled, :paused, :disabled], default: :enabled
 
     belongs_to :endpoint, Whooks.Endpoints.Endpoint
     belongs_to :topic, Whooks.Topics.Topic
@@ -19,7 +19,7 @@ defmodule Whooks.Subscriptions.Subscription do
     subscription
     |> cast(attrs, [:status, :endpoint_id, :topic_id])
     |> validate_required([:status, :topic_id])
-    |> assoc_constraint(:endpoint)
-    |> assoc_constraint(:topic)
+    |> foreign_key_constraint(:topic_id)
+    |> foreign_key_constraint(:endpoint_id)
   end
 end

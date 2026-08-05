@@ -13,7 +13,7 @@ defmodule WhooksWeb.Plugs.Auth do
   require Logger
 
   # Make the remember me cookie valid for 14 days. This should match
-  # the session validity setting in UserToken.
+  # the session validity setting in AccessToken.
   @max_cookie_age_in_days 14
   @remember_me_cookie "_whooks_web_user_remember_me"
   @remember_me_options [
@@ -38,10 +38,11 @@ defmodule WhooksWeb.Plugs.Auth do
   or falls back to the `signed_in_path/1`.
   """
   def log_in_user(conn, user, params \\ %{}) do
+    user_return_to = get_session(conn, :user_return_to)
+
     conn
     |> create_or_extend_session(user, params)
-
-    # |> redirect(to: user_return_to || signed_in_path(conn))
+    |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
   def log_in_consumer(conn, consumer, params \\ %{}) do
@@ -55,7 +56,7 @@ defmodule WhooksWeb.Plugs.Auth do
   It clears all session data for safety. See renew_session.
   """
   def log_out_user(conn) do
-    user_token = get_session(conn, :user_token)
+    user_token = get_session(conn, :access_token)
     user_token && Auth.delete_user_session_token(user_token)
 
     if live_socket_id = get_session(conn, :live_socket_id) do
@@ -91,7 +92,7 @@ defmodule WhooksWeb.Plugs.Auth do
     Logger.info("PLUG: fetching scope for consumer")
 
     with {token, conn} <- ensure_user_token(conn),
-         {consumer, _token_inserted_at} <- Auth.get_consumer_by_token(token) do
+         {consumer, _token_inserted_at} <- Auth.get_consumer_by_session_token(token) do
       conn
       |> assign(:current_scope, Scope.for_consumer(consumer))
       |> assign_prop(:current_scope, Whooks.Serializer.to_map(Scope.for_consumer(consumer)))
@@ -140,7 +141,7 @@ defmodule WhooksWeb.Plugs.Auth do
   end
 
   defp ensure_user_token(conn) do
-    if token = get_session(conn, :user_token) do
+    if token = get_session(conn, :access_token) do
       {token, conn}
     else
       conn = fetch_cookies(conn, signed: [@remember_me_cookie])
@@ -184,7 +185,7 @@ defmodule WhooksWeb.Plugs.Auth do
 
   defp create_or_extend_session(conn, %Consumer{} = consumer, params) do
     token = Auth.generate_consumer_session_token(consumer)
-    remember_me = get_session(conn, :user_remember_me)
+    remember_me = false
 
     conn
     |> renew_session(consumer)
@@ -237,7 +238,7 @@ defmodule WhooksWeb.Plugs.Auth do
   end
 
   defp put_token_in_session(conn, token) do
-    put_session(conn, :user_token, token)
+    put_session(conn, :access_token, token)
   end
 
   @doc """

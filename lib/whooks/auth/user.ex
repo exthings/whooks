@@ -12,7 +12,9 @@ defmodule Whooks.Auth.User do
     }
   }
 
-  @primary_key {:id, TypeID, autogenerate: true, prefix: "user", type: :string}
+  @prefix "user"
+
+  @primary_key {:id, TypeID, autogenerate: true, prefix: @prefix, type: :string}
   schema "users" do
     field :external_id, :string
     field :name, :string
@@ -26,6 +28,8 @@ defmodule Whooks.Auth.User do
 
     timestamps(type: :utc_datetime)
   end
+
+  def gen_id(), do: TypeID.new(@prefix)
 
   @doc """
   A user changeset for registering or changing the email.
@@ -51,11 +55,11 @@ defmodule Whooks.Auth.User do
 
   def create_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:name, :email, :password, :role])
+    |> cast(attrs, [:name, :email, :role])
     |> validate_email(opts)
   end
 
-  def full_changeset(user, attrs, opts \\ []) do
+  def register_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:name, :email, :password, :role])
     |> validate_email(opts)
@@ -70,6 +74,7 @@ defmodule Whooks.Auth.User do
         message: "must have the @ sign and no spaces"
       )
       |> validate_length(:email, max: 160)
+      |> update_change(:email, &String.downcase/1)
 
     if Keyword.get(opts, :validate_unique, true) do
       changeset

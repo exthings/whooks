@@ -99,7 +99,7 @@ defmodule Whooks.Dispatcher.StandardWebhooksDispatcher do
 
   defp handle_response({:ok, %Req.Response{status: status} = response})
        when status >= 300 do
-    {:error, Result.failed(response)}
+    {:error, Result.failed(status, response)}
   end
 
   defp handle_response({:error, %Req.TransportError{reason: reason}}) do

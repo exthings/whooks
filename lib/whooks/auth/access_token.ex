@@ -1,7 +1,7 @@
-defmodule Whooks.Auth.UserToken do
+defmodule Whooks.Auth.AccessToken do
   use Ecto.Schema
   import Ecto.Query
-  alias Whooks.Auth.UserToken
+  alias Whooks.Auth.AccessToken
 
   @hash_algorithm :sha256
   @rand_size 32
@@ -12,14 +12,29 @@ defmodule Whooks.Auth.UserToken do
   @change_email_validity_in_days 7
   @session_validity_in_days 14
 
-  @primary_key {:id, TypeID, autogenerate: true, prefix: "usertoken", type: :string}
+  @primary_key {:id, TypeID, autogenerate: true, prefix: "token", type: :string}
   @foreign_key_type TypeID
-  schema "users_tokens" do
+  schema "access_tokens" do
     field :token, :binary
+    field :entity_id, :string
+    field :entity_type, Ecto.Enum, values: [:user, :consumer]
     field :context, :string
     field :sent_to, :string
     field :authenticated_at, :utc_datetime
-    belongs_to :user, Whooks.Auth.User
+
+    belongs_to :user, Whooks.Auth.User,
+      foreign_key: :entity_id,
+      references: :id,
+      type: :string,
+      define_field: false
+
+    belongs_to :consumer, Whooks.Consumers.Consumer,
+      foreign_key: :entity_id,
+      references: :id,
+      type: :string,
+      define_field: false
+
+    field :entity, :any, virtual: true
 
     timestamps(type: :utc_datetime, updated_at: false)
   end
@@ -43,10 +58,18 @@ defmodule Whooks.Auth.UserToken do
   and devices in the UI and allow users to explicitly expire any
   session they deem invalid.
   """
-  def build_session_token(user) do
+  def build_session_token(id, entity_type, authenticated_at \\ nil) do
     token = :crypto.strong_rand_bytes(@rand_size)
-    dt = user.authenticated_at || DateTime.utc_now(:second)
-    {token, %UserToken{token: token, context: "session", user_id: user.id, authenticated_at: dt}}
+    dt = authenticated_at || DateTime.utc_now(:second)
+
+    {token,
+     %AccessToken{
+       token: token,
+       context: "session",
+       entity_id: id,
+       entity_type: entity_type,
+       authenticated_at: dt
+     }}
   end
 
   @doc """
@@ -57,12 +80,22 @@ defmodule Whooks.Auth.UserToken do
   The token is valid if it matches the value in the database and it has
   not expired (after @session_validity_in_days).
   """
-  def verify_session_token_query(token) do
+  def verify_user_session_token_query(token) do
     query =
       from token in by_token_and_context_query(token, "session"),
         join: user in assoc(token, :user),
         where: token.inserted_at > ago(@session_validity_in_days, "day"),
         select: {%{user | authenticated_at: token.authenticated_at}, token.inserted_at}
+
+    {:ok, query}
+  end
+
+  def verify_consumer_session_token_query(token) do
+    query =
+      from token in by_token_and_context_query(token, "session"),
+        join: consumer in assoc(token, :consumer),
+        where: token.inserted_at > ago(@session_validity_in_days, "day"),
+        select: {%{consumer | authenticated_at: token.authenticated_at}, token.inserted_at}
 
     {:ok, query}
   end
@@ -81,19 +114,38 @@ defmodule Whooks.Auth.UserToken do
   for example, by phone numbers.
   """
   def build_email_token(user, context) do
-    build_hashed_token(user, context, user.email)
+    build_hashed_token(TypeID.to_string(user.id), :user, context, sent_to: user.email)
   end
 
-  defp build_hashed_token(user, context, sent_to) do
+  def build_consumer_portal_token(consumer, context) do
+    build_hashed_token(TypeID.to_string(consumer.id), :consumer, context)
+  end
+
+  defp build_hashed_token(entity_id, entity_type, context, opts \\ []) do
     token = :crypto.strong_rand_bytes(@rand_size)
     hashed_token = :crypto.hash(@hash_algorithm, token)
 
     {Base.url_encode64(token, padding: false),
-     %UserToken{
+     %AccessToken{
        token: hashed_token,
        context: context,
-       sent_to: sent_to,
-       user_id: user.id
+       sent_to: Keyword.get(opts, :sent_to),
+       entity_id: entity_id,
+       entity_type: entity_type
+     }}
+  end
+
+  def build_session_token2(id, entity_type, authenticated_at \\ nil) do
+    token = :crypto.strong_rand_bytes(@rand_size)
+    dt = authenticated_at || DateTime.utc_now(:second)
+
+    {token,
+     %AccessToken{
+       token: token,
+       context: "session",
+       entity_id: id,
+       entity_type: entity_type,
+       authenticated_at: dt
      }}
   end
 
@@ -117,6 +169,33 @@ defmodule Whooks.Auth.UserToken do
             where: token.inserted_at > ago(^@magic_link_validity_in_minutes, "minute"),
             where: token.sent_to == user.email,
             select: {user, token}
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
+  @doc """
+  Checks if the token is valid and returns its underlying lookup query.
+
+  If found, the query returns a tuple of the form `{user, token}`.
+
+  The given token is valid if it matches its hashed counterpart in the
+  database. This function also checks whether the token has expired. The context
+  of a magic link token is always "login".
+  """
+  def verify_portal_link_token_query(token) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
+
+        query =
+          from token in by_token_and_context_query(hashed_token, "consumer-portal"),
+            join: consumer in assoc(token, :consumer),
+            where: token.inserted_at > ago(^@magic_link_validity_in_minutes, "minute"),
+            select: {consumer, token}
 
         {:ok, query}
 
@@ -153,6 +232,14 @@ defmodule Whooks.Auth.UserToken do
   end
 
   defp by_token_and_context_query(token, context) do
-    from UserToken, where: [token: ^token, context: ^context]
+    from AccessToken, where: [token: ^token, context: ^context]
+  end
+
+  defp id_to_string(id) when is_binary(id) do
+    id
+  end
+
+  defp id_to_string(id) do
+    TypeID.to_string(id)
   end
 end

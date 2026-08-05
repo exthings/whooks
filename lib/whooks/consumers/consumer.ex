@@ -18,6 +18,7 @@ defmodule Whooks.Consumers.Consumer do
     field :uid, :string
     field :name, :string
     field :metadata, :map
+    field :authenticated_at, :utc_datetime, virtual: true
 
     belongs_to :organization, Whooks.Organizations.Organization
     has_many :endpoints, Whooks.Endpoints.Endpoint

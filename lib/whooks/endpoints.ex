@@ -13,7 +13,6 @@ defmodule Whooks.Endpoints do
   alias Whooks.Topics.Topic
   alias Whooks.Common
   alias Whooks.Endpoints.Endpoint
-  alias Whooks.Endpoints.Payloads.CreateEndpoint
   alias Whooks.Subscriptions.Subscription
   alias Whooks.Auth.Scope
 
@@ -81,28 +80,30 @@ defmodule Whooks.Endpoints do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_endpoint(%CreateEndpoint{} = payload) do
-    with {:ok, topics} <- Topics.list_topics_by_names(payload.subscribe, payload.project_id) do
+  def create_endpoint(attrs) do
+    attrs = if is_struct(attrs), do: Map.from_struct(attrs), else: attrs
+
+    if Map.has_key?(attrs, :subscribe) and not is_nil(attrs[:subscribe]) do
+      with {:ok, topics} <- Topics.list_topics_by_names(attrs.subscribe, attrs.project_id) do
+        %Endpoint{}
+        |> Endpoint.create_changeset(
+          Enum.into(attrs, %{
+            subscriptions:
+              Enum.map(topics, fn %Topic{} = topic ->
+                %{
+                  topic_id: topic.id,
+                  status: "enabled"
+                }
+              end)
+          })
+        )
+        |> Repo.insert()
+        |> Common.Ecto.preload(subscriptions: :topic)
+      end
+    else
       %Endpoint{}
-      |> Endpoint.changeset(%{
-        uid: payload.uid,
-        status: payload.status,
-        url: payload.url,
-        description: payload.description,
-        headers: payload.headers,
-        metadata: payload.metadata,
-        consumer_id: payload.consumer_id,
-        project_id: payload.project_id,
-        subscriptions:
-          Enum.map(topics, fn %Topic{} = topic ->
-            %{
-              topic_id: topic.id,
-              status: "enabled"
-            }
-          end)
-      })
+      |> Endpoint.changeset(attrs)
       |> Repo.insert()
-      |> Common.Ecto.preload(subscriptions: :topic)
     end
   end
 
@@ -120,7 +121,7 @@ defmodule Whooks.Endpoints do
   """
   def update_endpoint(%Endpoint{} = endpoint, attrs) do
     endpoint
-    |> Endpoint.changeset(attrs)
+    |> Endpoint.update_changeset(attrs)
     |> Repo.update()
   end
 
