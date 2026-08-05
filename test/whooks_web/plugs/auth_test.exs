@@ -6,6 +6,7 @@ defmodule WhooksWeb.Plugs.AuthTest do
   alias WhooksWeb.Plugs
 
   import Whooks.AuthFixtures
+  import Whooks.ConsumersFixtures
 
   @remember_me_cookie "_whooks_web_user_remember_me"
   @remember_me_cookie_max_age 60 * 60 * 24 * 14
@@ -95,6 +96,16 @@ defmodule WhooksWeb.Plugs.AuthTest do
     end
   end
 
+  describe "log_in_consumer/3" do
+    test "stores the consumer token in the session", %{conn: conn} do
+      consumer = consumer_fixture()
+      conn = Plugs.Auth.log_in_consumer(conn, consumer)
+      assert token = get_session(conn, :access_token)
+      assert {retrieved_consumer, _token_inserted_at} = Auth.get_consumer_by_session_token(token)
+      assert retrieved_consumer.id == consumer.id
+    end
+  end
+
   describe "logout_user/1" do
     test "erases session and cookies", %{conn: conn, user: user} do
       user_token = Auth.generate_user_session_token(user)
@@ -117,6 +128,20 @@ defmodule WhooksWeb.Plugs.AuthTest do
       conn = conn |> fetch_cookies() |> Plugs.Auth.log_out_user()
       refute get_session(conn, :access_token)
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
+      assert redirected_to(conn) == ~p"/ui/auth/login"
+    end
+
+    test "broadcasts disconnect event when live_socket_id is set in session", %{conn: conn} do
+      live_socket_id = "users_sessions:123"
+      WhooksWeb.Endpoint.subscribe(live_socket_id)
+
+      conn =
+        conn
+        |> put_session(:live_socket_id, live_socket_id)
+        |> fetch_cookies()
+        |> Plugs.Auth.log_out_user()
+
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^live_socket_id, event: "disconnect"}
       assert redirected_to(conn) == ~p"/ui/auth/login"
     end
   end
@@ -184,6 +209,89 @@ defmodule WhooksWeb.Plugs.AuthTest do
       assert %{value: new_signed_token, max_age: max_age} = conn.resp_cookies[@remember_me_cookie]
       assert new_signed_token != signed_token
       assert max_age == @remember_me_cookie_max_age
+    end
+
+    test "assigns nil scope when session token is invalid", %{conn: conn} do
+      conn =
+        conn
+        |> put_session(:access_token, "invalid_user_token")
+        |> Plugs.Auth.fetch_current_scope_for_user([])
+
+      refute conn.assigns.current_scope
+    end
+  end
+
+  describe "fetch_current_scope_for_consumer/2" do
+    test "authenticates consumer from session", %{conn: conn} do
+      consumer = consumer_fixture()
+      consumer_token = Auth.generate_consumer_session_token(consumer)
+
+      conn =
+        conn
+        |> put_session(:access_token, consumer_token)
+        |> Plugs.Auth.fetch_current_scope_for_consumer([])
+
+      assert conn.assigns.current_scope.consumer.id == consumer.id
+      assert get_session(conn, :access_token) == consumer_token
+    end
+
+    test "assigns nil scope when token is missing or invalid", %{conn: conn} do
+      conn =
+        conn
+        |> put_session(:access_token, "invalid_consumer_token")
+        |> Plugs.Auth.fetch_current_scope_for_consumer([])
+
+      refute conn.assigns.current_scope
+    end
+  end
+
+  describe "require_api_key/2" do
+    setup do
+      api_key = System.get_env("API_KEY") || "test_api_key_value"
+      System.put_env("API_KEY", api_key)
+      %{api_key: api_key}
+    end
+
+    test "authenticates when valid bearer token is provided", %{conn: conn, api_key: api_key} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> api_key)
+        |> Plugs.Auth.require_api_key([])
+
+      refute conn.halted
+      assert conn.assigns.current_scope.user.email == Auth.build_root_user().email
+    end
+
+    test "returns 401 unauthorized when authorization header is missing", %{conn: conn} do
+      conn = Plugs.Auth.require_api_key(conn, [])
+      assert conn.halted
+      assert conn.status == 401
+      assert json_response(conn, 401) == %{"error" => "Unauthorized"}
+    end
+
+    test "returns 401 unauthorized when authorization header is not Bearer", %{
+      conn: conn,
+      api_key: api_key
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Basic " <> api_key)
+        |> Plugs.Auth.require_api_key([])
+
+      assert conn.halted
+      assert conn.status == 401
+      assert json_response(conn, 401) == %{"error" => "Unauthorized"}
+    end
+
+    test "returns 401 unauthorized when API key does not match env", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer wrong_api_key")
+        |> Plugs.Auth.require_api_key([])
+
+      assert conn.halted
+      assert conn.status == 401
+      assert json_response(conn, 401) == %{"error" => "Unauthorized"}
     end
   end
 
