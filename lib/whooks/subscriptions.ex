@@ -75,12 +75,14 @@ defmodule Whooks.Subscriptions do
 
   """
   def create_subscription(attrs) do
-    topics = Map.get(attrs, :topics, [nil])
+    endpoint_id = Map.get(attrs, :endpoint_id) || Map.get(attrs, "endpoint_id")
+    topics = Map.get(attrs, :topics) || Map.get(attrs, "topics")
+    topics = if is_nil(topics), do: [Map.get(attrs, :topic_id) || Map.get(attrs, "topic_id")], else: List.wrap(topics)
 
     Repo.transact(fn ->
       Enum.reduce_while(topics, [], fn topic, acc ->
         %Subscription{}
-        |> Subscription.changeset(%{endpoint_id: attrs.endpoint_id, topic_id: topic})
+        |> Subscription.changeset(%{endpoint_id: endpoint_id, topic_id: topic, status: Map.get(attrs, :status) || Map.get(attrs, "status") || "enabled"})
         |> Repo.insert()
         |> case do
           {:ok, subscription} ->
@@ -91,6 +93,7 @@ defmodule Whooks.Subscriptions do
         end
       end)
       |> case do
+        [subscription] -> {:ok, subscription}
         data when is_list(data) -> {:ok, data}
         error -> error
       end
