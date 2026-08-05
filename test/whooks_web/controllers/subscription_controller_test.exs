@@ -36,7 +36,11 @@ defmodule WhooksWeb.SubscriptionControllerTest do
   end
 
   describe "create subscription" do
-    test "renders subscription when data is valid", %{conn: conn, topic: topic, endpoint: endpoint} do
+    test "renders subscription when data is valid", %{
+      conn: conn,
+      topic: topic,
+      endpoint: endpoint
+    } do
       create_attrs = %{
         status: "enabled",
         topic_id: topic.id,
@@ -44,14 +48,15 @@ defmodule WhooksWeb.SubscriptionControllerTest do
       }
 
       conn = post(conn, ~p"/v1/subscriptions", subscription: create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      assert [%{"id" => id}] = json_response(conn, 201)["data"]
 
       conn = get(conn, ~p"/v1/subscriptions/#{id}")
 
       assert %{
                "id" => ^id,
                "status" => "enabled"
-             } = json_response(conn, 200)["data"]
+             } =
+               json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -75,7 +80,8 @@ defmodule WhooksWeb.SubscriptionControllerTest do
   end
 
   defp create_subscription(%{topic: topic, endpoint: endpoint}) do
-    subscription = subscription_fixture(%{topic_id: topic.id, endpoint_id: endpoint.id, status: "enabled"})
+    [subscription] =
+      subscription_fixture(%{topic_id: topic.id, endpoint_id: endpoint.id, status: "enabled"})
 
     %{subscription: subscription}
   end

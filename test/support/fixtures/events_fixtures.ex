@@ -17,6 +17,7 @@ defmodule Whooks.EventsFixtures do
       attrs
       |> Enum.into(%{
         uid: unique_event_uid(),
+        status: :pending,
         data: %{"name" => "event1"},
         tags: ["tag1", "tag2"],
         metadata: %{"meta" => "data"}

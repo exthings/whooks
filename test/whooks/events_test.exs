@@ -48,7 +48,7 @@ defmodule Whooks.EventsTest do
           secret: "signsecret"
         })
 
-      [subscription] =
+      subscription =
         subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
 
       %{
