@@ -13,7 +13,6 @@ defmodule Whooks.Endpoints do
   alias Whooks.Topics.Topic
   alias Whooks.Common
   alias Whooks.Endpoints.Endpoint
-  alias Whooks.Endpoints.Payloads.CreateEndpoint
   alias Whooks.Subscriptions.Subscription
   alias Whooks.Auth.Scope
 
@@ -82,7 +81,9 @@ defmodule Whooks.Endpoints do
 
   """
   def create_endpoint(attrs) do
-    if Map.has_key?(attrs, :subscribe) do
+    attrs = if is_struct(attrs), do: Map.from_struct(attrs), else: attrs
+
+    if Map.has_key?(attrs, :subscribe) and not is_nil(attrs[:subscribe]) do
       with {:ok, topics} <- Topics.list_topics_by_names(attrs.subscribe, attrs.project_id) do
         %Endpoint{}
         |> Endpoint.create_changeset(

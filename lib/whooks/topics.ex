@@ -62,6 +62,11 @@ defmodule Whooks.Topics do
     Repo.get_by!(Topic, name: name, project_id: project_id)
   end
 
+  @decorate cacheable(cache: RedisCache, opts: [ttl: @ttl])
+  def get_by_name!(name) do
+    Repo.get_by!(Topic, name: name)
+  end
+
   @doc """
   Returns the list of topics matching the given names.
 

@@ -20,7 +20,7 @@ defmodule WhooksWeb.V1.TopicController do
   end
 
   def show(conn, %{"id" => id}) do
-    topic = Topics.get_topic!(id)
+    topic = Topics.get_by_id!(id)
     render(conn, :show, topic: topic)
   end
 end
