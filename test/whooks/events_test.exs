@@ -165,13 +165,7 @@ defmodule Whooks.EventsTest do
       org = organization_fixture()
       consumer = consumer_fixture(%{organization_id: org.id})
       project = project_fixture(%{organization_id: org.id})
-      topic = topic_fixture(%{project_id: project.id})
-
-      res_data = %{status: "success"}
-
-      Bypass.expect(bypass, "POST", "/v1/webhooks", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(res_data))
-      end)
+      topic = topic_fixture(%{project_id: project.id, validate_schema: true})
 
       endpoint =
         endpoint_fixture(%{
@@ -190,20 +184,23 @@ defmodule Whooks.EventsTest do
         topic: topic,
         endpoint: endpoint,
         project: project,
-        subscription: subscription
+        subscription: subscription,
+        bypass: bypass
       }
     end
 
     test "create_event/1 is published to bullmq and dispatched", data do
+      Bypass.expect(data.bypass, "POST", "/v1/webhooks", fn conn ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{status: "success"}))
+      end)
+
       valid_attrs = %{
         "uid" => "uid-#{System.unique_integer([:positive])}",
         "consumer_id" => data.consumer.id |> TypeID.to_string(),
         "project_id" => data.project.id |> TypeID.to_string(),
         "topic" => data.topic.id |> TypeID.to_string(),
         "data" => %{
-          "id" => "019bb3b7-57f7-7b28-9ad1-ce122c7a66c0",
-          "status" => "completed",
-          "amount" => "15"
+          "id" => "019bb3b7-57f7-7b28-9ad1-ce122c7a66c0"
         },
         "metadata" => %{
           "transaction_id" => "01KESVHY8HACK7HGVYPRP90WS0"
@@ -222,9 +219,41 @@ defmodule Whooks.EventsTest do
 
       assert_receive {:bullmq_event, :completed, %{"returnvalue" => returnvalue}}, 2000
       assert %{"status" => "success", "id" => "attempt_" <> _} = Jason.decode!(returnvalue)
+
+      assert {:ok, event} = Events.get(event_id)
+      assert event.status == :success
+    end
+
+    test "create_event/1 is published to bullmq and data validation fails", data do
+      valid_attrs = %{
+        "uid" => "uid-#{System.unique_integer([:positive])}",
+        "consumer_id" => data.consumer.id |> TypeID.to_string(),
+        "project_id" => data.project.id |> TypeID.to_string(),
+        "topic" => data.topic.id |> TypeID.to_string(),
+        "data" => %{
+          "uid" => "019bb3b7-57f7-7b28-9ad1-ce122c7a66c0"
+        },
+        "metadata" => %{
+          "transaction_id" => "01KESVHY8HACK7HGVYPRP90WS0"
+        },
+        "tags" => [
+          "tag-1"
+        ]
+      }
+
+      assert {:ok, %{id: event_id, job_id: job_id}} = Events.enqueue(valid_attrs)
+      assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
+
+      assert {:ok, event} = Events.get(event_id)
+      assert event.status == :failed
+      assert event.metadata["failed_reason"] == "Required properties are missing: [\"id\"]."
     end
 
     test "create_event/1 verifies idempotency", data do
+      Bypass.expect(data.bypass, "POST", "/v1/webhooks", fn conn ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{status: "success"}))
+      end)
+
       valid_attrs = %{
         "uid" => "uid-#{System.unique_integer([:positive])}",
         "consumer_id" => data.consumer.id,
