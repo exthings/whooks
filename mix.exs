@@ -74,7 +74,6 @@ defmodule Whooks.MixProject do
       {:reactor, "~> 0.17.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:req, "~> 0.5.17"},
-      {:timescale, "~> 0.1.1"},
       {:swoosh, "~> 1.25"},
       {:bodyguard, "~> 2.4"},
       {:bypass, "~> 2.1", only: :test}
