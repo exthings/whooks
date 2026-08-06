@@ -21,6 +21,7 @@ defmodule Whooks.Topics.Topic do
     field :status, :string
     field :description, :string
     field :json_schema, :map
+    field :validate_schema, :boolean, default: false
     field :example, :map
 
     belongs_to :project, Whooks.Projects.Project
@@ -42,7 +43,15 @@ defmodule Whooks.Topics.Topic do
 
   def create_changeset(topic, attrs) do
     topic
-    |> cast(attrs, [:name, :status, :description, :json_schema, :example, :project_id])
+    |> cast(attrs, [
+      :name,
+      :status,
+      :description,
+      :json_schema,
+      :validate_schema,
+      :example,
+      :project_id
+    ])
     |> validate_required([:name, :status, :project_id])
     |> unique_constraint([:name, :project_id])
     |> foreign_key_constraint(:project_id)

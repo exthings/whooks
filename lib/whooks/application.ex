@@ -14,6 +14,7 @@ defmodule Whooks.Application do
       # {Redix, name: :redis, host: "127.0.0.1", port: 6379},
       {BullMQ.RedisConnection, name: :bullmq_redis, url: "redis://localhost:6379"},
       {Whooks.RedisCache, []},
+      {Whooks.LocalCache, []},
       {DNSCluster, query: Application.get_env(:whooks, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Whooks.PubSub},
 

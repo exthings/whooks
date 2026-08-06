@@ -67,6 +67,7 @@ defmodule Whooks.MixProject do
       {:decorator, "~> 1.4"},
       {:telemetry, "~> 1.0"},
       {:nebulex_redis_adapter, "~> 3.0"},
+      {:nebulex_local, "~> 3.0"},
       {:inertia, "~> 2.6"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:typeid_elixir, "~> 1.1"},
@@ -76,7 +77,8 @@ defmodule Whooks.MixProject do
       {:req, "~> 0.5.17"},
       {:swoosh, "~> 1.25"},
       {:bodyguard, "~> 2.4"},
-      {:bypass, "~> 2.1", only: :test}
+      {:bypass, "~> 2.1", only: :test},
+      {:json_xema, "~> 0.6.5"}
     ]
   end
 

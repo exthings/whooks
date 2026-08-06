@@ -77,7 +77,14 @@
         </dl>
         <div class="grid grid-cols-2 gap-4">
           <div class="flex flex-col">
-            <h3 class=" font-semibold pb-2">JSON Schema</h3>
+            <div class="flex gap-2 items-center mb-2">
+              <h3 class=" font-semibold">JSON Schema</h3>
+              {#if topic.validateSchema}
+                <BadgeStatus variant="success" size="xs" label="enabled" />
+              {:else}
+                <BadgeStatus variant="warning" size="xs" label="disabled" />
+              {/if}
+            </div>
             <Card.Root class="shadow-none py-2 flex-1">
               <Card.Content>
                 <JsonSchemaViewer schema={topic.jsonSchema} />

@@ -145,6 +145,7 @@ defmodule Whooks.Serializer do
       status: topic.status,
       description: topic.description,
       json_schema: topic.json_schema,
+      validate_schema: topic.validate_schema,
       example: topic.example,
       inserted_at: topic.inserted_at,
       updated_at: topic.updated_at

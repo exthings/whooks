@@ -10,13 +10,31 @@ defmodule WhooksWorker.EventsWorker do
 
   def process(%Job{name: "create", data: data}) do
     Logger.info("[EventsWorker.create] creating: #{inspect(data)}")
+    {:ok, topic} = get_topic(data["topic"], data["project_id"])
 
-    with {:ok, topic} <- get_topic(data["topic"], data["project_id"]),
+    with :ok <- validate_data(topic, data["data"]),
          {:ok, event} <- Events.create(Map.put(data, "topic_id", topic.id)),
          {:ok, subscriptions} <- list_subscriptions(event),
          {:ok, _flow} <- add_flow(event, subscriptions),
          {:ok, event} <- Events.update_to_processing(event) do
       {:ok, %{event_id: event.id, status: event.status}}
+    else
+      {:error, %JsonXema.ValidationError{} = error} ->
+        with {:ok, event} <-
+               Events.create(
+                 Map.merge(data, %{
+                   "status" => :failed,
+                   "topic_id" => topic.id,
+                   "metadata" => %{
+                     "failed_reason" => Exception.message(error)
+                   }
+                 })
+               ) do
+          {:ok, %{event_id: event.id, status: event.status}}
+        end
+
+      error ->
+        error
     end
   end
 
@@ -142,5 +160,20 @@ defmodule WhooksWorker.EventsWorker do
     {:ok, Topics.get_by_name!(topic_name, project_id)}
   rescue
     Ecto.NoResultsError -> {:error, :not_found}
+  end
+
+  defp validate_data(topic, data) do
+    if topic.validate_schema do
+      schema = get_schema!(topic.id, topic.json_schema)
+      JsonXema.validate(schema, data)
+    else
+      :ok
+    end
+  end
+
+  defp get_schema!(topic_id, schema) do
+    Whooks.LocalCache.get_or_store!("schemas:#{topic_id}", fn ->
+      JsonXema.new(schema)
+    end)
   end
 end
