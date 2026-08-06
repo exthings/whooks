@@ -69,7 +69,7 @@ defmodule Whooks.EventsTest do
       assert {:ok, {[_fetched_event], %Flop.Meta{} = _metadata}} = Events.list(%{})
     end
 
-    test "get_by_uid/1", data do
+    test "get!/1 with event id and uid", data do
       event =
         event_fixture(%{
           project_id: data.project.id,
@@ -77,7 +77,11 @@ defmodule Whooks.EventsTest do
           consumer_id: data.consumer.id
         })
 
-      assert {:ok, _fetched_event} = Events.get_by_uid(event.uid)
+      assert %Events.Event{id: id} = Events.get!(to_string(event.id))
+      assert id == event.id
+
+      assert %Events.Event{id: id} = Events.get!(event.uid)
+      assert id == event.id
     end
 
     test "update_to_scheduled/1", data do
@@ -209,13 +213,15 @@ defmodule Whooks.EventsTest do
         ]
       }
 
-      assert {:ok, %{id: _event_id, job_id: job_id}} = Events.create_event(valid_attrs)
+      assert {:ok, %{id: event_id, job_id: job_id}} = Events.enqueue(valid_attrs)
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
-      assert_receive {:bullmq_event, :completed, %{"returnvalue" => delivery_return}}, 2000
 
-      delivery_return = Jason.decode!(delivery_return)
-      assert String.starts_with?(delivery_return["id"], "attempt_")
-      assert delivery_return["status"] == "success"
+      event_return = Jason.encode!(%{id: event_id})
+
+      assert_receive {:bullmq_event, :completed, %{"returnvalue" => ^event_return}}, 2000
+
+      assert_receive {:bullmq_event, :completed, %{"returnvalue" => returnvalue}}, 2000
+      assert %{"status" => "success", "id" => "attempt_" <> _} = Jason.decode!(returnvalue)
     end
 
     test "create_event/1 verifies idempotency", data do
@@ -237,7 +243,7 @@ defmodule Whooks.EventsTest do
         ]
       }
 
-      assert {:ok, %{id: _event_id, job_id: job_id}} = Events.create_event(valid_attrs)
+      assert {:ok, %{id: _event_id, job_id: job_id}} = Events.enqueue(valid_attrs)
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
       assert_receive {:bullmq_event, :completed, %{"returnvalue" => delivery_return}}, 2000
 
@@ -245,7 +251,7 @@ defmodule Whooks.EventsTest do
       assert String.starts_with?(delivery_return["id"], "attempt_")
       assert delivery_return["status"] == "success"
 
-      assert {:ok, %Whooks.Events.Event{}} = Events.create_event(valid_attrs)
+      assert {:ok, %Whooks.Events.Event{}} = Events.enqueue(valid_attrs)
     end
   end
 
@@ -307,7 +313,7 @@ defmodule Whooks.EventsTest do
         ]
       }
 
-      assert {:ok, %{id: event_id, job_id: job_id}} = Events.create_event(valid_attrs)
+      assert {:ok, %{id: event_id, job_id: job_id}} = Events.enqueue(valid_attrs)
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
       assert_receive {:bullmq_event, :delayed, %{}}, 2000
       assert_receive {:bullmq_event, :failed, %{}}, 50000
