@@ -7,12 +7,12 @@ defmodule WhooksWeb.V1.ProjectController do
   action_fallback WhooksWeb.FallbackController
 
   def index(conn, _params) do
-    projects = Projects.list_projects()
+    projects = Projects.list()
     render(conn, :index, projects: projects)
   end
 
   def create(conn, params) do
-    with {:ok, %Project{} = project} <- Projects.create_project(params) do
+    with {:ok, %Project{} = project} <- Projects.create(params) do
       conn
       |> put_status(:created)
       |> render(:show, project: project)
@@ -20,22 +20,22 @@ defmodule WhooksWeb.V1.ProjectController do
   end
 
   def show(conn, %{"id" => id}) do
-    project = Projects.get_project!(id)
+    project = Projects.get!(id)
     render(conn, :show, project: project)
   end
 
   def update(conn, %{"id" => id, "project" => project_params}) do
-    project = Projects.get_project!(id)
+    project = Projects.get!(id)
 
-    with {:ok, %Project{} = project} <- Projects.update_project(project, project_params) do
+    with {:ok, %Project{} = project} <- Projects.update(project, project_params) do
       render(conn, :show, project: project)
     end
   end
 
   def delete(conn, %{"id" => id}) do
-    project = Projects.get_project!(id)
+    project = Projects.get!(id)
 
-    with {:ok, %Project{}} <- Projects.delete_project(project) do
+    with {:ok, %Project{}} <- Projects.delete(project) do
       send_resp(conn, :no_content, "")
     end
   end

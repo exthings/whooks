@@ -24,7 +24,7 @@ defmodule WhooksWeb.Plugs.AuthTest do
     test "stores the user token in the session", %{conn: conn, user: user} do
       conn = Plugs.Auth.log_in_user(conn, user)
       assert token = get_session(conn, :access_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/ui/admin/home"
       assert Auth.get_user_by_session_token(token)
     end
 
@@ -320,7 +320,7 @@ defmodule WhooksWeb.Plugs.AuthTest do
         |> assign(:current_scope, Scope.for_user(user))
         |> Plugs.Auth.require_sudo_mode([])
 
-      assert redirected_to(conn) == ~p"/users/log-in"
+      assert redirected_to(conn) == ~p"/ui/auth/login"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "You must re-authenticate to access this page."
@@ -339,7 +339,7 @@ defmodule WhooksWeb.Plugs.AuthTest do
         |> Plugs.Auth.redirect_if_user_is_authenticated([])
 
       assert conn.halted
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/ui/admin/home"
     end
 
     test "does not redirect if user is not authenticated", %{conn: conn} do

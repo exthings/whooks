@@ -20,7 +20,7 @@ defmodule Whooks.ConsumersFixtures do
         name: "some name",
         uid: unique_consumer_uid()
       })
-      |> Whooks.Consumers.create_consumer()
+      |> Whooks.Consumers.create()
 
     consumer
   end

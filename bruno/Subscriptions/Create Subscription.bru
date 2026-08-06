@@ -5,18 +5,17 @@ meta {
 }
 
 post {
-  url: {{base_url}}/v1/subscription
+  url: {{base_url}}/v1/subscriptions
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "endpoint_id": "endpoint_01kesz4skbey79n3qxqt99mkvv",
+    "endpoint_id": "{{endpoint_id}}",
     "topics":  [
       "transaction.completed",
-      "transaction.pending",
-      "transaction.error"
+      "transaction.pending"
     ]
   }
 }

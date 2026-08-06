@@ -13,7 +13,7 @@ defmodule Whooks.OrganizationsFixtures do
       |> Enum.into(%{
         name: "some name"
       })
-      |> Whooks.Organizations.create_organization()
+      |> Whooks.Organizations.create()
 
     organization
   end

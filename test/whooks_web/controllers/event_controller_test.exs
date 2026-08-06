@@ -32,7 +32,12 @@ defmodule WhooksWeb.EventControllerTest do
   end
 
   describe "create event" do
-    test "renders event when data is valid", %{conn: conn, project: project, consumer: consumer, topic: topic} do
+    test "renders event when data is valid", %{
+      conn: conn,
+      project: project,
+      consumer: consumer,
+      topic: topic
+    } do
       create_attrs = %{
         "uid" => "some-uid-#{System.unique_integer([:positive])}",
         "data" => %{"key" => "value"},

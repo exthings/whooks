@@ -5,10 +5,6 @@ defmodule Whooks.EndpointsFixtures do
   """
 
   @doc """
-  Generate a unique endpoint uid.
-  """
-
-  @doc """
   Generate a endpoint.
   """
   def endpoint_fixture(attrs \\ %{}) do
@@ -22,7 +18,7 @@ defmodule Whooks.EndpointsFixtures do
         status: "enabled",
         url: "http://localhost:4001"
       })
-      |> Whooks.Endpoints.create_endpoint()
+      |> Whooks.Endpoints.create()
 
     endpoint
   end

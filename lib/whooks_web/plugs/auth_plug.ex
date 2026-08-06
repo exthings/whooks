@@ -251,7 +251,7 @@ defmodule WhooksWeb.Plugs.Auth do
       conn
       |> put_flash(:error, "You must re-authenticate to access this page.")
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/users/log-in")
+      |> redirect(to: ~p"/ui/auth/login")
       |> halt()
     end
   end
@@ -269,7 +269,7 @@ defmodule WhooksWeb.Plugs.Auth do
     end
   end
 
-  defp signed_in_path(_conn), do: ~p"/"
+  defp signed_in_path(_conn), do: ~p"/ui/admin/home"
 
   @doc """
   Plug for routes that require the user to be authenticated.

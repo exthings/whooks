@@ -86,10 +86,6 @@ defmodule Whooks.Dispatcher.StandardWebhooksDispatcherTest do
   end
 
   test "dispatch/1 transport error" do
-    res_data = %{status: "failed"}
-
-    timestamp = DateTime.utc_now()
-
     params = %Params{
       event_id: "lcjinejt23v6njnpmlmgz7sl",
       topic: "transaction.paid",

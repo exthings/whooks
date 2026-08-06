@@ -18,11 +18,11 @@ defmodule Whooks.Topics do
 
   ## Examples
 
-      iex> list_topics()
+      iex> list()
       [%Topic{}, ...]
 
   """
-  def list_topics do
+  def list do
     Repo.all(Topic)
   end
 
@@ -33,15 +33,15 @@ defmodule Whooks.Topics do
 
   ## Examples
 
-      iex> get_topic!(123)
+      iex> get!(123)
       %Topic{}
 
-      iex> get_topic!(456)
+      iex> get!(456)
       ** (Ecto.NoResultsError)
 
   """
   @decorate cacheable(cache: RedisCache, opts: [ttl: @ttl])
-  def get_by_id!(id), do: Repo.get!(Topic, id)
+  def get!(id), do: Repo.get!(Topic, id)
 
   @doc """
   Gets a single topic by name.
@@ -50,10 +50,10 @@ defmodule Whooks.Topics do
 
   ## Examples
 
-      iex> get_topic_by_name!("my-topic")
+      iex> get_by_name!("my-topic")
       %Topic{}
 
-      iex> get_topic_by_name!("non-existent")
+      iex> get_by_name!("non-existent")
       ** (Ecto.NoResultsError)
 
   """
@@ -72,11 +72,11 @@ defmodule Whooks.Topics do
 
   ## Examples
 
-      iex> list_topics_by_names(["topic-1", "topic-2"])
+      iex> list_by_names(["topic-1", "topic-2"], project_id)
       [%Topic{}, ...]
 
   """
-  def list_topics_by_names(names, project_id) do
+  def list_by_names(names, project_id) do
     unique_names = Enum.uniq(names)
 
     Topic
@@ -97,14 +97,14 @@ defmodule Whooks.Topics do
 
   ## Examples
 
-      iex> create_topic(%{field: value})
+      iex> create(%{field: value})
       {:ok, %Topic{}}
 
-      iex> create_topic(%{field: bad_value})
+      iex> create(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_topic(attrs) do
+  def create(attrs) do
     %Topic{}
     |> Topic.create_changeset(attrs)
     |> Repo.insert()
@@ -115,14 +115,14 @@ defmodule Whooks.Topics do
 
   ## Examples
 
-      iex> update_topic(topic, %{field: new_value})
+      iex> update(topic, %{field: new_value})
       {:ok, %Topic{}}
 
-      iex> update_topic(topic, %{field: bad_value})
+      iex> update(topic, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_topic(%Topic{} = topic, attrs) do
+  def update(%Topic{} = topic, attrs) do
     topic
     |> Topic.changeset(attrs)
     |> Repo.update()
@@ -133,14 +133,14 @@ defmodule Whooks.Topics do
 
   ## Examples
 
-      iex> delete_topic(topic)
+      iex> delete(topic)
       {:ok, %Topic{}}
 
-      iex> delete_topic(topic)
+      iex> delete(topic)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_topic(%Topic{} = topic) do
+  def delete(%Topic{} = topic) do
     Repo.delete(topic)
   end
 
@@ -149,11 +149,11 @@ defmodule Whooks.Topics do
 
   ## Examples
 
-      iex> change_topic(topic)
+      iex> change(topic)
       %Ecto.Changeset{data: %Topic{}}
 
   """
-  def change_topic(%Topic{} = topic, attrs \\ %{}) do
+  def change(%Topic{} = topic, attrs \\ %{}) do
     Topic.changeset(topic, attrs)
   end
 end

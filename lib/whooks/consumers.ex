@@ -14,11 +14,11 @@ defmodule Whooks.Consumers do
 
   ## Examples
 
-      iex> list_consumers()
+      iex> list()
       [%Consumer{}, ...]
 
   """
-  def list_consumers do
+  def list do
     Repo.all(Consumer)
   end
 
@@ -44,28 +44,28 @@ defmodule Whooks.Consumers do
 
   ## Examples
 
-      iex> get_consumer!(123)
+      iex> get!(123)
       %Consumer{}
 
-      iex> get_consumer!(456)
+      iex> get!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_consumer!(id), do: Repo.get!(Consumer, id)
+  def get!(id), do: Repo.get!(Consumer, id)
 
   @doc """
   Creates a consumer.
 
   ## Examples
 
-      iex> create_consumer(%{field: value})
+      iex> create(%{field: value})
       {:ok, %Consumer{}}
 
-      iex> create_consumer(%{field: bad_value})
+      iex> create(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_consumer(attrs) do
+  def create(attrs) do
     %Consumer{}
     |> Consumer.changeset(attrs)
     |> Repo.insert()
@@ -76,14 +76,14 @@ defmodule Whooks.Consumers do
 
   ## Examples
 
-      iex> update_consumer(consumer, %{field: new_value})
+      iex> update(consumer, %{field: new_value})
       {:ok, %Consumer{}}
 
-      iex> update_consumer(consumer, %{field: bad_value})
+      iex> update(consumer, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_consumer(%Consumer{} = consumer, attrs) do
+  def update(%Consumer{} = consumer, attrs) do
     consumer
     |> Consumer.changeset(attrs)
     |> Repo.update()
@@ -94,14 +94,14 @@ defmodule Whooks.Consumers do
 
   ## Examples
 
-      iex> delete_consumer(consumer)
+      iex> delete(consumer)
       {:ok, %Consumer{}}
 
-      iex> delete_consumer(consumer)
+      iex> delete(consumer)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_consumer(%Consumer{} = consumer) do
+  def delete(%Consumer{} = consumer) do
     Repo.delete(consumer)
   end
 
@@ -110,11 +110,11 @@ defmodule Whooks.Consumers do
 
   ## Examples
 
-      iex> change_consumer(consumer)
+      iex> change(consumer)
       %Ecto.Changeset{data: %Consumer{}}
 
   """
-  def change_consumer(%Consumer{} = consumer, attrs \\ %{}) do
+  def change(%Consumer{} = consumer, attrs \\ %{}) do
     Consumer.changeset(consumer, attrs)
   end
 

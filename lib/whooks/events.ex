@@ -10,7 +10,6 @@ defmodule Whooks.Events do
 
   alias Whooks.Repo
   alias Whooks.Events.Event
-  alias Whooks.Topics
   alias Whooks.Topics.Topic
   alias Whooks.Consumers.Consumer
   alias Whooks.Subscriptions.Subscription
@@ -60,28 +59,7 @@ defmodule Whooks.Events do
   end
 
   def get(id, opts \\ []) do
-    from(e in Event,
-      where: e.id == ^id,
-      left_join: t in assoc(e, :topic),
-      as: :topic,
-      left_join: p in assoc(e, :project),
-      as: :project,
-      left_join: c in assoc(e, :consumer),
-      as: :consumer,
-      left_join: d in assoc(e, :delivery_attempts),
-      as: :delivery_attempt,
-      left_join: s in assoc(d, :subscription),
-      as: :subscription,
-      left_join: ep in assoc(s, :endpoint),
-      as: :endpoint,
-      order_by: [desc: d.inserted_at],
-      preload: [
-        topic: t,
-        project: p,
-        consumer: c,
-        delivery_attempts: {d, subscription: {s, endpoint: ep}}
-      ]
-    )
+    event_query(id)
     |> apply_filters(opts)
     |> Repo.one()
     |> case do
@@ -91,39 +69,24 @@ defmodule Whooks.Events do
   end
 
   def get!(id) do
-    from(e in Event,
-      where: e.id == ^id,
-      left_join: t in assoc(e, :topic),
-      as: :topic,
-      left_join: p in assoc(e, :project),
-      as: :project,
-      left_join: c in assoc(e, :consumer),
-      as: :consumer,
-      left_join: d in assoc(e, :delivery_attempts),
-      as: :delivery_attempt,
-      left_join: s in assoc(d, :subscription),
-      as: :subscription,
-      left_join: ep in assoc(s, :endpoint),
-      as: :endpoint,
-      order_by: [desc: d.inserted_at],
-      preload: [
-        topic: t,
-        project: p,
-        consumer: c,
-        delivery_attempts: {d, subscription: {s, endpoint: ep}}
-      ]
-    )
+    event_query(id)
     |> Repo.one!()
   end
 
-  @decorate cacheable(
-              cache: RedisCache,
-              key: &cache_key_gen/1,
-              opts: [ttl: @idempotency_key_ttl]
-            )
-  def get_by_uid(uid) do
+  defp event_query("event_" <> _ = id) do
+    where(event_base_query(), [e], e.id == ^id)
+  end
+
+  defp event_query(%TypeID{prefix: "event"} = id) do
+    where(event_base_query(), [e], e.id == ^id)
+  end
+
+  defp event_query(uid) do
+    where(event_base_query(), [e], e.uid == ^uid)
+  end
+
+  defp event_base_query do
     from(e in Event,
-      where: e.uid == ^uid,
       left_join: t in assoc(e, :topic),
       as: :topic,
       left_join: p in assoc(e, :project),
@@ -144,22 +107,17 @@ defmodule Whooks.Events do
         delivery_attempts: {d, subscription: {s, endpoint: ep}}
       ]
     )
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      event -> {:ok, event}
-    end
   end
 
   def get_event!(id), do: Repo.get!(Event, id)
 
-  def create_event(attrs) do
+  def enqueue(attrs) do
     Logger.info("Creating event: #{inspect(attrs)}")
 
     event_id = Event.gen_id() |> TypeID.to_string()
     attrs = Map.put(attrs, "id", event_id)
 
-    get_by_uid(attrs["uid"])
+    get(attrs["uid"])
     |> case do
       {:ok, %Event{} = event} ->
         {:ok, event}
@@ -274,7 +232,7 @@ defmodule Whooks.Events do
     end)
   end
 
-  defp cache_key_gen(%{args: args} = ctx) do
+  defp cache_key_gen(%{args: args}) do
     Logger.info("args #{inspect(args)}")
 
     uid =

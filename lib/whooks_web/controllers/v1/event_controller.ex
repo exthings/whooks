@@ -2,7 +2,6 @@ defmodule WhooksWeb.V1.EventController do
   use WhooksWeb, :controller
 
   alias Whooks.Events
-  alias Whooks.Events.Event
 
   action_fallback WhooksWeb.FallbackController
 
@@ -14,7 +13,7 @@ defmodule WhooksWeb.V1.EventController do
   end
 
   def create(conn, event_params) do
-    with {:ok, event} <- Events.create_event(event_params) do
+    with {:ok, event} <- Events.enqueue(event_params) do
       conn
       |> put_status(:created)
       |> render(:show, event: event)

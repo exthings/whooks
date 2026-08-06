@@ -50,7 +50,7 @@ defmodule WhooksWorker.DeliveryAttemptWorker do
           |> Map.put(:event_id, event.id)
           |> Map.put(:subscription_id, data["subscription_id"])
 
-        with {:ok, attempt} <- DeliveryAttempts.create_failed(attempt_params) do
+        with {:ok, _attempt} <- DeliveryAttempts.create_failed(attempt_params) do
           {:error, %{failed: true}}
         else
           _ -> {:error, %{failed: true}}

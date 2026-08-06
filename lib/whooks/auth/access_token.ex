@@ -234,12 +234,4 @@ defmodule Whooks.Auth.AccessToken do
   defp by_token_and_context_query(token, context) do
     from AccessToken, where: [token: ^token, context: ^context]
   end
-
-  defp id_to_string(id) when is_binary(id) do
-    id
-  end
-
-  defp id_to_string(id) do
-    TypeID.to_string(id)
-  end
 end

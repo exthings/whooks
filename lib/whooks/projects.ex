@@ -16,11 +16,11 @@ defmodule Whooks.Projects do
 
   ## Examples
 
-      iex> list_projects()
+      iex> list()
       [%Project{}, ...]
 
   """
-  def list_projects do
+  def list do
     Repo.all(Project)
   end
 
@@ -41,14 +41,14 @@ defmodule Whooks.Projects do
 
   ## Examples
 
-      iex> get_project!(123)
+      iex> get!(123)
       %Project{}
 
-      iex> get_project!(456)
+      iex> get!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_project!(id), do: Repo.get!(Project, id)
+  def get!(id), do: Repo.get!(Project, id)
 
   def get_by_id(id) do
     Project
@@ -66,14 +66,14 @@ defmodule Whooks.Projects do
 
   ## Examples
 
-      iex> create_project(%{field: value})
+      iex> create(%{field: value})
       {:ok, %Project{}}
 
-      iex> create_project(%{field: bad_value})
+      iex> create(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_project(attrs) do
+  def create(attrs) do
     %Project{}
     |> Project.changeset(attrs)
     |> Repo.insert()
@@ -84,14 +84,14 @@ defmodule Whooks.Projects do
 
   ## Examples
 
-      iex> update_project(project, %{field: new_value})
+      iex> update(project, %{field: new_value})
       {:ok, %Project{}}
 
-      iex> update_project(project, %{field: bad_value})
+      iex> update(project, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_project(%Project{} = project, attrs) do
+  def update(%Project{} = project, attrs) do
     project
     |> Project.changeset(attrs)
     |> Repo.update()
@@ -102,14 +102,14 @@ defmodule Whooks.Projects do
 
   ## Examples
 
-      iex> delete_project(project)
+      iex> delete(project)
       {:ok, %Project{}}
 
-      iex> delete_project(project)
+      iex> delete(project)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_project(%Project{} = project) do
+  def delete(%Project{} = project) do
     Repo.delete(project)
   end
 
@@ -118,11 +118,11 @@ defmodule Whooks.Projects do
 
   ## Examples
 
-      iex> change_project(project)
+      iex> change(project)
       %Ecto.Changeset{data: %Project{}}
 
   """
-  def change_project(%Project{} = project, attrs \\ %{}) do
+  def change(%Project{} = project, attrs \\ %{}) do
     Project.changeset(project, attrs)
   end
 

@@ -21,11 +21,11 @@ defmodule Whooks.Endpoints do
 
   ## Examples
 
-      iex> list_endpoints()
+      iex> list()
       [%Endpoint{}, ...]
 
   """
-  def list_endpoints do
+  def list do
     from(e in Endpoint,
       join: s in Subscription,
       on: e.id == s.endpoint_id,
@@ -43,14 +43,14 @@ defmodule Whooks.Endpoints do
 
   ## Examples
 
-      iex> get_endpoint!(123)
+      iex> get!(123)
       %Endpoint{}
 
-      iex> get_endpoint!(456)
+      iex> get!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_endpoint!(id) do
+  def get!(id) do
     Endpoint
     |> Repo.get!(id)
     |> Repo.preload(subscriptions: [:topic])
@@ -73,18 +73,18 @@ defmodule Whooks.Endpoints do
 
   ## Examples
 
-      iex> create_endpoint(%{field: value})
+      iex> create(%{field: value})
       {:ok, %Endpoint{}}
 
-      iex> create_endpoint(%{field: bad_value})
+      iex> create(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_endpoint(attrs) do
+  def create(attrs) do
     attrs = if is_struct(attrs), do: Map.from_struct(attrs), else: attrs
 
     if Map.has_key?(attrs, :subscribe) and not is_nil(attrs[:subscribe]) do
-      with {:ok, topics} <- Topics.list_topics_by_names(attrs.subscribe, attrs.project_id) do
+      with {:ok, topics} <- Topics.list_by_names(attrs.subscribe, attrs.project_id) do
         %Endpoint{}
         |> Endpoint.create_changeset(
           Enum.into(attrs, %{
@@ -112,14 +112,14 @@ defmodule Whooks.Endpoints do
 
   ## Examples
 
-      iex> update_endpoint(endpoint, %{field: new_value})
+      iex> update(endpoint, %{field: new_value})
       {:ok, %Endpoint{}}
 
-      iex> update_endpoint(endpoint, %{field: bad_value})
+      iex> update(endpoint, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_endpoint(%Endpoint{} = endpoint, attrs) do
+  def update(%Endpoint{} = endpoint, attrs) do
     endpoint
     |> Endpoint.update_changeset(attrs)
     |> Repo.update()
@@ -130,14 +130,14 @@ defmodule Whooks.Endpoints do
 
   ## Examples
 
-      iex> delete_endpoint(endpoint)
+      iex> delete(endpoint)
       {:ok, %Endpoint{}}
 
-      iex> delete_endpoint(endpoint)
+      iex> delete(endpoint)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_endpoint(%Endpoint{} = endpoint) do
+  def delete(%Endpoint{} = endpoint) do
     Repo.delete(endpoint)
   end
 
@@ -146,11 +146,11 @@ defmodule Whooks.Endpoints do
 
   ## Examples
 
-      iex> change_endpoint(endpoint)
+      iex> change(endpoint)
       %Ecto.Changeset{data: %Endpoint{}}
 
   """
-  def change_endpoint(%Endpoint{} = endpoint, attrs \\ %{}) do
+  def change(%Endpoint{} = endpoint, attrs \\ %{}) do
     Endpoint.changeset(endpoint, attrs)
   end
 

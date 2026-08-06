@@ -71,7 +71,7 @@ defmodule Whooks.SubscriptionsTest do
       assert subscription2.status == :enabled
     end
 
-    test "create_subscription/1 with invalid data returns error changeset", data do
+    test "create_subscription/1 with invalid data returns error changeset", _data do
       assert {:error, %Ecto.Changeset{}} = Subscriptions.create_subscription(@invalid_attrs)
     end
 

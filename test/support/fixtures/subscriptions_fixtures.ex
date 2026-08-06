@@ -11,7 +11,7 @@ defmodule Whooks.SubscriptionsFixtures do
     {:ok, subscription} =
       attrs
       |> Enum.into(%{
-        status: "some status"
+        status: :enabled
       })
       |> Whooks.Subscriptions.create_subscription()
 

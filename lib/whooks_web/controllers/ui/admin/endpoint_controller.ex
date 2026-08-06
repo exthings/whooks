@@ -1,7 +1,6 @@
 defmodule WhooksWeb.UI.Admin.EndpointController do
   use WhooksWeb, :controller
 
-  alias Whooks.Common
   alias Whooks.Events
   alias Whooks.Endpoints
   alias Whooks.Metrics

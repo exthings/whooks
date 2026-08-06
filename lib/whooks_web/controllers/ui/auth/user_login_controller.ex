@@ -2,7 +2,6 @@ defmodule WhooksWeb.UI.Auth.UserLoginController do
   use WhooksWeb, :controller
 
   alias Whooks.Auth
-  alias Whooks.Auth.User
   alias WhooksWeb.Plugs
 
   def index(conn, _params) do
@@ -15,7 +14,6 @@ defmodule WhooksWeb.UI.Auth.UserLoginController do
       conn
       |> put_flash(:info, "Welcome back!")
       |> Plugs.Auth.log_in_user(user, params)
-      |> redirect(to: ~p"/ui/admin/home")
     else
       conn
       |> put_flash(:error, "Invalid credentials.")
