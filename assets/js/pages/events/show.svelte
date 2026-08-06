@@ -7,6 +7,7 @@
     Attempt,
     Endpoint,
   } from "$types";
+  import { usePoll } from "@inertiajs/svelte";
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import BadgeStatus from "$components/badge-status.svelte";
@@ -16,6 +17,7 @@
   import CellTags from "$components/cell-tags.svelte";
   import * as Tabs from "$lib/components/ui/tabs";
   import { cn } from "$lib/utils";
+  import JsonViewer from "$components/json-viewer.svelte";
 
   import {
     EllipsisVerticalIcon,
@@ -56,6 +58,24 @@
   const resend = () => {
     router.post(`${event.id}/resend`, {});
   };
+
+  const { start, stop } = usePoll(
+    1000,
+    {},
+    {
+      autoStart: false,
+    },
+  );
+
+  $effect(() => {
+    if (
+      ["pending", "scheduled", "processing", "retry"].includes(event.status)
+    ) {
+      start();
+    } else {
+      stop();
+    }
+  });
 </script>
 
 <svelte:head>
@@ -71,7 +91,12 @@
             <h1 class="text-lg font-semibold">Event</h1>
             <BadgeStatus variant={statusVariant} label={event.status} />
           </div>
-          <p class="text-sm font-mono text-muted-foreground">{event.id}</p>
+          {#if event.metadata?.["failedReason"]}
+            <span class="text-red-500 text-xs">
+              <strong class="font-semibold">Reason</strong>
+              {event.metadata["failedReason"]}
+            </span>
+          {/if}
         </div>
         <div>
           <DropdownMenu.Root>
@@ -93,67 +118,75 @@
         </div>
       </div>
       <div class="w-full">
-        <dl class="text-sm grid grid-cols-4 gap-4">
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">ID</dt>
-            <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              {event.id}
-            </dd>
+        <dl class="grid grid-cols-3">
+          <div class="text-sm col-span-2 grid grid-cols-3 gap-4">
+            <div class="flex flex-col gap-1">
+              <dt class="text-xs font-semibold">ID</dt>
+              <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                {event.id}
+              </dd>
+            </div>
+            <div class="flex flex-col gap-1">
+              <dt class="text-xs font-semibold">UID</dt>
+              <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                {event.uid || "-"}
+              </dd>
+            </div>
+            <div class="flex flex-col gap-1">
+              <dt class="text-xs font-semibold">Inserted at</dt>
+              <dd class="text-gray-700 sm:col-span-3">
+                <DateTimeDisplay
+                  value={event.insertedAt}
+                  size="xs"
+                  options={{ fractionalSecondDigits: 3 }}
+                />
+              </dd>
+            </div>
+            <div class="flex flex-col gap-1">
+              <dt class="text-xs font-semibold">Updated at</dt>
+              <dd class="text-gray-700 sm:col-span-3">
+                <DateTimeDisplay
+                  value={event.updatedAt}
+                  size="xs"
+                  options={{ fractionalSecondDigits: 3 }}
+                />
+              </dd>
+            </div>
+            <div class="flex flex-col gap-1">
+              <dt class="text-xs font-semibold">Consumer</dt>
+              <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                <Badge variant="outline">
+                  <InboxIcon />
+                  {event.consumer.name}</Badge
+                >
+              </dd>
+            </div>
+            <div class="flex flex-col gap-1">
+              <dt class="text-xs font-semibold">Project</dt>
+              <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                <Badge variant="outline"><BoxIcon />{event.project.name}</Badge>
+              </dd>
+            </div>
+            <div class="flex flex-col gap-1">
+              <dt class="text-xs font-semibold">Topic</dt>
+              <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                <Badge variant="outline">
+                  <BoxIcon />
+                  {event.topic.name}
+                </Badge>
+              </dd>
+            </div>
+            <div class="flex flex-col gap-1">
+              <dt class="text-xs font-semibold">Tags</dt>
+              <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
+                <CellTags tags={event.tags} />
+              </dd>
+            </div>
           </div>
           <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">UID</dt>
-            <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              {event.uid || "-"}
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Inserted at</dt>
-            <dd class="text-gray-700 sm:col-span-3">
-              <DateTimeDisplay
-                value={event.insertedAt}
-                size="xs"
-                options={{ fractionalSecondDigits: 3 }}
-              />
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Updated at</dt>
-            <dd class="text-gray-700 sm:col-span-3">
-              <DateTimeDisplay
-                value={event.updatedAt}
-                size="xs"
-                options={{ fractionalSecondDigits: 3 }}
-              />
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Consumer</dt>
-            <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              <Badge variant="outline">
-                <InboxIcon />
-                {event.consumer.name}</Badge
-              >
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Project</dt>
-            <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              <Badge variant="outline"><BoxIcon />{event.project.name}</Badge>
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Topic</dt>
-            <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              <Badge variant="outline">
-                <BoxIcon />
-                {event.topic.name}
-              </Badge>
-            </dd>
-          </div>
-          <div class="flex flex-col gap-1">
-            <dt class="text-xs font-semibold">Tags</dt>
-            <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-              <CellTags tags={event.tags} />
+            <dt class="text-xs font-semibold">Data</dt>
+            <dd>
+              <JsonViewer data={event.data} />
             </dd>
           </div>
         </dl>
@@ -191,7 +224,7 @@
                 options={{ fractionalSecondDigits: undefined }}
               />
             </div>
-            <div class="col-span-7">
+            <div class="col-span-7 truncate">
               <span class="text-xs font-mono text-muted-foreground"
                 >{attempt.endpoint.url}</span
               >
@@ -256,13 +289,11 @@
                   <div class="pb-4">
                     <div class="py-2 px-4">
                       <p class="text-xs font-mono font-semibold">Headers</p>
-                      <andypf-json-viewer data={selectedAttempt.reqHeaders}
-                      ></andypf-json-viewer>
+                      <JsonViewer data={selectedAttempt.reqHeaders} />
                     </div>
                     <div class="py-2 px-4">
                       <p class="text-xs font-mono font-semibold">Body</p>
-                      <andypf-json-viewer data={event.data}
-                      ></andypf-json-viewer>
+                      <JsonViewer data={event.data} />
                     </div>
                   </div>
                 </Tabs.Content>
@@ -270,13 +301,23 @@
                   <div class="pb-4">
                     <div class="py-2 px-4">
                       <p class="text-xs font-mono font-semibold">Headers</p>
-                      <andypf-json-viewer data={selectedAttempt.resHeaders}
-                      ></andypf-json-viewer>
+                      {#if selectedAttempt.resHeaders}
+                        <JsonViewer data={selectedAttempt.resHeaders} />
+                      {:else}
+                        <p class="text-xs font-mono text-muted-foreground">
+                          No response headers
+                        </p>
+                      {/if}
                     </div>
                     <div class="py-2 px-4">
                       <p class="text-xs font-mono font-semibold">Body</p>
-                      <andypf-json-viewer data={selectedAttempt.resBody}
-                      ></andypf-json-viewer>
+                      {#if selectedAttempt.resBody}
+                        <JsonViewer data={selectedAttempt.resBody} />
+                      {:else}
+                        <p class="text-xs font-mono text-muted-foreground">
+                          No response body
+                        </p>
+                      {/if}
                     </div>
                   </div>
                 </Tabs.Content>

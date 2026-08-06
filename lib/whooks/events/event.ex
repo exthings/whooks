@@ -49,7 +49,17 @@ defmodule Whooks.Events.Event do
 
   def create_changeset(event, attrs) do
     event
-    |> cast(attrs, [:id, :uid, :data, :tags, :metadata, :consumer_id, :project_id, :topic_id])
+    |> cast(attrs, [
+      :id,
+      :uid,
+      :status,
+      :data,
+      :tags,
+      :metadata,
+      :consumer_id,
+      :project_id,
+      :topic_id
+    ])
     |> validate_required([:uid, :data, :consumer_id, :project_id, :topic_id])
     |> unique_constraint(:uid)
     |> foreign_key_constraint(:consumer_id)

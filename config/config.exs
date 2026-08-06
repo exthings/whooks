@@ -90,6 +90,18 @@ config :whooks, Whooks.RedisCache,
     port: 6379
   ]
 
+config :whooks, Whooks.LocalCache,
+  # Sets :shards as backend (defaults to :ets)
+  # backend: :shards,
+  # GC interval for pushing a new generation (e.g., 12 hrs)
+  gc_interval: :timer.hours(12),
+  # Max number of entries (e.g., 1 million)
+  max_size: 1_000_000,
+  # Max memory size in bytes (e.g., 2GB)
+  allocated_memory: 2_000_000_000,
+  # GC interval for checking memory and maybe evict entries (e.g., 10 sec)
+  gc_memory_check_interval: :timer.seconds(10)
+
 config :swoosh, :api_client, Swoosh.ApiClient.Req
 
 # Import environment specific config. This must remain at the bottom
