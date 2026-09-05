@@ -17,6 +17,7 @@ defmodule Whooks.Events do
   alias Whooks.Auth
   alias Whooks.Auth.Scope
   alias Whooks.RedisCache
+  alias Whooks.Metrics.Utils
 
   require Logger
 
@@ -244,6 +245,14 @@ defmodule Whooks.Events do
 
       {:organization_id, organization_id}, q ->
         where(q, [], as(:consumer).organization_id == ^organization_id)
+
+      {:last, last}, q ->
+        where(
+          q,
+          [e, da, s],
+          e.inserted_at >= ^Utils.parse_last_to_date_time(last) and
+            e.inserted_at <= fragment("now()")
+        )
 
       _, q ->
         q

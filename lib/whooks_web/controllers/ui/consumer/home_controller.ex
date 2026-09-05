@@ -64,23 +64,15 @@ defmodule WhooksWeb.UI.Consumer.HomeController do
       end)
     )
     |> assign_prop(
-      :recent_events,
+      :events,
       inertia_defer(fn ->
-        opts =
-          [consumer_id: consumer.id] ++
-            if(project_id, do: [project_id: project_id], else: [])
-
-        Events.list(
-          %{
-            "page_size" => 8,
-            "order_by" => [:inserted_at],
-            "order_directions" => [:desc]
-          },
-          opts
-        )
+        Events.list(scope, %{"page_size" => 5}, last: last)
         |> case do
-          {:ok, {events, _meta}} -> Serializer.to_map(events)
-          _ -> []
+          {:ok, {events, meta}} ->
+            %{data: Serializer.to_map(events), meta: Serializer.to_map(meta)}
+
+          _ ->
+            %{data: [], meta: %{}}
         end
       end)
     )
