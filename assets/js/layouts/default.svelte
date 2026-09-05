@@ -57,6 +57,13 @@
             icon: SquareChartGantt,
             isActive: true,
           },
+          {
+            title: "Settings",
+            url: `/ui/admin/${organization.current}/settings`,
+            component: "organizations/settings",
+            icon: Settings2Icon,
+            isActive: true,
+          },
         ]
       : [],
   );
