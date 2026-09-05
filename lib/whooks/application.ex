@@ -7,12 +7,15 @@ defmodule Whooks.Application do
 
   @impl true
   def start(_type, _args) do
+    bullmq_redis_url =
+      Application.get_env(:whooks, :bullmq_redis_url, "redis://localhost:6379")
+
     children = [
       WhooksWeb.Telemetry,
       Whooks.Repo,
       # {Registry, keys: :duplicate, name: :redis_registry},
       # {Redix, name: :redis, host: "127.0.0.1", port: 6379},
-      {BullMQ.RedisConnection, name: :bullmq_redis, url: "redis://localhost:6379"},
+      {BullMQ.RedisConnection, name: :bullmq_redis, url: bullmq_redis_url},
       {Whooks.RedisCache, []},
       {Whooks.LocalCache, []},
       {DNSCluster, query: Application.get_env(:whooks, :dns_cluster_query) || :ignore},

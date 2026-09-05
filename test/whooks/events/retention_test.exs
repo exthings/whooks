@@ -82,7 +82,9 @@ defmodule Whooks.Events.RetentionTest do
         |> DateTime.add(-35, :day)
         |> DateTime.truncate(:second)
 
-      Repo.update_all(from(e in Event, where: e.id == ^old_event.id), set: [inserted_at: old_time])
+      Repo.update_all(from(e in Event, where: e.id == ^old_event.id),
+        set: [inserted_at: old_time]
+      )
 
       # Add delivery_attempt to old_event
       attempt_attrs = %{
@@ -114,7 +116,9 @@ defmodule Whooks.Events.RetentionTest do
         |> DateTime.add(-10, :day)
         |> DateTime.truncate(:second)
 
-      Repo.update_all(from(e in Event, where: e.id == ^recent_event.id), set: [inserted_at: recent_time])
+      Repo.update_all(from(e in Event, where: e.id == ^recent_event.id),
+        set: [inserted_at: recent_time]
+      )
 
       # 3. Old event in org2 (retention nil - should NOT be purged)
       org2_old_event =
@@ -124,7 +128,9 @@ defmodule Whooks.Events.RetentionTest do
           topic_id: topic2.id
         })
 
-      Repo.update_all(from(e in Event, where: e.id == ^org2_old_event.id), set: [inserted_at: old_time])
+      Repo.update_all(from(e in Event, where: e.id == ^org2_old_event.id),
+        set: [inserted_at: old_time]
+      )
 
       # Execute purge for org1
       assert {:ok, 1} = Retention.purge_organization_events(org1.id, 30, 1000)
@@ -158,7 +164,10 @@ defmodule Whooks.Events.RetentionTest do
               topic_id: topic1.id
             })
 
-          Repo.update_all(from(e in Event, where: e.id == ^event.id), set: [inserted_at: old_time])
+          Repo.update_all(from(e in Event, where: e.id == ^event.id),
+            set: [inserted_at: old_time]
+          )
+
           event.id
         end
 

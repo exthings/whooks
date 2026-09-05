@@ -56,12 +56,13 @@ defmodule WhooksWorker.RetentionWorkerTest do
   end
 
   describe "process/1 purge_organization" do
-    test "when events are purged, re-enqueues next batch with delay and returns status :re_enqueued", %{
-      org: org,
-      project: project,
-      consumer: consumer,
-      topic: topic
-    } do
+    test "when events are purged, re-enqueues next batch with delay and returns status :re_enqueued",
+         %{
+           org: org,
+           project: project,
+           consumer: consumer,
+           topic: topic
+         } do
       old_time =
         DateTime.utc_now()
         |> DateTime.add(-20, :day)

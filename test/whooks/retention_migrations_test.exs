@@ -19,6 +19,7 @@ defmodule Whooks.RetentionMigrationsTest do
       consumer = consumer_fixture(%{organization_id: org.id})
       topic = topic_fixture(%{project_id: project.id})
       endpoint = endpoint_fixture(%{consumer_id: consumer.id, project_id: project.id})
+
       [subscription] =
         subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
 

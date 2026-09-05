@@ -37,9 +37,7 @@ defmodule Whooks.Events.Retention do
       )
 
     {count, _} =
-      Repo.delete_all(
-        from(e in Event, where: e.id in subquery(batch_query))
-      )
+      Repo.delete_all(from(e in Event, where: e.id in subquery(batch_query)))
 
     {:ok, count}
   end
@@ -62,7 +60,10 @@ defmodule Whooks.Events.Retention do
         {:ok, job}
 
       {:error, reason} ->
-        Logger.warning("[Retention] Failed to register hourly retention scheduler: #{inspect(reason)}")
+        Logger.warning(
+          "[Retention] Failed to register hourly retention scheduler: #{inspect(reason)}"
+        )
+
         {:error, reason}
     end
   rescue
