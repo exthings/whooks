@@ -13,15 +13,9 @@ defmodule Whooks.Endpoints do
   alias Whooks.Endpoints.Endpoint
   alias Whooks.Topics
   alias Whooks.Topics.Topic
-  alias Whooks.Common
-  alias Whooks.Consumers.Consumer
-  alias Whooks.Endpoints.Endpoint
-  alias Whooks.Subscriptions.Subscription
   alias Whooks.Auth
   alias Whooks.Auth.Scope
-  alias Whooks.RedisCache
-
-  @ttl :timer.minutes(60)
+  alias Whooks.Common
 
   @doc """
   Returns the list of endpoints.
@@ -32,6 +26,10 @@ defmodule Whooks.Endpoints do
       [%Endpoint{}, ...]
 
   """
+  def list do
+    Repo.all(Endpoint)
+  end
+
   def list(%Scope{} = scope, params \\ %{}) do
     from(e in Endpoint,
       join: c in assoc(e, :consumer),

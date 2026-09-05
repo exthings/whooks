@@ -91,7 +91,8 @@
   const selectedProjectLabel = $derived(
     selectedProjectId === "all"
       ? "All Projects"
-      : (projects.find((p) => p.id === selectedProjectId)?.name ?? "Select Project"),
+      : (projects.find((p) => p.id === selectedProjectId)?.name ??
+          "Select Project"),
   );
 
   function handleLastChange(val: string | undefined) {
@@ -123,9 +124,11 @@
   <title>Whooks - Consumer Dashboard</title>
 </svelte:head>
 
-<div class="flex-1 flex flex-col gap-6 p-6 lg:p-8 max-w-7xl mx-auto w-full">
+<div class="flex-1 flex flex-col gap-6 p-6 lg:p-8 w-full">
   <!-- Page Header & Filter Toolbar -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b">
+  <div
+    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b"
+  >
     <div>
       <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
       <p class="text-sm text-muted-foreground mt-1">
@@ -201,10 +204,16 @@
     {#if kpis}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Card 1: Total Deliveries -->
-        <Card.Root class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30">
+        <Card.Root
+          class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30"
+        >
           <div class="flex items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium uppercase tracking-wider">Total Deliveries</span>
-            <div class="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <span class="text-xs font-medium uppercase tracking-wider"
+              >Total Deliveries</span
+            >
+            <div
+              class="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"
+            >
               <ActivityIcon class="size-4" />
             </div>
           </div>
@@ -217,15 +226,27 @@
         </Card.Root>
 
         <!-- Card 2: Success Rate -->
-        <Card.Root class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30">
+        <Card.Root
+          class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30"
+        >
           <div class="flex items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium uppercase tracking-wider">Success Rate</span>
-            <div class="size-8 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center">
+            <span class="text-xs font-medium uppercase tracking-wider"
+              >Success Rate</span
+            >
+            <div
+              class="size-8 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center"
+            >
               <CheckCircle2Icon class="size-4" />
             </div>
           </div>
-          <div class="mt-3 text-2xl font-bold tracking-tight flex items-baseline gap-1.5">
-            <span class={kpis.successRate >= 95 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}>
+          <div
+            class="mt-3 text-2xl font-bold tracking-tight flex items-baseline gap-1.5"
+          >
+            <span
+              class={kpis.successRate >= 95
+                ? "text-green-600 dark:text-green-400"
+                : "text-amber-600 dark:text-amber-400"}
+            >
               {kpis.successRate.toFixed(1)}%
             </span>
           </div>
@@ -235,10 +256,16 @@
         </Card.Root>
 
         <!-- Card 3: Failed Deliveries -->
-        <Card.Root class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30">
+        <Card.Root
+          class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30"
+        >
           <div class="flex items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium uppercase tracking-wider">Failed Deliveries</span>
-            <div class={`size-8 rounded-lg flex items-center justify-center ${kpis.failedEvents > 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+            <span class="text-xs font-medium uppercase tracking-wider"
+              >Failed Deliveries</span
+            >
+            <div
+              class={`size-8 rounded-lg flex items-center justify-center ${kpis.failedEvents > 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}
+            >
               <AlertTriangleIcon class="size-4" />
             </div>
           </div>
@@ -248,15 +275,23 @@
             </span>
           </div>
           <p class="text-xs text-muted-foreground mt-1">
-            {kpis.failedEvents > 0 ? "Requires review or endpoint fix" : "No failed delivery attempts"}
+            {kpis.failedEvents > 0
+              ? "Requires review or endpoint fix"
+              : "No failed delivery attempts"}
           </p>
         </Card.Root>
 
         <!-- Card 4: Active Endpoints -->
-        <Card.Root class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30">
+        <Card.Root
+          class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30"
+        >
           <div class="flex items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium uppercase tracking-wider">Active Endpoints</span>
-            <div class="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <span class="text-xs font-medium uppercase tracking-wider"
+              >Active Endpoints</span
+            >
+            <div
+              class="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center"
+            >
               <CableIcon class="size-4" />
             </div>
           </div>
@@ -273,9 +308,13 @@
 
   <!-- Delivery Volume Chart Section -->
   <Card.Root class="p-6 shadow-none">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-2 border-b border-border/50">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-2 border-b border-border/50"
+    >
       <div>
-        <h2 class="text-base font-semibold tracking-tight">Delivery Performance</h2>
+        <h2 class="text-base font-semibold tracking-tight">
+          Delivery Performance
+        </h2>
         <p class="text-xs text-muted-foreground mt-0.5">
           Dispatched webhook events over time for the selected interval ({selectedLast})
         </p>
@@ -289,14 +328,22 @@
 
       {#if eventsMetrics?.data && eventsMetrics.data.length > 0}
         <div class="h-64 w-full">
-          <BarChartEvents data={eventsMetrics.data} interval={eventsMetrics.interval} />
+          <BarChartEvents
+            data={eventsMetrics.data}
+            interval={eventsMetrics.interval}
+          />
         </div>
       {:else}
-        <div class="h-56 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-lg">
+        <div
+          class="h-56 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-lg"
+        >
           <InboxIcon class="size-8 text-muted-foreground mb-2 stroke-[1.5]" />
-          <p class="text-sm font-medium text-muted-foreground">No delivery metrics recorded</p>
+          <p class="text-sm font-medium text-muted-foreground">
+            No delivery metrics recorded
+          </p>
           <p class="text-xs text-muted-foreground/70 mt-1">
-            Events will automatically populate here once dispatched to your endpoints.
+            Events will automatically populate here once dispatched to your
+            endpoints.
           </p>
         </div>
       {/if}
@@ -307,9 +354,13 @@
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
     <!-- Left: Recent Deliveries (2/3 width) -->
     <Card.Root class="lg:col-span-2 shadow-none p-5 flex flex-col">
-      <div class="flex items-center justify-between pb-3 mb-3 border-b border-border/50">
+      <div
+        class="flex items-center justify-between pb-3 mb-3 border-b border-border/50"
+      >
         <div>
-          <h2 class="text-base font-semibold tracking-tight">Recent Deliveries</h2>
+          <h2 class="text-base font-semibold tracking-tight">
+            Recent Deliveries
+          </h2>
           <p class="text-xs text-muted-foreground mt-0.5">
             Latest events received by your configured webhooks
           </p>
@@ -327,7 +378,9 @@
         {#snippet fallback()}
           <div class="space-y-3">
             {#each Array(4) as _}
-              <div class="flex items-center justify-between py-2 border-b border-border/40">
+              <div
+                class="flex items-center justify-between py-2 border-b border-border/40"
+              >
                 <div class="space-y-1">
                   <Skeleton class="h-4 w-32" />
                   <Skeleton class="h-3 w-48" />
@@ -347,14 +400,20 @@
               >
                 <div class="min-w-0 pr-4">
                   <div class="flex items-center gap-2">
-                    <span class="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                    <span
+                      class="text-sm font-medium truncate group-hover:text-primary transition-colors"
+                    >
                       {event.topic?.name ?? "Webhook Event"}
                     </span>
-                    <span class="font-mono text-[11px] text-muted-foreground/80 truncate">
+                    <span
+                      class="font-mono text-[11px] text-muted-foreground/80 truncate"
+                    >
                       {event.uid ?? event.id}
                     </span>
                   </div>
-                  <div class="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                  <div
+                    class="text-xs text-muted-foreground mt-0.5 flex items-center gap-2"
+                  >
                     <DateTimeDisplay value={event.insertedAt} />
                   </div>
                 </div>
@@ -364,17 +423,24 @@
                     variant={STATUS_VARIANT[event.status] ?? "default"}
                     label={event.status}
                   />
-                  <ArrowRightIcon class="size-3.5 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRightIcon
+                    class="size-3.5 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
+                  />
                 </div>
               </Link>
             {/each}
           </div>
         {:else}
-          <div class="py-12 flex flex-col items-center justify-center text-center">
+          <div
+            class="py-12 flex flex-col items-center justify-center text-center"
+          >
             <InboxIcon class="size-8 text-muted-foreground mb-2 stroke-[1.5]" />
-            <p class="text-sm font-medium text-muted-foreground">No recent events</p>
+            <p class="text-sm font-medium text-muted-foreground">
+              No recent events
+            </p>
             <p class="text-xs text-muted-foreground/70 mt-1 max-w-sm">
-              When external webhooks are triggered, they will appear here in real time.
+              When external webhooks are triggered, they will appear here in
+              real time.
             </p>
           </div>
         {/if}
@@ -383,7 +449,9 @@
 
     <!-- Right: Endpoint Health (1/3 width) -->
     <Card.Root class="lg:col-span-1 shadow-none p-5 flex flex-col">
-      <div class="flex items-center justify-between pb-3 mb-3 border-b border-border/50">
+      <div
+        class="flex items-center justify-between pb-3 mb-3 border-b border-border/50"
+      >
         <div>
           <h2 class="text-base font-semibold tracking-tight">Endpoints</h2>
           <p class="text-xs text-muted-foreground mt-0.5">
@@ -419,16 +487,23 @@
                 class="py-3 px-2 flex flex-col gap-1.5 rounded-md hover:bg-muted/50 transition-colors group"
               >
                 <div class="flex items-center justify-between gap-2">
-                  <span class="font-mono text-xs text-foreground truncate group-hover:text-primary transition-colors" title={endpoint.url}>
+                  <span
+                    class="font-mono text-xs text-foreground truncate group-hover:text-primary transition-colors"
+                    title={endpoint.url}
+                  >
                     {endpoint.url}
                   </span>
                   <BadgeStatus
-                    variant={endpoint.status === "enabled" ? "success" : "warning"}
+                    variant={endpoint.status === "enabled"
+                      ? "success"
+                      : "warning"}
                     label={endpoint.status}
                   />
                 </div>
 
-                <div class="flex items-center gap-3 text-xs text-muted-foreground">
+                <div
+                  class="flex items-center gap-3 text-xs text-muted-foreground"
+                >
                   <span class="flex items-center gap-1">
                     <LayersIcon class="size-3" />
                     {endpoint.subscriptions?.length ?? 0} topics
@@ -443,9 +518,13 @@
             {/each}
           </div>
         {:else}
-          <div class="py-10 flex flex-col items-center justify-center text-center">
+          <div
+            class="py-10 flex flex-col items-center justify-center text-center"
+          >
             <CableIcon class="size-8 text-muted-foreground mb-2 stroke-[1.5]" />
-            <p class="text-sm font-medium text-muted-foreground">No endpoints configured</p>
+            <p class="text-sm font-medium text-muted-foreground">
+              No endpoints configured
+            </p>
             <p class="text-xs text-muted-foreground/70 mt-1 mb-4">
               Add your first endpoint destination to receive webhook events.
             </p>

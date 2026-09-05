@@ -53,7 +53,7 @@ defmodule Whooks.Metrics do
 
     success_rate =
       if total_events > 0 do
-        Float.round((successful_events / total_events) * 100, 1)
+        Float.round(successful_events / total_events * 100, 1)
       else
         100.0
       end

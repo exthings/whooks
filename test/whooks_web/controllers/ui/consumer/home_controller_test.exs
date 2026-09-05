@@ -28,7 +28,10 @@ defmodule WhooksWeb.UI.Consumer.HomeControllerTest do
       assert inertia_component(conn) == "consumers/portal/dashboard"
     end
 
-    test "accepts filter parameters and exposes filters and projects props", %{conn: conn, project: project} do
+    test "accepts filter parameters and exposes filters and projects props", %{
+      conn: conn,
+      project: project
+    } do
       conn = get(conn, ~p"/ui/consumers/dashboard?last=7d&project_id=#{project.id}")
       assert html_response(conn, 200)
       props = inertia_props(conn)
@@ -48,7 +51,10 @@ defmodule WhooksWeb.UI.Consumer.HomeControllerTest do
         |> put_req_header("x-inertia", "true")
         |> put_req_header("x-inertia-version", version)
         |> put_req_header("x-inertia-partial-component", "consumers/portal/dashboard")
-        |> put_req_header("x-inertia-partial-data", "kpis,eventsMetrics,recentEvents,endpointHealth")
+        |> put_req_header(
+          "x-inertia-partial-data",
+          "kpis,eventsMetrics,recentEvents,endpointHealth"
+        )
         |> get(~p"/ui/consumers/dashboard")
 
       assert conn.status == 200
