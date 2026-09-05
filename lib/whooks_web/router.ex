@@ -67,8 +67,14 @@ defmodule WhooksWeb.Router do
     scope "/consumers", Consumer do
       pipe_through [:fetch_current_scope_for_consumer]
 
-      get "/", HomeController, :index
+      get "/dashboard", HomeController, :index
       get "/login/:token", ConsumerSessionController, :confirm
+
+      # todo projects listing
+      resources "/projects", ProjectController, only: [:index, :show]
+
+      # todo endpoints listing, create and subscriptions
+      resources "/endpoints", EndpointController, only: [:index, :create, :show]
 
       scope "/events" do
         resources "/", EventController, only: [:index, :show]

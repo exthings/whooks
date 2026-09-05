@@ -13,7 +13,7 @@ defmodule WhooksWeb.UI.Consumer.ConsumerSessionController do
       {:ok, {consumer, _expired_tokens}} ->
         conn
         |> Plugs.Auth.log_in_consumer(consumer, params)
-        |> redirect(to: ~p"/ui/consumers")
+        |> redirect(to: ~p"/ui/consumers/dashboard")
 
       {:error, :not_found} ->
         Logger.info("Consumer session not found for token: #{params["token"]}")

@@ -5,6 +5,6 @@ defmodule WhooksWeb.UI.Consumer.HomeController do
 
   def index(conn, _params) do
     conn
-    |> render_inertia("consumers/home")
+    |> render_inertia("consumers/portal/dashboard")
   end
 end

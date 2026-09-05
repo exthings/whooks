@@ -14,6 +14,7 @@ defmodule Whooks.Events do
   alias Whooks.Consumers.Consumer
   alias Whooks.Subscriptions.Subscription
   alias Whooks.DeliveryAttempts.DeliveryAttempt
+  alias Whooks.Auth
   alias Whooks.Auth.Scope
   alias Whooks.RedisCache
 
@@ -26,7 +27,24 @@ defmodule Whooks.Events do
     Repo.all(Event)
   end
 
-  def list(params, opts \\ []) do
+  def list(%Scope{} = scope, params, opts) do
+    Logger.info("list events")
+
+    from(e in Event,
+      join: t in Topic,
+      on: e.topic_id == t.id,
+      as: :topic,
+      join: c in Consumer,
+      on: e.consumer_id == c.id,
+      as: :consumer,
+      preload: [:topic, :consumer]
+    )
+    |> Auth.scope_query(scope)
+    |> apply_filters(opts)
+    |> Flop.validate_and_run(params, for: Event)
+  end
+
+  def list(params, opts) do
     Logger.info("list events")
 
     from(e in Event,

@@ -6,10 +6,22 @@ defmodule Whooks.Auth do
   import Ecto.Query, warn: false
   alias Whooks.Repo
 
-  alias Whooks.Auth.{User, AccessToken, UserNotifier}
+  alias Whooks.Auth.{User, AccessToken, UserNotifier, Scope}
   alias Whooks.Consumers.Consumer
 
   require Logger
+
+  def scope_query(q, %Scope{consumer: %Consumer{} = consumer, user: nil}) do
+    if has_named_binding?(q, :consumer) do
+      where(q, [consumer: c], c.id == ^consumer.id)
+    else
+      q
+    end
+  end
+
+  def scope_query(q, _) do
+    q
+  end
 
   def build_root_user do
     %User{

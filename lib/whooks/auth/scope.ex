@@ -19,6 +19,8 @@ defmodule Whooks.Auth.Scope do
   alias Whooks.Auth.User
   alias Whooks.Consumers.Consumer
 
+  import Ecto.Query
+
   defstruct user: nil, consumer: nil
 
   @doc """

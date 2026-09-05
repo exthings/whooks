@@ -5,16 +5,23 @@ defmodule Whooks.Endpoints do
   @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
+
+  use Nebulex.Caching
+
   alias Whooks.Repo
 
   alias Whooks.Endpoints.Endpoint
-
   alias Whooks.Topics
   alias Whooks.Topics.Topic
   alias Whooks.Common
+  alias Whooks.Consumers.Consumer
   alias Whooks.Endpoints.Endpoint
   alias Whooks.Subscriptions.Subscription
+  alias Whooks.Auth
   alias Whooks.Auth.Scope
+  alias Whooks.RedisCache
+
+  @ttl :timer.minutes(60)
 
   @doc """
   Returns the list of endpoints.
@@ -25,15 +32,13 @@ defmodule Whooks.Endpoints do
       [%Endpoint{}, ...]
 
   """
-  def list do
+  def list(%Scope{} = scope, params \\ %{}) do
     from(e in Endpoint,
-      join: s in Subscription,
-      on: e.id == s.endpoint_id,
-      join: t in Topic,
-      on: s.topic_id == t.id,
-      preload: [subscriptions: :topic]
+      join: c in assoc(e, :consumer),
+      as: :consumer
     )
-    |> Repo.all()
+    |> Auth.scope_query(scope)
+    |> Flop.validate_and_run(params, for: Endpoint)
   end
 
   @doc """
@@ -65,6 +70,26 @@ defmodule Whooks.Endpoints do
     |> case do
       nil -> {:error, :not_found}
       endpoint -> {:ok, endpoint}
+    end
+  end
+
+  # @decorate cache_put(cache: RedisCache, opts: [ttl: @ttl])
+  def get(%Scope{} = scope, id, opts \\ []) do
+    from(e in Endpoint,
+      join: c in assoc(e, :consumer),
+      as: :consumer,
+      where: e.id == ^id,
+      preload: [:project, :consumer, subscriptions: [:topic]]
+    )
+    |> Auth.scope_query(scope)
+    |> apply_filters(opts)
+    |> Repo.one()
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      endpoint ->
+        {:ok, endpoint}
     end
   end
 
@@ -152,6 +177,16 @@ defmodule Whooks.Endpoints do
   """
   def change(%Endpoint{} = endpoint, attrs \\ %{}) do
     Endpoint.changeset(endpoint, attrs)
+  end
+
+  defp apply_filters(q, opts) do
+    Enum.reduce(opts, q, fn
+      {:consumer_id, consumer_id}, q ->
+        where(q, [e], e.consumer_id == ^consumer_id)
+
+      {:project_id, project_id}, q ->
+        where(q, [e], e.project_id == ^project_id)
+    end)
   end
 
   def authorize(:get, %Scope{user: user}, _opts) do
