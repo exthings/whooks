@@ -12,12 +12,14 @@
 
   const { data, interval = "hour" }: Props = $props();
 
-  const chartData = data
-    .filter((item) => item.status === "success")
-    .map((item) => ({
-      date: new Date(item.dateTime),
-      value: item.count,
-    }));
+  const chartData = $derived(
+    data
+      .filter((item) => item.status === "success")
+      .map((item) => ({
+        date: new Date(item.dateTime),
+        value: item.count,
+      })),
+  );
 
   const chartConfig = {
     success: { label: "success", color: "var(--color-green-400)" },
@@ -38,8 +40,6 @@
         return { day: "2-digit", month: "2-digit" };
     }
   });
-
-  $inspect(chartData);
 </script>
 
 <Chart.Container config={chartConfig} class="h-full w-full pl-2 pr-2 pb-0 pt-2">
@@ -70,7 +70,9 @@
       highlight: { area: { fill: "none" } },
       xAxis: {
         format: (d: Date) => {
-          return d.toLocaleDateString("en-US", labelFormat);
+          return interval === "minute"
+            ? d.toLocaleTimeString("en-US", labelFormat)
+            : d.toLocaleDateString("en-US", labelFormat);
         },
         ticks: Math.floor(chartData.length / 6),
       },

@@ -5,11 +5,11 @@
 
   type Props = {
     label: string;
-    description: string;
+    description?: string;
     isActive: boolean;
   } & LinkProps;
 
-  let { isActive, label, description, ...rest }: Props = $props();
+  let { isActive, label, description = "", ...rest }: Props = $props();
 </script>
 
 <Link
