@@ -1,3 +1,5 @@
+import type { Consumer } from "./consumer";
+
 export type User = {
   id: string;
   externalId: string;
@@ -11,5 +13,6 @@ export type User = {
 };
 
 export type Scope = {
-  user: User;
+  user: User | null;
+  consumer: Consumer | null;
 };
