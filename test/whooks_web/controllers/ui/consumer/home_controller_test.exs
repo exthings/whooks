@@ -53,7 +53,7 @@ defmodule WhooksWeb.UI.Consumer.HomeControllerTest do
         |> put_req_header("x-inertia-partial-component", "consumers/portal/dashboard")
         |> put_req_header(
           "x-inertia-partial-data",
-          "kpis,eventsMetrics,recentEvents,endpointHealth"
+          "kpis,eventsMetrics,events,endpointHealth"
         )
         |> get(~p"/ui/consumers/dashboard")
 
@@ -61,7 +61,8 @@ defmodule WhooksWeb.UI.Consumer.HomeControllerTest do
       props = json_response(conn, 200)["props"]
       assert is_map(props["kpis"])
       assert is_map(props["eventsMetrics"])
-      assert is_list(props["recentEvents"])
+      assert is_map(props["events"])
+      assert is_list(props["events"]["data"])
       assert is_list(props["endpointHealth"])
     end
   end

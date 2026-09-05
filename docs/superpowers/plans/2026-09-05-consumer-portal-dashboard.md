@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the Consumer Portal Dashboard to provide consumers with an overview of webhook delivery KPIs, time-series volume metrics, recent delivery logs, and endpoint health status.
+**Goal:** Build the Consumer Portal Dashboard to provide consumers with an overview of webhook delivery KPIs, time-series volume metrics, recent delivery logs with pagination, and endpoint health status.
 
-**Architecture:** A Phoenix controller (`WhooksWeb.UI.Consumer.HomeController`) renders an Inertia Svelte 5 page (`consumers/portal/dashboard.svelte`). The initial page shell renders immediately with filter options, while heavy metrics (`kpis`, `events_metrics`, `recent_events`, `endpoint_health`) are loaded asynchronously via Inertia deferred props. Background polling (`usePoll(10000)`) keeps data synchronized.
+**Architecture:** A Phoenix controller (`WhooksWeb.UI.Consumer.HomeController`) renders an Inertia Svelte 5 page (`consumers/portal/dashboard.svelte`). The initial page shell renders immediately with filter options, while heavy metrics (`kpis`, `events_metrics`, `events`, `endpoint_health`) are loaded asynchronously via Inertia deferred props. Background polling keeps data synchronized.
 
 **Tech Stack:** Elixir, Phoenix 1.8, Inertia.js, Svelte 5 (runes), TypeScript, Tailwind CSS, shadcn-svelte, LayerChart v2.
 
@@ -27,7 +27,7 @@
 - Consumes: `Whooks.Events.Event`, `Whooks.Endpoints.Endpoint`, `Whooks.Metrics.Utils`
 - Produces: `Whooks.Metrics.consumer_kpis(consumer_id, opts \\ [])` returning `{:ok, %{total_events: non_neg_integer(), successful_events: non_neg_integer(), failed_events: non_neg_integer(), success_rate: float(), active_endpoints_count: non_neg_integer()}}`
 
-- [ ] **Step 1: Write the failing unit test**
+- [x] **Step 1: Write the failing unit test**
 
 Create `test/whooks/metrics/consumer_kpis_test.exs`:
 ```elixir
@@ -65,13 +65,36 @@ defmodule Whooks.Metrics.ConsumerKpisTest do
       topic = topic_fixture(%{project_id: project.id})
 
       # Create endpoints
-      _ep1 = endpoint_fixture(%{consumer_id: consumer.id, project_id: project.id, status: :active})
-      _ep2 = endpoint_fixture(%{consumer_id: consumer.id, project_id: project.id, status: :active})
+      _ep1 =
+        endpoint_fixture(%{consumer_id: consumer.id, project_id: project.id, status: :enabled})
+
+      _ep2 =
+        endpoint_fixture(%{consumer_id: consumer.id, project_id: project.id, status: :enabled})
 
       # Create events
-      _event1 = event_fixture(%{consumer_id: consumer.id, project_id: project.id, topic_id: topic.id, status: "delivered"})
-      _event2 = event_fixture(%{consumer_id: consumer.id, project_id: project.id, topic_id: topic.id, status: "delivered"})
-      _event3 = event_fixture(%{consumer_id: consumer.id, project_id: project.id, topic_id: topic.id, status: "failed"})
+      _event1 =
+        event_fixture(%{
+          consumer_id: consumer.id,
+          project_id: project.id,
+          topic_id: topic.id,
+          status: :success
+        })
+
+      _event2 =
+        event_fixture(%{
+          consumer_id: consumer.id,
+          project_id: project.id,
+          topic_id: topic.id,
+          status: :success
+        })
+
+      _event3 =
+        event_fixture(%{
+          consumer_id: consumer.id,
+          project_id: project.id,
+          topic_id: topic.id,
+          status: :failed
+        })
 
       assert {:ok, kpis} = Metrics.consumer_kpis(consumer.id, last: "24h")
 
@@ -85,12 +108,12 @@ defmodule Whooks.Metrics.ConsumerKpisTest do
 end
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `mix test test/whooks/metrics/consumer_kpis_test.exs`
 Expected: FAIL with `undefined function consumer_kpis/2`
 
-- [ ] **Step 3: Implement `consumer_kpis/2` in `Whooks.Metrics`**
+- [x] **Step 3: Implement `consumer_kpis/2` in `Whooks.Metrics`**
 
 Add to `lib/whooks/metrics/metrics.ex`:
 ```elixir
@@ -118,8 +141,8 @@ Add to `lib/whooks/metrics/metrics.ex`:
 
     status_counts = Repo.all(events_query) |> Map.new()
 
-    successful_events = Map.get(status_counts, "delivered", 0)
-    failed_events = Map.get(status_counts, "failed", 0)
+    successful_events = Map.get(status_counts, :success, 0) + Map.get(status_counts, "success", 0)
+    failed_events = Map.get(status_counts, :failed, 0) + Map.get(status_counts, "failed", 0)
     total_events = Enum.reduce(status_counts, 0, fn {_status, count}, acc -> acc + count end)
 
     success_rate =
@@ -131,7 +154,7 @@ Add to `lib/whooks/metrics/metrics.ex`:
 
     endpoints_query =
       from(ep in Endpoint,
-        where: ep.consumer_id == ^consumer_id and ep.status == :active,
+        where: ep.consumer_id == ^consumer_id and ep.status == :enabled,
         select: count(ep.id)
       )
 
@@ -155,12 +178,12 @@ Add to `lib/whooks/metrics/metrics.ex`:
   end
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `mix test test/whooks/metrics/consumer_kpis_test.exs`
 Expected: PASS (2 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/whooks/metrics/metrics.ex test/whooks/metrics/consumer_kpis_test.exs
@@ -173,13 +196,14 @@ git commit -m "feat(metrics): add consumer_kpis/2 aggregation helper"
 
 **Files:**
 - Modify: `lib/whooks_web/controllers/ui/consumer/home_controller.ex`
+- Modify: `lib/whooks/events.ex`
 - Test: `test/whooks_web/controllers/ui/consumer/home_controller_test.exs`
 
 **Interfaces:**
 - Consumes: `Whooks.Metrics`, `Whooks.Projects`, `Whooks.Events`, `Whooks.Endpoints`, `Whooks.Serializer`
-- Produces: Inertia render for `"consumers/portal/dashboard"` with `projects`, `filters`, and deferred `kpis`, `events_metrics`, `recent_events`, and `endpoint_health`.
+- Produces: Inertia render for `"consumers/portal/dashboard"` with `projects`, `filters`, and deferred `kpis`, `events_metrics`, `events` (with `data` and `meta`), and `endpoint_health`.
 
-- [ ] **Step 1: Write controller test**
+- [x] **Step 1: Write controller test**
 
 Create `test/whooks_web/controllers/ui/consumer/home_controller_test.exs`:
 ```elixir
@@ -189,7 +213,7 @@ defmodule WhooksWeb.UI.Consumer.HomeControllerTest do
   import Whooks.OrganizationsFixtures
   import Whooks.ProjectsFixtures
   import Whooks.ConsumersFixtures
-  import Whooks.AuthFixtures
+  import Inertia.Testing
 
   setup do
     organization = organization_fixture()
@@ -206,31 +230,77 @@ defmodule WhooksWeb.UI.Consumer.HomeControllerTest do
   end
 
   describe "GET /ui/consumers/dashboard" do
-    test "renders dashboard page with initial props", %{conn: conn, project: project} do
+    test "renders dashboard page with initial props", %{conn: conn, project: _project} do
       conn = get(conn, ~p"/ui/consumers/dashboard")
       assert html_response(conn, 200) =~ "consumers/portal/dashboard"
+      assert inertia_component(conn) == "consumers/portal/dashboard"
     end
 
-    test "accepts filter parameters", %{conn: conn, project: project} do
+    test "accepts filter parameters and exposes filters and projects props", %{
+      conn: conn,
+      project: project
+    } do
       conn = get(conn, ~p"/ui/consumers/dashboard?last=7d&project_id=#{project.id}")
-      assert html_response(conn, 200) =~ "consumers/portal/dashboard"
+      assert html_response(conn, 200)
+      props = inertia_props(conn)
+      assert props.filters.last == "7d"
+      assert props.filters.projectId == to_string(project.id)
+      assert is_list(props.projects)
+    end
+
+    test "resolves deferred props successfully", %{conn: conn} do
+      version =
+        ["/assets/app.js"]
+        |> Enum.map_join(&WhooksWeb.Endpoint.static_path(&1))
+        |> then(&Base.encode16(:crypto.hash(:md5, &1), case: :lower))
+
+      conn =
+        conn
+        |> put_req_header("x-inertia", "true")
+        |> put_req_header("x-inertia-version", version)
+        |> put_req_header("x-inertia-partial-component", "consumers/portal/dashboard")
+        |> put_req_header(
+          "x-inertia-partial-data",
+          "kpis,eventsMetrics,events,endpointHealth"
+        )
+        |> get(~p"/ui/consumers/dashboard")
+
+      assert conn.status == 200
+      props = json_response(conn, 200)["props"]
+      assert is_map(props["kpis"])
+      assert is_map(props["eventsMetrics"])
+      assert is_map(props["events"])
+      assert is_list(props["events"]["data"])
+      assert is_list(props["endpointHealth"])
     end
   end
 end
 ```
 
-- [ ] **Step 2: Run test to verify initial behavior**
+- [x] **Step 2: Run test to verify behavior**
 
 Run: `mix test test/whooks_web/controllers/ui/consumer/home_controller_test.exs`
-Expected: PASS (verifies existing placeholder renders, but does not yet supply required dashboard props)
+Expected: PASS
 
-- [ ] **Step 3: Update `WhooksWeb.UI.Consumer.HomeController`**
+- [x] **Step 3: Update `WhooksWeb.UI.Consumer.HomeController` & `Whooks.Events`**
 
-Modify `lib/whooks_web/controllers/ui/consumer/home_controller.ex`:
+In `lib/whooks/events.ex`, support the `{:last, last}` filter option:
+```elixir
+      {:last, last}, q ->
+        where(
+          q,
+          [e, da, s],
+          e.inserted_at >= ^Utils.parse_last_to_date_time(last) and
+            e.inserted_at <= fragment("now()")
+        )
+```
+
+In `lib/whooks_web/controllers/ui/consumer/home_controller.ex`:
 ```elixir
 defmodule WhooksWeb.UI.Consumer.HomeController do
   use WhooksWeb, :controller
 
+  alias Whooks.Repo
   alias Whooks.Projects
   alias Whooks.Events
   alias Whooks.Endpoints
@@ -276,11 +346,12 @@ defmodule WhooksWeb.UI.Consumer.HomeController do
     |> assign_prop(
       :events_metrics,
       inertia_defer(fn ->
-        opts = [
-          consumer_id: consumer.id,
-          last: last,
-          interval: interval
-        ] ++ if(project_id, do: [project_id: project_id], else: [])
+        opts =
+          [
+            consumer_id: consumer.id,
+            last: last,
+            interval: interval
+          ] ++ if(project_id, do: [project_id: project_id], else: [])
 
         {:ok, events_stats} = Metrics.EventStats.timeseries(opts)
 
@@ -292,14 +363,15 @@ defmodule WhooksWeb.UI.Consumer.HomeController do
       end)
     )
     |> assign_prop(
-      :recent_events,
+      :events,
       inertia_defer(fn ->
-        opts = [consumer_id: consumer.id] ++ if(project_id, do: [project_id: project_id], else: [])
-
-        Events.list(%{"page_size" => 8}, opts)
+        Events.list(scope, %{"page_size" => 5}, last: last)
         |> case do
-          {:ok, {events, _meta}} -> Serializer.to_map(events)
-          _ -> []
+          {:ok, {events, meta}} ->
+            %{data: Serializer.to_map(events), meta: Serializer.to_map(meta)}
+
+          _ ->
+            %{data: [], meta: %{}}
         end
       end)
     )
@@ -308,8 +380,13 @@ defmodule WhooksWeb.UI.Consumer.HomeController do
       inertia_defer(fn ->
         Endpoints.list(scope, %{"page_size" => 5})
         |> case do
-          {:ok, {endpoints, _meta}} -> Serializer.to_map(endpoints)
-          _ -> []
+          {:ok, {endpoints, _meta}} ->
+            endpoints
+            |> Repo.preload(subscriptions: [:topic])
+            |> Serializer.to_map()
+
+          _ ->
+            []
         end
       end)
     )
@@ -318,15 +395,15 @@ defmodule WhooksWeb.UI.Consumer.HomeController do
 end
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `mix test test/whooks_web/controllers/ui/consumer/home_controller_test.exs`
-Expected: PASS
+Expected: PASS (3 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
-git add lib/whooks_web/controllers/ui/consumer/home_controller.ex test/whooks_web/controllers/ui/consumer/home_controller_test.exs
+git add lib/whooks_web/controllers/ui/consumer/home_controller.ex lib/whooks/events.ex test/whooks_web/controllers/ui/consumer/home_controller_test.exs
 git commit -m "feat(portal): add dashboard data and deferred props in consumer HomeController"
 ```
 
@@ -336,47 +413,48 @@ git commit -m "feat(portal): add dashboard data and deferred props in consumer H
 
 **Files:**
 - Modify: `assets/js/pages/consumers/portal/dashboard.svelte`
-- Create/Modify helper component if needed: `assets/js/components/charts/bar-chart-events.svelte`
+- Components used: `assets/js/components/events-table.svelte`, `assets/js/components/section.svelte`, `assets/js/components/charts/bar-chart-events.svelte`
 
 **Interfaces:**
 - Consumes:
-  - Immediate Props: `projects: Project[]`, `filters: { last: string, project_id: string | null }`
-  - Deferred Props: `kpis: { total_events: number, successful_events: number, failed_events: number, success_rate: number, active_endpoints_count: number }`
-  - `events_metrics: { data: Analytics[], interval: string, last: string }`
-  - `recent_events: Event[]`
-  - `endpoint_health: Endpoint[]`
-- Produces: Fully interactive Svelte 5 Dashboard page with filter bar, KPI cards, delivery volume chart, recent deliveries table, endpoint health list, and `usePoll(10000)`.
+  - Immediate Props: `projects?: Project[]`, `filters?: { last: string, projectId?: string | null }`
+  - Deferred Props:
+    - `kpis?: { totalEvents: number, successfulEvents: number, failedEvents: number, successRate: number, activeEndpointsCount: number }`
+    - `eventsMetrics?: { data: Analytics[], interval: string, last: string }`
+    - `events?: { data: Event[], meta: Meta }`
+    - `endpointHealth?: (Endpoint & { subscriptions?: any[] })[]`
+- Produces: Fully responsive Svelte 5 Dashboard layout with 3-column top section (2x2 KPI grid + 2-col performance chart) and full EventsTable + Endpoints Section.
 
-- [ ] **Step 1: Inspect existing types and chart components**
+- [x] **Step 1: Inspect existing types and chart components**
 
-Ensure `assets/js/types/index.ts` exports `Analytics`, `Project`, `Event`, `Endpoint`.
-Ensure `BarChartEvents` from `$components/charts` or `LayerChart` integrates properly with `events_metrics.data`.
+Ensure `assets/js/types/index.ts` exports `Analytics`, `Project`, `Event`, `Endpoint`, `Meta`.
+Ensure `BarChartEvents` from `$components/charts` integrates properly with `eventsMetrics.data`.
 
-- [ ] **Step 2: Implement `dashboard.svelte` with Svelte 5 Runes & shadcn-svelte**
+- [x] **Step 2: Implement `dashboard.svelte` with Svelte 5 Runes & shadcn-svelte**
 
-Write `assets/js/pages/consumers/portal/dashboard.svelte` using runes (`$props()`, `$state()`, `$derived()`):
-- Top header with Title and Filter Bar (Project selector + Time range selector: 24h, 7d, 30d).
-- Handling filter changes via `router.reload({ data: { last, project_id }, only: ['kpis', 'events_metrics', 'recent_events'] })`.
-- KPI Cards with `<Deferred data={['kpis']}>` and `<Skeleton>` fallback cards:
-  - Total Deliveries
-  - Success Rate %
-  - Failed Deliveries
-  - Active Endpoints
-- Timeseries Volume & Status Chart with `<Deferred data={['events_metrics']}>` and `<Skeleton>` fallback.
-- Bottom Split Section:
-  - 2/3 column: Recent Events with `BadgeStatus`, topic name, event ID, `DateTimeDisplay`, and "View all events →" link to `/ui/consumers/events`.
-  - 1/3 column: Endpoint Health with URL (truncated mono font), status indicator, subscription count, and link to `/ui/consumers/endpoints`.
-- Real-time updates: `usePoll(10000)`.
+Write `assets/js/pages/consumers/portal/dashboard.svelte`:
+- Header Toolbar: Title and description with Project Selector (`Select.Root`) and Time Range Selector (`24h`, `7d`, `30d`).
+- Reactive filters with `$derived`:
+  - `selectedLast = $derived(filters?.last ?? "24h")`
+  - `selectedProjectId = $derived(filters?.projectId ?? "all")`
+- Partial reload:
+  - `router.reload({ data: { last, project_id: projectId === "all" ? "" : projectId }, only: ["filters", "kpis", "eventsMetrics", "endpointHealth", "events"] })`
+- Top 3-Column Layout (`grid grid-cols-3 gap-4`):
+  - Column 1: 2x2 Grid with 4 KPI cards (Total Deliveries, Success Rate %, Failed Deliveries, Active Endpoints) inside `<Deferred data="kpis">` with skeleton fallback.
+  - Columns 2-3 (`col-span-2`): Delivery Performance Chart card inside `<Deferred data="eventsMetrics">` with `BarChartEvents`.
+- Bottom Section:
+  - `<EventsTable propsKey="events" columnVisibility={["insertedAt", "id", "consumer", "topic", "status", "tags"]} />`
+  - `<Section title="Endpoints">` containing Endpoint Health list card with `<Deferred data="endpointHealth">`.
 
-- [ ] **Step 3: Validate Frontend Build / Compilation**
+- [x] **Step 3: Validate Frontend Build / Compilation**
 
-Run: `npm --prefix assets run check` or `npm --prefix assets run build`
+Run: `pnpm --dir assets run build`
 Expected: Clean build without Svelte/TypeScript syntax errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
-git add assets/js/pages/consumers/portal/dashboard.svelte
+git add assets/js/pages/consumers/portal/dashboard.svelte assets/js/components/section.svelte assets/js/components/events-table.svelte
 git commit -m "feat(portal): implement consumer portal dashboard UI with Svelte 5"
 ```
 
@@ -387,12 +465,12 @@ git commit -m "feat(portal): implement consumer portal dashboard UI with Svelte 
 **Files:**
 - Codebase-wide linting and precommit checks
 
-- [ ] **Step 1: Run mix precommit alias**
+- [x] **Step 1: Run compile --warnings-as-errors and mix format**
 
-Run: `mix precommit`
-Expected: All tests pass, formatter clean, no compilation warnings.
+Run: `mix compile --warnings-as-errors && mix format`
+Expected: Clean compilation with 0 warnings, code formatted.
 
-- [ ] **Step 2: Commit any formatting or minor fixes if needed**
+- [x] **Step 2: Commit any formatting or minor fixes**
 
 ```bash
 git commit -am "chore: formatting and precommit fixes for consumer portal dashboard"
