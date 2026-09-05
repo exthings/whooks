@@ -47,18 +47,12 @@
   );
 
   const handleLastChange = (value: string) => {
-    router.get(
-      "",
-      {
+    router.reload({
+      data: {
         [propKey]: { last: value, interval: lastToInterval[value as Last] },
-        only: [propKey],
       },
-      {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-      },
-    );
+      only: [propKey],
+    });
   };
 
   $effect(() => {

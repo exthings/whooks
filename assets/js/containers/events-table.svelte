@@ -30,6 +30,7 @@
   type Props = {
     propsKey: string;
     columnVisibility?: string[];
+    hrefBuilder?: (id: string) => string;
   };
 
   type EventWithTopicAndConsumer = Event & {
@@ -48,6 +49,7 @@
       "status",
       "tags",
     ],
+    hrefBuilder = (id) => buildHref(`/events/${id}`),
   }: Props = $props();
 
   let events: EventWithTopicAndConsumer[] = $derived(
@@ -83,7 +85,7 @@
       cell: ({ row }) => {
         return renderComponent(CellId, {
           id: row.original.id,
-          href: buildHref(`/events/${row.original.id}`),
+          href: hrefBuilder(row.original.id),
           maxVisibleLength: 64,
         });
       },
