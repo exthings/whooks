@@ -28,6 +28,7 @@ defmodule WhooksWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import WhooksWeb.ConnCase
+      import Inertia.Testing
     end
   end
 
@@ -75,5 +76,30 @@ defmodule WhooksWeb.ConnCase do
 
   defp maybe_set_token_authenticated_at(token, authenticated_at) do
     Whooks.AuthFixtures.override_token_authenticated_at(token, authenticated_at)
+  end
+
+  @doc """
+  Computes the current asset version used by Inertia.Plug.
+  """
+  def inertia_version do
+    endpoint = Application.get_env(:inertia, :endpoint, WhooksWeb.Endpoint)
+    static_paths = Application.get_env(:inertia, :static_paths, ["/assets/app.js"])
+
+    static_paths
+    |> Enum.map_join(&endpoint.static_path(&1))
+    |> then(&Base.encode16(:crypto.hash(:md5, &1), case: :lower))
+  end
+
+  @doc """
+  Configures the connection for an Inertia partial reload request.
+  """
+  def inertia_partial_reload(conn, component, only_keys) when is_list(only_keys) do
+    data = Enum.join(only_keys, ",")
+
+    conn
+    |> Plug.Conn.put_req_header("x-inertia", "true")
+    |> Plug.Conn.put_req_header("x-inertia-version", inertia_version())
+    |> Plug.Conn.put_req_header("x-inertia-partial-component", component)
+    |> Plug.Conn.put_req_header("x-inertia-partial-data", data)
   end
 end
