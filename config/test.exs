@@ -9,11 +9,11 @@ config :argon2_elixir, t_cost: 1, m_cost: 8
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :whooks, Whooks.Repo,
-  username: System.get_env("DATABASE_USERNAME", "whooks"),
-  password: System.get_env("DATABASE_PASSWORD", "whooks"),
+  username: System.get_env("DATABASE_USERNAME", "root"),
+  password: System.get_env("DATABASE_PASSWORD", ""),
   hostname: System.get_env("DATABASE_HOST", "localhost"),
   database: "whooks_test#{System.get_env("MIX_TEST_PARTITION")}",
-  port: System.get_env("DATABASE_PORT", "5432") |> String.to_integer(),
+  port: System.get_env("DATABASE_PORT", "3306") |> String.to_integer(),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
