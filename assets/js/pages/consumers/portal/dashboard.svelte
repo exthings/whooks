@@ -11,7 +11,9 @@
   import * as Card from "$lib/components/ui/card";
   import * as Select from "$lib/components/ui/select";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import Section from "$components/section.svelte";
   import { buttonVariants } from "$lib/components/ui/button";
+  import EventsTable from "$components/events-table.svelte";
   import { Link, Deferred, router, usePoll } from "@inertiajs/svelte";
   import {
     ActivityIcon,
@@ -22,6 +24,7 @@
     PlusIcon,
     LayersIcon,
     InboxIcon,
+    SquareChartGanttIcon,
   } from "lucide-svelte";
 
   type KPIs = {
@@ -52,10 +55,9 @@
 
   let {
     projects = [],
-    filters = { last: "24h", projectId: null },
+    filters,
     kpis,
     eventsMetrics,
-    recentEvents = [],
     endpointHealth = [],
   }: Props = $props();
 
@@ -75,8 +77,8 @@
     partial_success: "warning",
   };
 
-  let selectedLast = $state(filters?.last ?? "24h");
-  let selectedProjectId = $state(filters?.projectId ?? "all");
+  let selectedLast = $derived(filters?.last ?? "24h");
+  let selectedProjectId = $derived(filters?.projectId ?? "all");
 
   $effect(() => {
     if (filters?.last) selectedLast = filters.last;
@@ -113,11 +115,13 @@
         last,
         project_id: projectId === "all" ? "" : projectId,
       },
-      only: ["kpis", "eventsMetrics", "recentEvents"],
+      only: ["filters", "kpis", "eventsMetrics", "endpointHealth", "events"],
     });
   }
 
-  usePoll(10000);
+  // usePoll(10000, {
+  //   only: ["filters", "kpis", "eventsMetrics", "endpointHealth"],
+  // });
 </script>
 
 <svelte:head>
@@ -127,12 +131,12 @@
 <div class="flex-1 flex flex-col gap-6 p-6 lg:p-8 w-full">
   <!-- Page Header & Filter Toolbar -->
   <div
-    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b"
+    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2"
   >
     <div>
       <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
       <p class="text-sm text-muted-foreground mt-1">
-        Monitor webhook delivery health, volume, and active endpoints.
+        Monitor events delivery health, volume and active endpoints.
       </p>
     </div>
 
@@ -202,271 +206,170 @@
     {/snippet}
 
     {#if kpis}
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Card 1: Total Deliveries -->
-        <Card.Root
-          class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30"
-        >
-          <div class="flex items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium uppercase tracking-wider"
-              >Total Deliveries</span
-            >
-            <div
-              class="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"
-            >
-              <ActivityIcon class="size-4" />
-            </div>
-          </div>
-          <div class="mt-3 text-2xl font-bold tracking-tight">
-            {kpis.totalEvents.toLocaleString()}
-          </div>
-          <p class="text-xs text-muted-foreground mt-1">
-            Delivered in selected timeframe
-          </p>
-        </Card.Root>
-
-        <!-- Card 2: Success Rate -->
-        <Card.Root
-          class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30"
-        >
-          <div class="flex items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium uppercase tracking-wider"
-              >Success Rate</span
-            >
-            <div
-              class="size-8 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center"
-            >
-              <CheckCircle2Icon class="size-4" />
-            </div>
-          </div>
-          <div
-            class="mt-3 text-2xl font-bold tracking-tight flex items-baseline gap-1.5"
+      <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+          <!-- Card 1: Total Deliveries -->
+          <Card.Root
+            class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30 gap-2"
           >
-            <span
-              class={kpis.successRate >= 95
-                ? "text-green-600 dark:text-green-400"
-                : "text-amber-600 dark:text-amber-400"}
-            >
-              {kpis.successRate.toFixed(1)}%
-            </span>
-          </div>
-          <p class="text-xs text-muted-foreground mt-1">
-            {kpis.successfulEvents.toLocaleString()} successful
-          </p>
-        </Card.Root>
-
-        <!-- Card 3: Failed Deliveries -->
-        <Card.Root
-          class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30"
-        >
-          <div class="flex items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium uppercase tracking-wider"
-              >Failed Deliveries</span
-            >
             <div
-              class={`size-8 rounded-lg flex items-center justify-center ${kpis.failedEvents > 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}
+              class="flex items-center justify-between text-muted-foreground"
             >
-              <AlertTriangleIcon class="size-4" />
+              <span class="text-xs font-medium uppercase tracking-wider"
+                >Total Deliveries</span
+              >
+              <div
+                class="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"
+              >
+                <ActivityIcon class="size-4" />
+              </div>
             </div>
-          </div>
-          <div class="mt-3 text-2xl font-bold tracking-tight">
-            <span class={kpis.failedEvents > 0 ? "text-destructive" : ""}>
-              {kpis.failedEvents.toLocaleString()}
-            </span>
-          </div>
-          <p class="text-xs text-muted-foreground mt-1">
-            {kpis.failedEvents > 0
-              ? "Requires review or endpoint fix"
-              : "No failed delivery attempts"}
-          </p>
-        </Card.Root>
+            <div class="mt-1 text-2xl font-bold tracking-tight">
+              {kpis.totalEvents.toLocaleString()}
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">
+              Delivered in selected timeframe
+            </p>
+          </Card.Root>
 
-        <!-- Card 4: Active Endpoints -->
-        <Card.Root
-          class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30"
-        >
-          <div class="flex items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium uppercase tracking-wider"
-              >Active Endpoints</span
-            >
+          <!-- Card 2: Success Rate -->
+          <Card.Root
+            class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30 gap-2"
+          >
             <div
-              class="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center"
+              class="flex items-center justify-between text-muted-foreground"
             >
-              <CableIcon class="size-4" />
+              <span class="text-xs font-medium uppercase tracking-wider"
+                >Success Rate</span
+              >
+              <div
+                class="size-8 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center"
+              >
+                <CheckCircle2Icon class="size-4" />
+              </div>
             </div>
-          </div>
-          <div class="mt-3 text-2xl font-bold tracking-tight">
-            {kpis.activeEndpointsCount}
-          </div>
-          <p class="text-xs text-muted-foreground mt-1">
-            Registered webhook listeners
-          </p>
-        </Card.Root>
+            <div
+              class="mt-3 text-2xl font-bold tracking-tight flex items-baseline gap-1.5"
+            >
+              <span
+                class={kpis.successRate >= 95
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-amber-600 dark:text-amber-400"}
+              >
+                {kpis.successRate.toFixed(1)}%
+              </span>
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">
+              {kpis.successfulEvents.toLocaleString()} successful
+            </p>
+          </Card.Root>
+
+          <!-- Card 3: Failed Deliveries -->
+          <Card.Root
+            class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30 gap-2"
+          >
+            <div
+              class="flex items-center justify-between text-muted-foreground"
+            >
+              <span class="text-xs font-medium uppercase tracking-wider"
+                >Failed Deliveries</span
+              >
+              <div
+                class={`size-8 rounded-lg flex items-center justify-center ${kpis.failedEvents > 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}
+              >
+                <AlertTriangleIcon class="size-4" />
+              </div>
+            </div>
+            <div class="mt-3 text-2xl font-bold tracking-tight">
+              <span class={kpis.failedEvents > 0 ? "text-destructive" : ""}>
+                {kpis.failedEvents.toLocaleString()}
+              </span>
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">
+              {kpis.failedEvents > 0
+                ? "Requires review or endpoint fix"
+                : "No failed delivery attempts"}
+            </p>
+          </Card.Root>
+
+          <!-- Card 4: Active Endpoints -->
+          <Card.Root
+            class="p-5 relative overflow-hidden transition-all hover:border-muted-foreground/30 gap-2"
+          >
+            <div
+              class="flex items-center justify-between text-muted-foreground"
+            >
+              <span class="text-xs font-medium uppercase tracking-wider"
+                >Active Endpoints</span
+              >
+              <div
+                class="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center"
+              >
+                <CableIcon class="size-4" />
+              </div>
+            </div>
+            <div class="mt-3 text-2xl font-bold tracking-tight">
+              {kpis.activeEndpointsCount}
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">
+              Registered webhook listeners
+            </p>
+          </Card.Root>
+        </div>
+        <div class="col-span-2">
+          <Card.Root class="p-4 h-full">
+            <Deferred data="eventsMetrics">
+              {#snippet fallback()}
+                <Skeleton class="h-64 w-full rounded-md" />
+              {/snippet}
+
+              {#if eventsMetrics?.data && eventsMetrics.data.length > 0}
+                <div class="h-64 w-full">
+                  <BarChartEvents
+                    data={eventsMetrics.data}
+                    interval={eventsMetrics.interval}
+                  />
+                </div>
+              {:else}
+                <div
+                  class="h-56 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-lg"
+                >
+                  <SquareChartGanttIcon
+                    class="size-8 text-muted-foreground mb-2"
+                  />
+                  <p class="text-sm font-medium text-muted-foreground">
+                    No delivery metrics recorded
+                  </p>
+                  <p class="text-xs text-muted-foreground/70 mt-1">
+                    Events will automatically populate here once dispatched to
+                    your endpoints.
+                  </p>
+                </div>
+              {/if}
+            </Deferred>
+          </Card.Root>
+        </div>
       </div>
     {/if}
   </Deferred>
 
-  <!-- Delivery Volume Chart Section -->
-  <Card.Root class="p-6 shadow-none">
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-2 border-b border-border/50"
-    >
-      <div>
-        <h2 class="text-base font-semibold tracking-tight">
-          Delivery Performance
-        </h2>
-        <p class="text-xs text-muted-foreground mt-0.5">
-          Dispatched webhook events over time for the selected interval ({selectedLast})
-        </p>
-      </div>
-    </div>
-
-    <Deferred data="eventsMetrics">
-      {#snippet fallback()}
-        <Skeleton class="h-64 w-full rounded-md" />
-      {/snippet}
-
-      {#if eventsMetrics?.data && eventsMetrics.data.length > 0}
-        <div class="h-64 w-full">
-          <BarChartEvents
-            data={eventsMetrics.data}
-            interval={eventsMetrics.interval}
-          />
-        </div>
-      {:else}
-        <div
-          class="h-56 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-lg"
-        >
-          <InboxIcon class="size-8 text-muted-foreground mb-2 stroke-[1.5]" />
-          <p class="text-sm font-medium text-muted-foreground">
-            No delivery metrics recorded
-          </p>
-          <p class="text-xs text-muted-foreground/70 mt-1">
-            Events will automatically populate here once dispatched to your
-            endpoints.
-          </p>
-        </div>
-      {/if}
-    </Deferred>
-  </Card.Root>
-
   <!-- Bottom Split Section: Recent Events & Endpoint Health -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-    <!-- Left: Recent Deliveries (2/3 width) -->
-    <Card.Root class="lg:col-span-2 shadow-none p-5 flex flex-col">
-      <div
-        class="flex items-center justify-between pb-3 mb-3 border-b border-border/50"
-      >
-        <div>
-          <h2 class="text-base font-semibold tracking-tight">
-            Recent Deliveries
-          </h2>
-          <p class="text-xs text-muted-foreground mt-0.5">
-            Latest events received by your configured webhooks
-          </p>
-        </div>
-        <Link
-          href="/ui/consumers/events"
-          class={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <span>View all</span>
-          <ArrowRightIcon class="size-3.5 ml-1" />
-        </Link>
-      </div>
+  <!-- Left: Recent Deliveries -->
+  <EventsTable
+    propsKey="events"
+    columnVisibility={[
+      "insertedAt",
+      "id",
+      "consumer",
+      "topic",
+      "status",
+      "tags",
+    ]}
+  />
 
-      <Deferred data="recentEvents">
-        {#snippet fallback()}
-          <div class="space-y-3">
-            {#each Array(4) as _}
-              <div
-                class="flex items-center justify-between py-2 border-b border-border/40"
-              >
-                <div class="space-y-1">
-                  <Skeleton class="h-4 w-32" />
-                  <Skeleton class="h-3 w-48" />
-                </div>
-                <Skeleton class="h-5 w-16 rounded-full" />
-              </div>
-            {/each}
-          </div>
-        {/snippet}
-
-        {#if recentEvents && recentEvents.length > 0}
-          <div class="divide-y divide-border/50 -mx-1">
-            {#each recentEvents as event (event.id)}
-              <Link
-                href={`/ui/consumers/events/${event.id}`}
-                class="flex items-center justify-between py-3 px-2 rounded-md hover:bg-muted/50 transition-colors group"
-              >
-                <div class="min-w-0 pr-4">
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="text-sm font-medium truncate group-hover:text-primary transition-colors"
-                    >
-                      {event.topic?.name ?? "Webhook Event"}
-                    </span>
-                    <span
-                      class="font-mono text-[11px] text-muted-foreground/80 truncate"
-                    >
-                      {event.uid ?? event.id}
-                    </span>
-                  </div>
-                  <div
-                    class="text-xs text-muted-foreground mt-0.5 flex items-center gap-2"
-                  >
-                    <DateTimeDisplay value={event.insertedAt} />
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-3 shrink-0">
-                  <BadgeStatus
-                    variant={STATUS_VARIANT[event.status] ?? "default"}
-                    label={event.status}
-                  />
-                  <ArrowRightIcon
-                    class="size-3.5 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
-                  />
-                </div>
-              </Link>
-            {/each}
-          </div>
-        {:else}
-          <div
-            class="py-12 flex flex-col items-center justify-center text-center"
-          >
-            <InboxIcon class="size-8 text-muted-foreground mb-2 stroke-[1.5]" />
-            <p class="text-sm font-medium text-muted-foreground">
-              No recent events
-            </p>
-            <p class="text-xs text-muted-foreground/70 mt-1 max-w-sm">
-              When external webhooks are triggered, they will appear here in
-              real time.
-            </p>
-          </div>
-        {/if}
-      </Deferred>
-    </Card.Root>
-
-    <!-- Right: Endpoint Health (1/3 width) -->
-    <Card.Root class="lg:col-span-1 shadow-none p-5 flex flex-col">
-      <div
-        class="flex items-center justify-between pb-3 mb-3 border-b border-border/50"
-      >
-        <div>
-          <h2 class="text-base font-semibold tracking-tight">Endpoints</h2>
-          <p class="text-xs text-muted-foreground mt-0.5">
-            Active destinations
-          </p>
-        </div>
-        <Link
-          href="/ui/consumers/endpoints"
-          class={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <span>Manage</span>
-          <ArrowRightIcon class="size-3.5 ml-1" />
-        </Link>
-      </div>
-
+  <!-- Right: Endpoint Health  -->
+  <Section title="Endpoints">
+    <Card.Root class="lg:col-span-1 shadow-none p-5 flex flex-col flex-1">
       <Deferred data="endpointHealth">
         {#snippet fallback()}
           <div class="space-y-3">
@@ -508,11 +411,6 @@
                     <LayersIcon class="size-3" />
                     {endpoint.subscriptions?.length ?? 0} topics
                   </span>
-                  {#if endpoint.description}
-                    <span class="truncate max-w-[150px]">
-                      {endpoint.description}
-                    </span>
-                  {/if}
                 </div>
               </Link>
             {/each}
@@ -539,5 +437,5 @@
         {/if}
       </Deferred>
     </Card.Root>
-  </div>
+  </Section>
 </div>

@@ -245,27 +245,27 @@
     {#if meta}
       <div class="flex items-center justify-end space-x-2 pt-3">
         <div class="text-muted-foreground flex-1 text-xs">
-          {meta.total_count} events
+          {meta.totalCount} events
         </div>
         <div class="flex items-center space-x-2">
           <Button
             variant="ghost"
             size="sm"
             type="button"
-            disabled={!meta?.has_previous_page}
-            onclick={() => handlePageChange(meta.previous_page)}
+            disabled={!meta?.hasPreviousPage}
+            onclick={() => handlePageChange(meta.previousPage)}
           >
             <ChevronLeftIcon />
           </Button>
           <div class={buttonVariants({ variant: "outline", size: "sm" })}>
-            {meta.current_page}
+            {meta.currentPage}
           </div>
           <Button
             variant="ghost"
             size="sm"
             type="button"
-            disabled={!meta?.has_next_page}
-            onclick={() => handlePageChange(meta.next_page)}
+            disabled={!meta?.hasNextPage}
+            onclick={() => handlePageChange(meta.nextPage)}
           >
             <ChevronRightIcon />
           </Button>
