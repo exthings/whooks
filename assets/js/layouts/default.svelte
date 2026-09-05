@@ -5,10 +5,12 @@
   import { Link, page, router } from "@inertiajs/svelte";
   import OrganizationsCombobox from "$containers/organizations-combobox.svelte";
   import {
+    LayoutDashboardIcon,
     SquareChartGantt,
+    UnplugIcon,
+    CableIcon,
     Box,
     Inbox,
-    Settings2Icon,
     UsersIcon,
     ChevronRightIcon,
   } from "lucide-svelte";
@@ -33,33 +35,63 @@
     organizationId,
   );
 
-  let nav = $derived(
-    organization.current
-      ? [
-          {
-            title: "Projects",
-            url: `/ui/admin/${organization.current}/projects`,
-            component: "projects",
-            icon: Box,
-            isActive: true,
-          },
-          {
-            title: "Consumers",
-            url: `/ui/admin/${organization.current}/consumers`,
-            component: "consumers",
-            icon: Inbox,
-            isActive: true,
-          },
-          {
-            title: "Events",
-            url: `/ui/admin/${organization.current}/events`,
-            component: "events",
-            icon: SquareChartGantt,
-            isActive: true,
-          },
-        ]
-      : [],
-  );
+  let nav = $derived.by(() => {
+    if (currentScope.user && !currentScope.consumer) {
+      return organization.current
+        ? [
+            {
+              title: "Projects",
+              url: `/ui/admin/${organization.current}/projects`,
+              component: "projects",
+              icon: Box,
+              isActive: true,
+            },
+            {
+              title: "Consumers",
+              url: `/ui/admin/${organization.current}/consumers`,
+              component: "consumers",
+              icon: Inbox,
+              isActive: true,
+            },
+            {
+              title: "Events",
+              url: `/ui/admin/${organization.current}/events`,
+              component: "events",
+              icon: SquareChartGantt,
+              isActive: true,
+            },
+          ]
+        : [];
+    } else if (!currentScope.user && currentScope.consumer) {
+      return [
+        {
+          title: "Dashboard",
+          url: `/ui/consumers/dashboard`,
+          component: "dashboard",
+          icon: LayoutDashboardIcon,
+        },
+        {
+          title: "Projects",
+          url: `/ui/consumers/projects`,
+          component: "consumers",
+          icon: Box,
+        },
+        {
+          title: "Endpoints",
+          url: `/ui/consumers/endpoints`,
+          component: "endpoints",
+          icon: CableIcon,
+        },
+        {
+          title: "Events",
+          url: `/ui/consumers/events`,
+          component: "events",
+          icon: SquareChartGantt,
+        },
+      ];
+    }
+    return [];
+  });
 
   let settingsNav = [
     {
