@@ -41,13 +41,30 @@ defmodule Whooks.Application do
          processor: &WhooksWorker.DeliveryAttemptWorker.process/1,
          concurrency: 200},
         id: :delivery_worker
+      ),
+      Supervisor.child_spec(
+        {BullMQ.Worker,
+         name: :retention_worker,
+         queue: "retention",
+         connection: :bullmq_redis,
+         processor: &WhooksWorker.RetentionWorker.process/1,
+         concurrency: 5},
+        id: :retention_worker
       )
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Whooks.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    case Supervisor.start_link(children, opts) do
+      {:ok, pid} ->
+        Whooks.Events.Retention.setup_scheduler()
+        {:ok, pid}
+
+      error ->
+        error
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
