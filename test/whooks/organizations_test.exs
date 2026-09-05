@@ -47,6 +47,42 @@ defmodule Whooks.OrganizationsTest do
       assert organization == Organizations.get!(organization.id)
     end
 
+    test "create/1 with valid event_retention_days creates organization" do
+      valid_attrs = %{name: "Retention Org", event_retention_days: 30}
+
+      assert {:ok, %Organization{} = organization} = Organizations.create(valid_attrs)
+      assert organization.event_retention_days == 30
+    end
+
+    test "create/1 with zero or negative event_retention_days returns error changeset" do
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Organizations.create(%{name: "Bad Retention", event_retention_days: 0})
+
+      assert "must be greater than 0" in errors_on(changeset).event_retention_days
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Organizations.create(%{name: "Bad Retention", event_retention_days: -1})
+
+      assert "must be greater than 0" in errors_on(changeset).event_retention_days
+    end
+
+    test "update/2 allows clearing event_retention_days with nil" do
+      organization = organization_fixture(%{name: "Org", event_retention_days: 60})
+      assert organization.event_retention_days == 60
+
+      assert {:ok, %Organization{} = updated} =
+               Organizations.update(organization, %{event_retention_days: nil})
+
+      assert updated.event_retention_days == nil
+    end
+
+    test "serializer includes event_retention_days" do
+      organization = organization_fixture(%{name: "Serialized Org", event_retention_days: 14})
+      serialized = Whooks.Serializer.to_map(organization)
+
+      assert serialized[:event_retention_days] == 14
+    end
+
     test "delete/1 deletes the organization" do
       organization = organization_fixture()
       assert {:ok, %Organization{}} = Organizations.delete(organization)
