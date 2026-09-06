@@ -13,20 +13,37 @@ defmodule WhooksWorker.RetentionWorker do
 
     orgs = Retention.list_organizations_with_retention()
 
-    for org <- orgs do
-      BullMQ.Queue.add(
-        "retention",
-        "purge_organization",
-        %{
-          "organization_id" => org.id,
-          "retention_days" => org.event_retention_days,
-          "total_deleted" => 0
-        },
-        connection: :bullmq_redis
-      )
-    end
+    jobs =
+      orgs
+      |> Enum.map(fn org ->
+        {
+          "purge_organization",
+          %{
+            "organization_id" => org.id,
+            "retention_days" => org.event_retention_days,
+            "total_deleted" => 0
+          },
+          []
+        }
+      end)
 
-    {:ok, %{scheduled_count: length(orgs)}}
+    # All jobs are added atomically - either all succeed or none do
+    BullMQ.Queue.add_bulk("retention", jobs, connection: :bullmq_redis)
+    |> case do
+      {:ok, added_jobs} ->
+        Logger.info(
+          "[RetentionWorker] Successfully registered #{length(added_jobs)} organization retention purges"
+        )
+
+        {:ok, added_jobs}
+
+      {:error, reason} ->
+        Logger.warning(
+          "[RetentionWorker] Failed to register organization retention purges: #{inspect(reason)}"
+        )
+
+        {:error, reason}
+    end
   end
 
   def process(%Job{name: "purge_organization", data: data}) do
@@ -48,7 +65,7 @@ defmodule WhooksWorker.RetentionWorker do
           "batch_size" => batch_size,
           "total_deleted" => new_total
         },
-        delay: 1_000,
+        delay: 100,
         connection: :bullmq_redis
       )
 
