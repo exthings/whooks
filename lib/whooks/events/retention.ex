@@ -50,7 +50,7 @@ defmodule Whooks.Events.Retention do
            :bullmq_redis,
            "retention",
            "hourly_retention_scheduler",
-           %{pattern: "0 * * * *"},
+           %{every: 3_600_000},
            "schedule_organization_purges",
            %{},
            prefix: "bull"
