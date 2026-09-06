@@ -35,7 +35,7 @@ defmodule WhooksWorker.RetentionWorker do
           "[RetentionWorker] Successfully registered #{length(added_jobs)} organization retention purges"
         )
 
-        {:ok, added_jobs}
+        {:ok, %{scheduled_count: length(added_jobs)}}
 
       {:error, reason} ->
         Logger.warning(

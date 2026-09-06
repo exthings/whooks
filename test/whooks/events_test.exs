@@ -155,6 +155,83 @@ defmodule Whooks.EventsTest do
       assert {:ok, updated_event} = Events.update_to_partial_success(event)
       assert updated_event.status == :partial_success
     end
+
+    test "update_status_from_deliveries/4 with all success", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, %{id: id}} =
+               Events.update_status_from_deliveries(
+                 event.id,
+                 [%{"status" => "success"}, %{"status" => "success"}],
+                 [],
+                 0
+               )
+
+      assert id == event.id
+      assert Events.get_event!(event.id).status == :success
+    end
+
+    test "update_status_from_deliveries/4 with all failed", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, %{id: id}} =
+               Events.update_status_from_deliveries(
+                 event.id,
+                 [%{"status" => "failed"}],
+                 [%{"status" => "ignored"}],
+                 0
+               )
+
+      assert id == event.id
+      assert Events.get_event!(event.id).status == :failed
+    end
+
+    test "update_status_from_deliveries/4 with partial success", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, %{id: id}} =
+               Events.update_status_from_deliveries(
+                 event.id,
+                 [%{"status" => "success"}, %{"status" => "failed"}],
+                 [],
+                 0
+               )
+
+      assert id == event.id
+      assert Events.get_event!(event.id).status == :partial_success
+    end
+
+    test "process_create/1 with not found topic", data do
+      attrs = %{
+        "topic" => "non_existent_topic",
+        "project_id" => to_string(data.project.id),
+        "data" => %{}
+      }
+
+      assert {:error, :not_found} = Events.process_create(attrs)
+    end
+  end
+
+  describe "WhooksWorker.EventsWorker" do
+    test "process/1 returns error for unknown job type" do
+      job = %BullMQ.Job{id: "1", name: "unknown", data: %{}, queue_name: "events"}
+      assert {:error, "Unknown job type: unknown"} = WhooksWorker.EventsWorker.process(job)
+    end
   end
 
   describe "events success dispatching" do
