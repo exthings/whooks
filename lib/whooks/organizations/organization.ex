@@ -15,6 +15,7 @@ defmodule Whooks.Organizations.Organization do
   @primary_key {:id, TypeID, autogenerate: true, prefix: "org", type: :string}
   schema "organizations" do
     field :name, :string
+    field :event_retention_days, :integer
 
     has_many :consumers, Whooks.Consumers.Consumer
 
@@ -24,7 +25,8 @@ defmodule Whooks.Organizations.Organization do
   @doc false
   def changeset(organization, attrs) do
     organization
-    |> cast(attrs, [:name])
+    |> cast(attrs, [:name, :event_retention_days])
     |> validate_required([:name])
+    |> validate_number(:event_retention_days, greater_than: 0)
   end
 end

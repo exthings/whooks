@@ -57,6 +57,9 @@ defmodule WhooksWeb.Router do
           resources "/", EventController, only: [:index, :show]
           post "/:id/resend", EventController, :resend
         end
+
+        get "/settings", OrganizationSettingsController, :show
+        put "/settings", OrganizationSettingsController, :update
       end
 
       scope "/settings", Settings do

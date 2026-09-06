@@ -69,6 +69,7 @@ defmodule WhooksWeb.ConnCase do
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.put_session(:user_token, token)
+    |> Plug.Conn.put_session(:access_token, token)
   end
 
   defp maybe_set_token_authenticated_at(_token, nil), do: nil

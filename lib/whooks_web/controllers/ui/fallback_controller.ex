@@ -8,11 +8,13 @@ defmodule WhooksWeb.UI.FallbackController do
 
   def call(conn, {:error, :not_found}) do
     conn
+    |> put_status(:not_found)
     |> render_inertia("errors/not-found")
   end
 
   def call(conn, {:error, :unauthorized}) do
     conn
+    |> put_status(:forbidden)
     |> render_inertia("errors/unauthorized")
   end
 end

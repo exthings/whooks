@@ -70,8 +70,9 @@ defmodule WhooksWeb.TopicControllerTest do
                "id" => ^id,
                "description" => "Transaction approved event",
                "json_schema" => %{
+                 "$schema" => "http://json-schema.org/draft-07/schema#",
                  "properties" => %{"id" => %{"type" => "string"}},
-                 "type" => "object"
+                 "required" => ["id"]
                },
                "name" => "transaction.approved",
                "status" => "enabled"

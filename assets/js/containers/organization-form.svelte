@@ -12,12 +12,14 @@
 
   type Form = {
     name: string;
+    event_retention_days: number | string | null;
   };
 
   let { open = $bindable(false) }: Props = $props();
 
   const form = useForm<Form>({
     name: "",
+    event_retention_days: null,
   });
 
   const submit = (e: Event) => {
@@ -28,6 +30,7 @@
       only: ["errors", "project"],
       onSuccess: () => {
         open = false;
+        $form.reset();
       },
     });
   };
@@ -41,13 +44,32 @@
     <form onsubmit={submit}>
       <div class="flex flex-col gap-4">
         <div class="grid gap-2">
-          <Label for="name" class="text-end">Name</Label>
+          <Label for="name">Name</Label>
           <Input id="name" name="name" bind:value={$form.name} required />
           {#if $form.errors.name}
-            <p class="text-red-500">{$form.errors.name}</p>
+            <p class="text-red-500 text-xs">{$form.errors.name}</p>
           {/if}
         </div>
-        <div class="flex justify-end gap-2">
+
+        <div class="grid gap-2">
+          <Label for="event_retention_days">Event retention (days)</Label>
+          <Input
+            id="event_retention_days"
+            name="event_retention_days"
+            type="number"
+            min="1"
+            placeholder="e.g. 30 (optional)"
+            bind:value={$form.event_retention_days}
+          />
+          <p class="text-xs text-muted-foreground">
+            Number of days to retain events. Leave blank for indefinite retention.
+          </p>
+          {#if $form.errors.event_retention_days}
+            <p class="text-red-500 text-xs">{$form.errors.event_retention_days}</p>
+          {/if}
+        </div>
+
+        <div class="flex justify-end gap-2 mt-2">
           <Button
             type="button"
             variant="outline"

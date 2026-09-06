@@ -110,7 +110,8 @@ defmodule Whooks.Serializer do
       id: organization.id,
       inserted_at: organization.inserted_at,
       updated_at: organization.updated_at,
-      name: organization.name
+      name: organization.name,
+      event_retention_days: organization.event_retention_days
     }
   end
 

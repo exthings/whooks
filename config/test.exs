@@ -34,4 +34,13 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix,
   sort_verified_routes_query_params: true
 
+config :whooks, :bullmq_redis_url, "redis://localhost:6379/1"
+
+config :whooks, Whooks.RedisCache,
+  conn_opts: [
+    host: "127.0.0.1",
+    port: 6379,
+    database: 1
+  ]
+
 config :whooks, Whooks.Mailer, adapter: Swoosh.Adapters.Test
