@@ -162,7 +162,14 @@
       {#each consumers.data as consumer (consumer.id)}
         <Link
           href={buildHref(`/consumers/${consumer.id}`)}
-          only={["consumer", "id", "events", "eventsMetrics"]}
+          only={[
+            "consumer",
+            "id",
+            "events",
+            "eventsMetrics",
+            "eventsKpi",
+            "subscriptionsCount",
+          ]}
           class={cn(
             "flex items-center gap-1 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors text-left",
             id === consumer.id && "bg-gray-100",
@@ -329,7 +336,7 @@
                     <span
                       >{eventsKpi?.successRate != null
                         ? `${Math.round(eventsKpi.successRate)}%`
-                        : "—"}</span
+                        : "-"}</span
                     >
                     {#if eventsKpi?.successRate != null}
                       <BadgeStatus
@@ -378,7 +385,7 @@
                   <div class="text-2xl lg:text-3xl font-bold tracking-tight">
                     {eventsKpi?.p95LatencyMs != null
                       ? `${Math.round(eventsKpi.p95LatencyMs)} ms`
-                      : "—"}
+                      : "-"}
                   </div>
                   <p class="text-xs text-muted-foreground mt-1">
                     {eventsKpi?.p95LatencyMs != null
