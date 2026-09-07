@@ -9,6 +9,8 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
 
   action_fallback WhooksWeb.UI.FallbackController
 
+  plug WhooksWeb.Plugs.GlobalFilters
+
   require Logger
 
   def index(conn, params) do
@@ -28,11 +30,15 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
   def show(conn, params) do
     with :ok <- Bodyguard.permit(Consumers, :get, conn.assigns.current_scope, []),
          {:ok, consumer} <- Consumers.get_by_id(params["id"]) do
+      global_filters = conn.assigns.global_filters
+
       conn
       |> assign_prop(:id, params["id"])
       |> assign_prop(:consumer, Serializer.to_map(consumer))
       |> assign_prop(:consumers, fn ->
-        Consumers.list(params, organization_id: params["organization_id"])
+        Consumers.list(Map.get(params, "consumers", %{}),
+          organization_id: params["organization_id"]
+        )
         |> case do
           {:ok, {consumers, meta}} ->
             %{data: Serializer.to_map(consumers), meta: Serializer.to_map(meta)}
@@ -42,7 +48,10 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
         :events,
         inertia_defer(fn ->
           {:ok, {events, meta}} =
-            Events.list(Map.get(params, "events_params", %{}), consumer_id: consumer.id)
+            Events.list(Map.get(params, "events_params", %{}),
+              consumer_id: consumer.id,
+              last: global_filters.last
+            )
 
           %{data: Serializer.to_map(events), meta: Serializer.to_map(meta)}
         end)
@@ -50,21 +59,39 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
       |> assign_prop(
         :events_metrics,
         inertia_defer(fn ->
-          interval = Map.get(params, "eventsMetrics", %{}) |> Map.get("interval", "hour")
-          last = Map.get(params, "eventsMetrics", %{}) |> Map.get("last", "24h")
-
           {:ok, events_stats} =
-            Metrics.EventStats.timeseries(
+            Metrics.events(
               consumer_id: consumer.id,
-              interval: interval,
-              last: last
+              interval: global_filters.interval,
+              last: global_filters.last
             )
 
           %{
             data: events_stats,
-            interval: interval,
-            last: last
+            interval: global_filters.interval,
+            last: global_filters.last
           }
+        end)
+      )
+      |> assign_prop(
+        :events_kpi,
+        inertia_defer(fn ->
+          Metrics.events_kpi(
+            consumer_id: consumer.id,
+            last: global_filters.last
+          )
+          |> case do
+            {:ok, data} -> data
+          end
+        end)
+      )
+      |> assign_prop(
+        :subscriptions_count,
+        inertia_defer(fn ->
+          Metrics.count_active_subscriptions(consumer_id: consumer.id)
+          |> case do
+            {:ok, data} -> data
+          end
         end)
       )
       |> assign_prop(

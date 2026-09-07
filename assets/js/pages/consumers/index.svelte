@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Consumer, Event, Topic, Meta } from "$types";
 
-  import { router, Link, Form } from "@inertiajs/svelte";
+  import { router, Link, Form, Deferred } from "@inertiajs/svelte";
   import * as Sheet from "$lib/components/ui/sheet";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -12,28 +12,61 @@
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import EndpointsTable from "./endpoints-table.svelte";
   import { EventsTable } from "$containers";
-  import { RotateCwIcon, PlusIcon, EllipsisIcon } from "lucide-svelte";
+  import {
+    EllipsisIcon,
+    ActivityIcon,
+    CircleCheckIcon,
+    TimerIcon,
+    WebhookIcon,
+    RotateCwIcon,
+  } from "lucide-svelte";
   import ChartMetrics from "$containers/chart-metrics.svelte";
+  import BadgeStatus, {
+    type BadgeStatusVariant,
+  } from "$components/badge-status.svelte";
   import Section from "$components/section.svelte";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import CopyClipboard from "$components/copy-clipboard.svelte";
   import * as Dialog from "$lib/components/ui/dialog/index.js";
+  import MetricsRangeSelect, {
+    type Interval,
+    type Last,
+  } from "$containers/time-range-select.svelte";
+  import { buildHref, getFilterValue } from "$utils";
 
-  import { getFilterValue } from "$utils";
   import { cn } from "$lib/utils";
   import { useDebounce } from "runed";
+  import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 
   type Props = {
     consumers: { data: Consumer[]; meta: Meta };
     consumer?: Consumer;
     events?: { data: (Event & { topic: Topic })[]; meta: Meta };
     id?: string | null;
+    globalFilters: { last: Last; interval: Interval };
     organizationId: string;
     portalLink?: string;
+    subscriptionsCount?: number;
+    eventsKpi?: {
+      totalAttempts: number;
+      successRate: number;
+      p95LatencyMs: number;
+      successCount: number;
+      failedCount: number;
+    };
   };
 
-  const { consumers, consumer, id, organizationId, portalLink }: Props =
-    $props();
+  const {
+    consumers,
+    consumer,
+    id,
+    events,
+    organizationId,
+    portalLink,
+    globalFilters,
+    eventsKpi,
+    subscriptionsCount,
+  }: Props = $props();
 
   let searchName = $derived(
     getFilterValue(consumers.meta.filters, "name")[0]?.value,
@@ -42,6 +75,29 @@
   let formIsOpen = $state(false);
 
   let showPortalLinkDialog = $state(false);
+
+  const successRateLabel: { label: string; variant: BadgeStatusVariant } =
+    $derived.by(() => {
+      if (eventsKpi) {
+        const rate = eventsKpi.successRate;
+
+        if (rate >= 95) {
+          return { label: "Excellent", variant: "success" };
+        }
+
+        if (rate >= 80) {
+          return { label: "Good", variant: "info" };
+        }
+
+        if (rate >= 60) {
+          return { label: "Degraded", variant: "warning" };
+        }
+
+        return { label: "Poor", variant: "destructive" };
+      }
+
+      return { label: "", variant: "default" };
+    });
 
   const handleSearch = useDebounce((e: Event) => {
     const target = e.target as HTMLInputElement;
@@ -67,26 +123,20 @@
     );
   }, 500);
 
-  const handleEndpointsRefresh = () => {
-    router.get(
-      "",
-      {
-        filters: consumers.meta.filters,
-      },
-      {
-        queryStringArrayFormat: "indices",
-        preserveState: true,
-        only: ["endpoints"],
-      },
-    );
-  };
-
   const handleCreatePortalLink = () => {
     router.reload({
       only: ["portalLink"],
       onSuccess: () => {
         showPortalLinkDialog = true;
       },
+    });
+  };
+
+  const handleRefresh = () => {
+    router.reload({
+      queryStringArrayFormat: "indices",
+      except: ["consumers", "consumer"],
+      showProgress: true,
     });
   };
 </script>
@@ -111,7 +161,7 @@
     <div class="flex flex-col">
       {#each consumers.data as consumer (consumer.id)}
         <Link
-          href={`consumers/${consumer.id}`}
+          href={buildHref(`/consumers/${consumer.id}`)}
           only={["consumer", "id", "events", "eventsMetrics"]}
           class={cn(
             "flex items-center gap-1 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors text-left",
@@ -140,31 +190,8 @@
   </div>
 {/snippet}
 
-{#snippet endpointsActions()}
-  <div>
-    <Button
-      size="sm"
-      variant="outline"
-      type="button"
-      onclick={handleEndpointsRefresh}
-    >
-      <RotateCwIcon />
-      Refresh
-    </Button>
-    <Button
-      size="sm"
-      variant="outline"
-      type="button"
-      onclick={handleEndpointsRefresh}
-    >
-      <PlusIcon />
-      Add
-    </Button>
-  </div>
-{/snippet}
-
 <ContentWithSidebar {sidebar}>
-  <div class="px-8 py-6 flex-1 flex flex-col gap-6 overflow-x-scroll">
+  <div class="px-8 py-6 flex-1 flex flex-col gap-4 overflow-x-scroll">
     {#key id}
       {#if consumer}
         <header>
@@ -224,44 +251,184 @@
             </dl>
           </div>
         </header>
-        <div class="grid grid-cols-4 gap-4">
-          <Card.Root class="shadow-none py-4 gap-1">
-            <Card.Header>
-              <Card.Title class="text-sm font-normal text-muted-foreground">
-                Total endpoints
-              </Card.Title>
-            </Card.Header>
-            <Card.Content>
-              <p class="text-3xl">76</p>
-            </Card.Content>
-          </Card.Root>
 
-          <Card.Root class="shadow-none py-4 gap-1">
-            <Card.Header>
-              <Card.Title class="text-sm font-normal text-muted-foreground">
-                Success rate
-              </Card.Title>
-            </Card.Header>
-            <Card.Content>
-              <p class="text-3xl">76</p>
-            </Card.Content>
-          </Card.Root>
-
-          <Card.Root class="shadow-none py-4 gap-1">
-            <Card.Header>
-              <Card.Title class="text-sm font-normal text-muted-foreground">
-                Recent events
-              </Card.Title>
-            </Card.Header>
-            <Card.Content>
-              <p class="text-3xl">76</p>
-            </Card.Content>
-          </Card.Root>
+        <div class="flex items-center justify-end gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-muted-foreground">Filters</span>
+            <MetricsRangeSelect
+              value={globalFilters.last}
+              only={["globalFilters", "eventsKpi", "events", "eventsMetrics"]}
+            />
+          </div>
+          <Button variant="outline" type="button" onclick={handleRefresh}>
+            <RotateCwIcon />
+          </Button>
         </div>
 
-        <ChartMetrics propKey="eventsMetrics" />
+        <div class="flex flex-col gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card.Root class="shadow-none py-4 gap-2">
+              <Card.Header
+                class="flex flex-row items-center justify-between pb-1 space-y-0"
+              >
+                <Card.Title
+                  class="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Total events
+                </Card.Title>
+                <div class="rounded-md bg-muted/60 p-1.5 text-muted-foreground">
+                  <ActivityIcon class="size-4" />
+                </div>
+              </Card.Header>
+              <Card.Content class="pt-0">
+                <Deferred data="events">
+                  {#snippet fallback()}
+                    <div class="space-y-1.5">
+                      <Skeleton class="h-8 w-24" />
+                      <Skeleton class="h-3.5 w-32" />
+                    </div>
+                  {/snippet}
+                  <div class="text-2xl lg:text-3xl font-bold tracking-tight">
+                    {events?.meta?.totalCount != null
+                      ? events.meta.totalCount.toLocaleString()
+                      : "0"}
+                  </div>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    {eventsKpi?.totalAttempts != null
+                      ? `${eventsKpi.totalAttempts.toLocaleString()} deliveries attempted`
+                      : "Events received in period"}
+                  </p>
+                </Deferred>
+              </Card.Content>
+            </Card.Root>
 
-        <Section title="Endpoints" actions={endpointsActions}>
+            <Card.Root class="shadow-none py-4 gap-2">
+              <Card.Header
+                class="flex flex-row items-center justify-between pb-1 space-y-0"
+              >
+                <Card.Title
+                  class="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Success rate
+                </Card.Title>
+                <div class="rounded-md bg-muted/60 p-1.5 text-muted-foreground">
+                  <CircleCheckIcon class="size-4" />
+                </div>
+              </Card.Header>
+              <Card.Content class="pt-0">
+                <Deferred data="eventsKpi">
+                  {#snippet fallback()}
+                    <div class="space-y-1.5">
+                      <Skeleton class="h-8 w-24" />
+                      <Skeleton class="h-3.5 w-28" />
+                    </div>
+                  {/snippet}
+                  <div
+                    class="text-2xl lg:text-3xl font-bold tracking-tight flex items-baseline gap-2"
+                  >
+                    <span
+                      >{eventsKpi?.successRate != null
+                        ? `${Math.round(eventsKpi.successRate)}%`
+                        : "—"}</span
+                    >
+                    {#if eventsKpi?.successRate != null}
+                      <BadgeStatus
+                        label={successRateLabel.label}
+                        variant={successRateLabel.variant}
+                      />
+                    {/if}
+                  </div>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    {#if eventsKpi && eventsKpi.failedCount > 0}
+                      <span class="font-medium text-red-600 dark:text-red-400"
+                        >{eventsKpi.failedCount.toLocaleString()}</span
+                      > failed deliveries attempts
+                    {:else}
+                      <span
+                        class="text-emerald-600 dark:text-emerald-400 font-medium"
+                        >0 failed</span
+                      > deliveries
+                    {/if}
+                  </p>
+                </Deferred>
+              </Card.Content>
+            </Card.Root>
+
+            <Card.Root class="shadow-none py-4 gap-2">
+              <Card.Header
+                class="flex flex-row items-center justify-between pb-1 space-y-0"
+              >
+                <Card.Title
+                  class="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  P95 latency
+                </Card.Title>
+                <div class="rounded-md bg-muted/60 p-1.5 text-muted-foreground">
+                  <TimerIcon class="size-4" />
+                </div>
+              </Card.Header>
+              <Card.Content class="pt-0">
+                <Deferred data="eventsKpi">
+                  {#snippet fallback()}
+                    <div class="space-y-1.5">
+                      <Skeleton class="h-8 w-24" />
+                      <Skeleton class="h-3.5 w-28" />
+                    </div>
+                  {/snippet}
+                  <div class="text-2xl lg:text-3xl font-bold tracking-tight">
+                    {eventsKpi?.p95LatencyMs != null
+                      ? `${Math.round(eventsKpi.p95LatencyMs)} ms`
+                      : "—"}
+                  </div>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    {eventsKpi?.p95LatencyMs != null
+                      ? "95th percentile delivery time"
+                      : "No delivery latency data"}
+                  </p>
+                </Deferred>
+              </Card.Content>
+            </Card.Root>
+
+            <Card.Root class="shadow-none py-4 gap-2">
+              <Card.Header
+                class="flex flex-row items-center justify-between pb-1 space-y-0"
+              >
+                <Card.Title
+                  class="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Subscriptions
+                </Card.Title>
+                <div class="rounded-md bg-muted/60 p-1.5 text-muted-foreground">
+                  <WebhookIcon class="size-4" />
+                </div>
+              </Card.Header>
+              <Card.Content class="pt-0">
+                <Deferred data="subscriptionsCount">
+                  {#snippet fallback()}
+                    <div class="space-y-1.5">
+                      <Skeleton class="h-8 w-24" />
+                      <Skeleton class="h-3.5 w-28" />
+                    </div>
+                  {/snippet}
+                  <div class="text-2xl lg:text-3xl font-bold tracking-tight">
+                    {subscriptionsCount != null
+                      ? subscriptionsCount.toLocaleString()
+                      : "0"}
+                  </div>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    Active endpoint subscriptions
+                  </p>
+                </Deferred>
+              </Card.Content>
+            </Card.Root>
+          </div>
+
+          <div>
+            <ChartMetrics propKey="eventsMetrics" />
+          </div>
+        </div>
+
+        <Section title="Endpoints">
           <div>
             {#if consumer.endpoints}
               <EndpointsTable endpoints={consumer.endpoints} />

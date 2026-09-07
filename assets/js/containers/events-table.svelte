@@ -151,17 +151,12 @@
   });
 
   const handleRefresh = () => {
-    router.get(
-      "",
-      {
-        events_params: {},
-      },
-      {
-        queryStringArrayFormat: "indices",
-        preserveState: true,
-        only: ["events"],
-      },
-    );
+    router.reload({
+      queryStringArrayFormat: "indices",
+      only: ["events"],
+      data: { events_params: {} },
+      showProgress: true,
+    });
   };
 
   const handlePageChange = (page: number | null) => {
@@ -190,7 +185,6 @@
   <div>
     <Button size="sm" variant="outline" type="button" onclick={handleRefresh}>
       <RotateCwIcon />
-      Refresh
     </Button>
   </div>
 {/snippet}
