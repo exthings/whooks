@@ -5,7 +5,7 @@
 
   type Props = {
     label: string;
-    description: string;
+    description?: string;
     isActive: boolean;
   } & LinkProps;
 
@@ -23,8 +23,10 @@
     <p class={cn("text-sm", isActive && "font-semibold")}>
       {label}
     </p>
-    <p class="text-xs text-muted-foreground">
-      {description}
-    </p>
+    {#if description}
+      <p class="text-xs text-muted-foreground">
+        {description}
+      </p>
+    {/if}
   </div>
 </Link>

@@ -1,6 +1,5 @@
 <script lang="ts" module>
-  export type Interval = "minute" | "hour" | "day";
-  export type Last = "1m" | "1h" | "12h" | "24h" | "48h" | "1w" | "1mo";
+  import type { Interval, Last } from "$types";
 
   export type TimeRangeOption = {
     value: Last;

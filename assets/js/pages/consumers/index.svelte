@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Consumer, Event, Topic, Meta } from "$types";
+  import type { Consumer, Event, Topic, Meta, GlobalFilters } from "$types";
 
   import { router, Link, Form, Deferred } from "@inertiajs/svelte";
   import * as Sheet from "$lib/components/ui/sheet";
@@ -21,18 +21,14 @@
     RotateCwIcon,
   } from "lucide-svelte";
   import ChartMetrics from "$containers/chart-metrics.svelte";
-  import BadgeStatus, {
-    type BadgeStatusVariant,
-  } from "$components/badge-status.svelte";
+  import BadgeStatus from "$components/badge-status.svelte";
   import Section from "$components/section.svelte";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import CopyClipboard from "$components/copy-clipboard.svelte";
   import * as Dialog from "$lib/components/ui/dialog/index.js";
-  import MetricsRangeSelect, {
-    type Interval,
-    type Last,
-  } from "$containers/time-range-select.svelte";
+  import MetricsRangeSelect from "$containers/time-range-select.svelte";
   import { buildHref, getFilterValue } from "$utils";
+  import { getSuccessRateLabel } from "$common";
 
   import { cn } from "$lib/utils";
   import { useDebounce } from "runed";
@@ -43,7 +39,7 @@
     consumer?: Consumer;
     events?: { data: (Event & { topic: Topic })[]; meta: Meta };
     id?: string | null;
-    globalFilters: { last: Last; interval: Interval };
+    globalFilters: GlobalFilters;
     organizationId: string;
     portalLink?: string;
     subscriptionsCount?: number;
@@ -76,28 +72,9 @@
 
   let showPortalLinkDialog = $state(false);
 
-  const successRateLabel: { label: string; variant: BadgeStatusVariant } =
-    $derived.by(() => {
-      if (eventsKpi) {
-        const rate = eventsKpi.successRate;
-
-        if (rate >= 95) {
-          return { label: "Excellent", variant: "success" };
-        }
-
-        if (rate >= 80) {
-          return { label: "Good", variant: "info" };
-        }
-
-        if (rate >= 60) {
-          return { label: "Degraded", variant: "warning" };
-        }
-
-        return { label: "Poor", variant: "destructive" };
-      }
-
-      return { label: "", variant: "default" };
-    });
+  const successRateLabel = $derived(
+    eventsKpi && getSuccessRateLabel(eventsKpi.successRate),
+  );
 
   const handleSearch = useDebounce((e: Event) => {
     const target = e.target as HTMLInputElement;

@@ -1,10 +1,10 @@
 <script lang="ts" module>
   export {
-    type Interval,
-    type Last,
     type TimeRangeOption,
     TIME_RANGE_OPTIONS,
   } from "$components/metrics-range-select.svelte";
+
+  import type { Interval, Last } from "$types";
 
   export const LAST_TO_INTERVAL: Record<Last, Interval> = {
     "1m": "minute",
@@ -19,8 +19,6 @@
 
 <script lang="ts">
   import TimeRangeSelect, {
-    type Interval,
-    type Last,
     type TimeRangeOption,
     TIME_RANGE_OPTIONS,
   } from "$components/metrics-range-select.svelte";

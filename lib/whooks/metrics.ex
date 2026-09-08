@@ -26,6 +26,36 @@ defmodule Whooks.Metrics do
     end
   end
 
+  def count_subscriptions(opts) do
+    query =
+      from(s in Subscription,
+        join: e in Endpoint,
+        on: e.id == s.endpoint_id,
+        as: :endpoint,
+        group_by: s.topic_id,
+        select: %{topic_id: s.topic_id, count: count(s.id)}
+      )
+
+    Enum.reduce(opts, query, fn
+      {:consumer_id, consumer_id}, q ->
+        where(q, [_s, e], e.consumer_id == ^consumer_id)
+
+      {:project_id, project_id}, q ->
+        where(q, [_s, e], e.project_id == ^project_id)
+
+      _, q ->
+        q
+    end)
+    |> Repo.all()
+    |> case do
+      nil ->
+        {:ok, 0}
+
+      data ->
+        {:ok, data}
+    end
+  end
+
   def events_kpi(opts) do
     base_query =
       Event
