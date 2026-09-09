@@ -9,10 +9,15 @@
     createSvelteTable,
     renderComponent,
   } from "$lib/components/ui/data-table";
+  import * as Empty from "$lib/components/ui/empty";
   import CellLabelDescription from "$components/cell-label-description.svelte";
   import BadgeStatus from "$components/badge-status.svelte";
   import DateTimeDisplay from "$components/date-time-display.svelte";
-  import { ChevronLeftIcon, ChevronRightIcon } from "lucide-svelte";
+  import {
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    WebhookIcon,
+  } from "lucide-svelte";
   import { buildHref } from "$utils";
 
   let { endpoints }: { endpoints: Endpoint[] } = $props();
@@ -99,8 +104,23 @@
           </Table.Row>
         {:else}
           <Table.Row>
-            <Table.Cell colspan={columns.length} class="h-24 text-center">
-              No results.
+            <Table.Cell colspan={columns.length} class="h-44 text-center">
+              <Empty.Root class="border-none p-4">
+                <Empty.Header class="gap-1.5 max-w-xs">
+                  <Empty.Media
+                    variant="icon"
+                    class="size-9 rounded-full bg-muted/80 text-muted-foreground ring-4 ring-muted/30 mb-1"
+                  >
+                    <WebhookIcon class="size-4" />
+                  </Empty.Media>
+                  <Empty.Title class="text-sm font-semibold text-foreground">
+                    No endpoints
+                  </Empty.Title>
+                  <Empty.Description class="text-xs text-muted-foreground">
+                    This consumer has no registered endpoints yet.
+                  </Empty.Description>
+                </Empty.Header>
+              </Empty.Root>
             </Table.Cell>
           </Table.Row>
         {/each}

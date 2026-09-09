@@ -7,6 +7,7 @@
   } from "@tanstack/table-core";
   import { page, router, Deferred } from "@inertiajs/svelte";
   import * as Table from "$lib/components/ui/table";
+  import * as Empty from "$lib/components/ui/empty";
   import { Button, buttonVariants } from "$lib/components/ui/button";
   import {
     FlexRender,
@@ -24,6 +25,7 @@
     ChevronLeftIcon,
     ChevronRightIcon,
     RotateCwIcon,
+    SquareChartGantt,
   } from "lucide-svelte";
   import { buildHref } from "$utils";
 
@@ -233,8 +235,25 @@
               </Table.Row>
             {:else}
               <Table.Row>
-                <Table.Cell colspan={columns.length} class="h-24 text-center">
-                  No results.
+                <Table.Cell colspan={columns.length} class="text-center">
+                  <Empty.Root class="border-none p-4">
+                    <Empty.Header class="gap-1.5 max-w-xs">
+                      <Empty.Media
+                        variant="icon"
+                        class="size-9 rounded-full bg-muted/80 text-muted-foreground ring-4 ring-muted/30 mb-1"
+                      >
+                        <SquareChartGantt class="size-4" />
+                      </Empty.Media>
+                      <Empty.Title
+                        class="text-sm font-semibold text-foreground"
+                      >
+                        No events found
+                      </Empty.Title>
+                      <Empty.Description class="text-xs text-muted-foreground">
+                        No events match the selected filters or time range.
+                      </Empty.Description>
+                    </Empty.Header>
+                  </Empty.Root>
                 </Table.Cell>
               </Table.Row>
             {/each}
