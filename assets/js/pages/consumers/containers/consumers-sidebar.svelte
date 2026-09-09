@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Consumer, Meta } from "$types";
   import SidebarHeader from "$components/sidebar-header.svelte";
+  import SidebarItem from "$components/sidebar-item.svelte";
   import { Link, router } from "@inertiajs/svelte";
   import { buildHref, getFilterValue } from "$utils";
   import { cn } from "$lib/utils";
@@ -53,7 +54,7 @@
 <div class="grow overflow-y-scroll">
   <div class="flex flex-col">
     {#each consumers.data as consumer (consumer.id)}
-      <Link
+      <SidebarItem
         href={buildHref(`/consumers/${consumer.id}`)}
         only={[
           "consumer",
@@ -63,28 +64,14 @@
           "eventsKpi",
           "subscriptionsCount",
         ]}
-        class={cn(
-          "flex items-center gap-1 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors text-left",
-          selectedId === consumer.id && "bg-gray-100",
-        )}
+        isActive={selectedId === consumer.id}
+        label={consumer.name}
+        description={consumer.uid}
         data={{ filters: consumers.meta.filters }}
         preserveState={true}
         preserveScroll={true}
-      >
-        <div class="flex-1">
-          <p
-            class={cn(
-              "text-sm",
-              selectedId === consumer.id && "font-semibold text-primary",
-            )}
-          >
-            {consumer.name}
-          </p>
-          <p class="text-[0.625rem] text-gray-500 font-mono">
-            {consumer.uid}
-          </p>
-        </div>
-      </Link>
+        prefetch={true}
+      />
     {/each}
   </div>
 </div>

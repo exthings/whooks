@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { LinkProps } from "node_modules/@inertiajs/svelte/dist/components/Link.svelte";
   import { cn } from "$lib/utils";
-  import { Link } from "@inertiajs/svelte";
+  import { Link, router } from "@inertiajs/svelte";
+  import { onMount } from "svelte";
 
   type Props = {
     label: string;

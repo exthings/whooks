@@ -69,6 +69,7 @@
         data={{ filters: projects.meta.filters }}
         preserveState={true}
         preserveScroll={true}
+        prefetch={true}
       />
     {/each}
   </div>

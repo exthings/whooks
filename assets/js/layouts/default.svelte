@@ -100,7 +100,7 @@
         <Sidebar.MenuItem>
           <Sidebar.MenuButton size="lg">
             {#snippet child({ props })}
-              <Link href="/ui/admin/dashboard" {...props}>
+              <Link href="/ui/admin/dashboard" {...props} prefetch>
                 <div
                   class="bg-primary p-1 text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
                 >
@@ -130,7 +130,7 @@
                     isActive={$page.component.startsWith(mainItem.component)}
                   >
                     {#snippet child({ props })}
-                      <Link href={mainItem.url} {...props}>
+                      <Link href={mainItem.url} {...props} prefetch>
                         <mainItem.icon />
                         <span>{mainItem.title}</span>
                       </Link>
