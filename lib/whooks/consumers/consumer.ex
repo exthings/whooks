@@ -1,16 +1,17 @@
 defmodule Whooks.Consumers.Consumer do
   use Ecto.Schema
+  use Flop.Schema
+
   import Ecto.Changeset
 
-  @derive {
-    Flop.Schema,
+  @flop_options [
     filterable: [:uid, :name, :inserted_at, :updated_at],
     sortable: [:name, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:name],
       order_directions: [:asc]
     }
-  }
+  ]
 
   @primary_key {:id, TypeID, autogenerate: true, prefix: "consumer", type: :string}
   @foreign_key_type TypeID

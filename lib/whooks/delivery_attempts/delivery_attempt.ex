@@ -1,18 +1,19 @@
 defmodule Whooks.DeliveryAttempts.DeliveryAttempt do
   use Ecto.Schema
+  use Flop.Schema
+
   import Ecto.Changeset
 
   @prefix "attempt"
 
-  @derive {
-    Flop.Schema,
+  @flop_options [
     filterable: [:status, :inserted_at, :updated_at],
     sortable: [:status, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:inserted_at],
       order_directions: [:desc]
     }
-  }
+  ]
 
   @primary_key {:id, TypeID, autogenerate: true, prefix: @prefix, type: :string}
   @foreign_key_type TypeID

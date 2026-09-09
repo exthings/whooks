@@ -1,16 +1,17 @@
 defmodule Whooks.Auth.User do
   use Ecto.Schema
+  use Flop.Schema
+
   import Ecto.Changeset
 
-  @derive {
-    Flop.Schema,
+  @flop_options [
     filterable: [:external_id, :name, :email, :inserted_at, :updated_at],
     sortable: [:name, :email, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:name],
       order_directions: [:asc]
     }
-  }
+  ]
 
   @prefix "user"
 

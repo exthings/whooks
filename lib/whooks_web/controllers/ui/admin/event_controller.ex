@@ -6,14 +6,19 @@ defmodule WhooksWeb.UI.Admin.EventController do
 
   action_fallback WhooksWeb.UI.FallbackController
 
+  plug WhooksWeb.Plugs.GlobalFilters
+
   require Logger
 
   def index(conn, params) do
+    scope = conn.assigns.current_scope
+    global_filters = conn.assigns.global_filters
     events_params = Map.get(params, "events_params", %{}) |> Map.put_new("page_size", 20)
+    organization_id = Map.get(params, "organization_id")
 
-    with :ok <- Bodyguard.permit(Events, :list, conn.assigns.current_scope, []),
+    with :ok <- Bodyguard.permit(Events, :list, scope, []),
          {:ok, {events, meta}} <-
-           Events.list(events_params, organization_id: params["organization_id"]) do
+           Events.list(events_params, organization_id: organization_id, last: global_filters.last) do
       conn
       |> assign_prop(:events, %{data: Serializer.to_map(events), meta: Serializer.to_map(meta)})
       |> render_inertia("events/index")
