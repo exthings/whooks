@@ -81,7 +81,6 @@
           <div class="flex items-center gap-2">
             <span class="text-sm text-muted-foreground">Filters</span>
             <MetricsRangeSelect
-              value={globalFilters.last}
               only={["globalFilters", "eventsKpi", "events", "eventsMetrics"]}
             />
           </div>

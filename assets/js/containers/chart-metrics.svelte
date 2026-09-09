@@ -31,8 +31,8 @@
 </script>
 
 <Section {title}>
-  <Card.Root class="shadow-none py-4 gap-1 h-72">
-    <Card.Content>
+  <Card.Root class="shadow-none gap-1 h-72">
+    <Card.Content class="px-6">
       <div class="h-60">
         <Deferred data={propKey}>
           {#snippet fallback()}

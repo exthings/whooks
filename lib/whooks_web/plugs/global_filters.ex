@@ -8,7 +8,7 @@ defmodule WhooksWeb.Plugs.GlobalFilters do
 
   def call(%Plug.Conn{params: params} = conn, _default) do
     last = Map.get(params, "last", "1h")
-    interval = Map.get(params, "interval", "minute")
+    interval = Map.get(params, "interval", "30s")
 
     Logger.info("[Plugs.GlobalFilters] last: #{params["last"]}, interval: #{params["interval"]}")
 

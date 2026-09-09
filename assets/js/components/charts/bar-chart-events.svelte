@@ -1,7 +1,12 @@
 <script lang="ts">
   import type { Analytics } from "$types";
   import { scaleBand, scaleUtc, scaleTime } from "d3-scale";
-  import { BarChart, type ChartContextValue, Highlight } from "layerchart";
+  import {
+    BarChart,
+    type ChartContextValue,
+    Highlight,
+    Text,
+  } from "layerchart";
   import * as Chart from "$lib/components/ui/chart/index.js";
   import { cubicInOut } from "svelte/easing";
 
@@ -48,7 +53,13 @@
   const formatter = $derived(new Intl.DateTimeFormat("en-US", labelFormat));
 </script>
 
-<Chart.Container config={chartConfig} class="h-full w-full pl-2 pr-2 pb-0 pt-2">
+{#snippet tickLabel({ props, index }: { props: any; index: number })}
+  {#if index > 0}
+    <Text {...props} dy={16} textAnchor={index ? "end" : "start"} />
+  {/if}
+{/snippet}
+
+<Chart.Container config={chartConfig} class="h-full w-full pl-0 pr-0 pb-0 pt-2">
   <BarChart
     bind:context
     x="date"
@@ -86,10 +97,25 @@
         format: (d: Date) => {
           return formatter.format(d);
         },
-        ticks: Math.floor(successData.length / 5),
+        tickOcclusion: {
+          padding: 40,
+          priority: "start",
+        },
+        tickLabelProps: {
+          dy: 10,
+        },
+        tickLabel,
+        labelPlacement: "end",
+        placement: "bottom",
       },
     }}
   >
+    <!-- {#snippet tickLabel({ index, props })}
+      {#if index > 0}
+        <Text {...props} textAnchor={index ? "end" : "start"} />
+        a
+      {/if}
+    {/snippet} -->
     {#snippet belowMarks()}
       <Highlight area={{ class: "fill-muted" }} />
     {/snippet}

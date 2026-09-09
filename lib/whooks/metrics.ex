@@ -8,6 +8,8 @@ defmodule Whooks.Metrics do
   alias Whooks.Endpoints.Endpoint
   alias Whooks.Common.Utils
 
+  require Logger
+
   def count_subscriptions_by_project(project_id) do
     from(s in Subscription,
       join: e in Endpoint,
@@ -177,8 +179,9 @@ defmodule Whooks.Metrics do
   end
 
   def events(opts \\ []) do
-    last = Keyword.get(opts, :last, "24h")
-    interval = Keyword.get(opts, :interval, "minute")
+    last = Keyword.get(opts, :last)
+    interval = Keyword.get(opts, :interval)
+    step_seconds = interval_seconds(interval)
     date_format = sql_date_format(interval)
     start_dt = Utils.parse_last_to_date_time(last) |> trunc_to_interval(interval)
     end_dt = NaiveDateTime.utc_now() |> trunc_to_interval(interval)
@@ -191,7 +194,16 @@ defmodule Whooks.Metrics do
       order_by: [asc: selected_as(:date_time)],
       select: %{
         date_time:
-          selected_as(fragment("DATE_FORMAT(?, ?)", e.inserted_at, ^date_format), :date_time),
+          selected_as(
+            fragment(
+              "DATE_FORMAT(FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(?) / ?) * ?), ?)",
+              e.inserted_at,
+              ^step_seconds,
+              ^step_seconds,
+              ^date_format
+            ),
+            :date_time
+          ),
         status: e.status,
         count: fragment("coalesce(count(*), 0)")
       }
@@ -252,7 +264,7 @@ defmodule Whooks.Metrics do
       count = Map.get(db_map, {bucket, status}, 0)
 
       %{
-        date_time: format_output_string(bucket, interval),
+        date_time: format_output_string(bucket),
         status: status,
         count: count
       }
@@ -273,35 +285,77 @@ defmodule Whooks.Metrics do
     |> Enum.to_list()
   end
 
-  defp sql_date_format("minute"), do: "%Y-%m-%d %H:%i"
-  defp sql_date_format("hour"), do: "%Y-%m-%d %H:00"
-  defp sql_date_format("day"), do: "%Y-%m-%d 00:00"
+  defp sql_date_format(interval) do
+    case interval do
+      interval when interval in ["1s", "15s", "30s", "45s"] ->
+        "%Y-%m-%d %H:%i:%S"
 
-  defp interval_seconds("minute"), do: 60
-  defp interval_seconds("hour"), do: 3600
-  defp interval_seconds("day"), do: 86_400
+      interval when interval in ["1m", "15m", "30m", "45m", "1h", "12h", "24h", "48h"] ->
+        "%Y-%m-%d %H:%i"
 
-  defp parse_date_time(str, "minute"), do: NaiveDateTime.from_iso8601!("#{str}:00")
-  defp parse_date_time(str, "hour"), do: NaiveDateTime.from_iso8601!("#{str}:00")
-  defp parse_date_time(str, "day"), do: NaiveDateTime.from_iso8601!("#{str}:00")
+      "24h" ->
+        "%Y-%m-%d %H:%i"
 
-  defp format_output_string(dt, "minute"), do: NaiveDateTime.to_string(dt) |> String.slice(0..15)
-  defp format_output_string(dt, "hour"), do: NaiveDateTime.to_string(dt) |> String.slice(0..15)
-  defp format_output_string(dt, "day"), do: NaiveDateTime.to_string(dt) |> String.slice(0..9)
+      "48h" ->
+        "%Y-%m-%d %H:%i"
 
-  defp trunc_to_interval(%NaiveDateTime{} = dt, "minute") do
-    NaiveDateTime.new!(dt.year, dt.month, dt.day, dt.hour, dt.minute, 0)
+      "1d" ->
+        "%Y-%m-%d"
+
+      "1w" ->
+        "%Y-%m-%d"
+
+      "1mo" ->
+        "%Y-%m-%d"
+
+      _ ->
+        "%Y-%m-%d"
+    end
   end
 
-  defp trunc_to_interval(%NaiveDateTime{} = dt, "hour") do
-    NaiveDateTime.new!(dt.year, dt.month, dt.day, dt.hour, 0, 0)
+  defp interval_seconds(interval) do
+    case interval do
+      "1s" -> 1
+      "15s" -> 15
+      "30s" -> 30
+      "45s" -> 45
+      "1m" -> 60
+      "15m" -> 15 * 60
+      "30m" -> 30 * 60
+      "45m" -> 45 * 60
+      "1h" -> 60 * 60
+      "12h" -> 12 * 60 * 60
+      "24h" -> 24 * 60 * 60
+      "48h" -> 48 * 60 * 60
+      "1d" -> 24 * 60 * 60
+      "1w" -> 7 * 24 * 60 * 60
+      "1mo" -> 30 * 24 * 60 * 60
+      _ -> 60
+    end
   end
 
-  defp trunc_to_interval(%NaiveDateTime{} = dt, "day") do
-    NaiveDateTime.new!(dt.year, dt.month, dt.day, 0, 0, 0)
+  defp parse_date_time(str, _interval) do
+    case String.length(str) do
+      10 -> NaiveDateTime.from_iso8601!("#{str} 00:00:00")
+      16 -> NaiveDateTime.from_iso8601!("#{str}:00")
+      _ -> NaiveDateTime.from_iso8601!(str)
+    end
   end
+
+  defp format_output_string(dt), do: NaiveDateTime.to_string(dt)
 
   defp trunc_to_interval(%DateTime{} = dt, interval) do
     DateTime.to_naive(dt) |> trunc_to_interval(interval)
+  end
+
+  defp trunc_to_interval(%NaiveDateTime{} = dt, interval) do
+    step_seconds = interval_seconds(interval)
+
+    dt
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_unix(:second)
+    |> then(&(div(&1, step_seconds) * step_seconds))
+    |> DateTime.from_unix!(:second)
+    |> DateTime.to_naive()
   end
 end

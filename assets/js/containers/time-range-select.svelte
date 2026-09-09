@@ -5,16 +5,6 @@
   } from "$components/metrics-range-select.svelte";
 
   import type { Interval, Last } from "$types";
-
-  export const LAST_TO_INTERVAL: Record<Last, Interval> = {
-    "1m": "minute",
-    "1h": "minute",
-    "12h": "hour",
-    "24h": "hour",
-    "48h": "hour",
-    "1w": "day",
-    "1mo": "day",
-  };
 </script>
 
 <script lang="ts">
@@ -26,7 +16,8 @@
 
   type Props = {
     propKey?: string;
-    value?: Last;
+    last?: Last;
+    interval?: Interval;
     options?: TimeRangeOption[];
     placeholder?: string;
     disabled?: boolean;
@@ -37,7 +28,8 @@
 
   let {
     propKey,
-    value = $bindable(),
+    last = $bindable(),
+    interval = $bindable(),
     options = TIME_RANGE_OPTIONS,
     placeholder = "Interval",
     disabled = false,
@@ -46,31 +38,19 @@
     onValueChange,
   }: Props = $props();
 
-  let selectedValue = $state<Last | undefined>(value);
-
-  $effect(() => {
-    if (value !== undefined) {
-      selectedValue = value;
-    }
-  });
-
   $effect(() => {
     if (propKey) {
       const pageMetrics = $page.props[propKey] as { last?: Last } | undefined;
       if (pageMetrics?.last) {
-        selectedValue = pageMetrics.last;
+        last = pageMetrics.last;
       }
     } else {
-      selectedValue = $page.props["last"];
+      last = $page.props["globalFilters"]["last"];
+      interval = $page.props["globalFilters"]["interval"];
     }
   });
 
-  const handleLastChange = (value: string) => {
-    const last = value as Last;
-    const interval = LAST_TO_INTERVAL[last] ?? "hour";
-    selectedValue = last;
-    value = last;
-
+  const handleLastChange = (last: Last, interval: Interval) => {
     if (propKey) {
       router.reload({
         data: { [propKey]: { last, interval } },
@@ -88,11 +68,14 @@
 
     onValueChange?.(last, interval);
   };
+
+  $inspect(last);
 </script>
 
 <TimeRangeSelect
   name="last"
-  bind:value={selectedValue}
+  bind:last
+  bind:interval
   placeholder="Interval"
   onValueChange={handleLastChange}
 />
