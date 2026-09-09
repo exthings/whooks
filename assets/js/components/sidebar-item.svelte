@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { LinkProps } from "node_modules/@inertiajs/svelte/dist/components/Link.svelte";
   import { cn } from "$lib/utils";
-  import { Link } from "@inertiajs/svelte";
+  import { Link, router } from "@inertiajs/svelte";
+  import { onMount } from "svelte";
 
   type Props = {
     label: string;
-    description: string;
+    description?: string;
     isActive: boolean;
   } & LinkProps;
 
@@ -23,8 +24,10 @@
     <p class={cn("text-sm", isActive && "font-semibold")}>
       {label}
     </p>
-    <p class="text-xs text-muted-foreground">
-      {description}
-    </p>
+    {#if description}
+      <p class="text-xs text-muted-foreground">
+        {description}
+      </p>
+    {/if}
   </div>
 </Link>

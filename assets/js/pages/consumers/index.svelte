@@ -1,85 +1,56 @@
 <script lang="ts">
-  import type { Consumer, Event, Topic, Meta } from "$types";
+  import type { Consumer, Event, Topic, Meta, GlobalFilters } from "$types";
 
-  import { router, Link, Form } from "@inertiajs/svelte";
-  import * as Sheet from "$lib/components/ui/sheet";
-  import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label";
+  import { router } from "@inertiajs/svelte";
   import { Button } from "$lib/components/ui/button";
-  import * as Card from "$lib/components/ui/card";
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
-  import SidebarHeader from "$components/sidebar-header.svelte";
-  import DateTimeDisplay from "$components/date-time-display.svelte";
-  import EndpointsTable from "./endpoints-table.svelte";
   import { EventsTable } from "$containers";
-  import { RotateCwIcon, PlusIcon, EllipsisIcon } from "lucide-svelte";
   import ChartMetrics from "$containers/chart-metrics.svelte";
-  import Section from "$components/section.svelte";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import CopyClipboard from "$components/copy-clipboard.svelte";
-  import * as Dialog from "$lib/components/ui/dialog/index.js";
+  import MetricsRangeSelect from "$containers/time-range-select.svelte";
+  import { RotateCwIcon } from "lucide-svelte";
 
-  import { getFilterValue } from "$utils";
-  import { cn } from "$lib/utils";
-  import { useDebounce } from "runed";
+  import {
+    ConsumersSidebar,
+    ConsumerHeader,
+    ConsumerKpiCards,
+    ConsumerEndpoints,
+    ConsumerFormSheet,
+    PortalLinkDialog,
+  } from "./containers";
+
+  type EventsKpi = {
+    totalAttempts: number;
+    successRate: number;
+    p95LatencyMs: number;
+    successCount: number;
+    failedCount: number;
+  };
 
   type Props = {
     consumers: { data: Consumer[]; meta: Meta };
     consumer?: Consumer;
     events?: { data: (Event & { topic: Topic })[]; meta: Meta };
     id?: string | null;
+    globalFilters: GlobalFilters;
     organizationId: string;
     portalLink?: string;
+    subscriptionsCount?: number;
+    eventsKpi?: EventsKpi;
   };
 
-  const { consumers, consumer, id, organizationId, portalLink }: Props =
-    $props();
-
-  let searchName = $derived(
-    getFilterValue(consumers.meta.filters, "name")[0]?.value,
-  );
+  const {
+    consumers,
+    consumer,
+    id,
+    events,
+    portalLink,
+    globalFilters,
+    eventsKpi,
+    subscriptionsCount,
+  }: Props = $props();
 
   let formIsOpen = $state(false);
-
   let showPortalLinkDialog = $state(false);
-
-  const handleSearch = useDebounce((e: Event) => {
-    const target = e.target as HTMLInputElement;
-    const searchValue = target.value;
-
-    router.get(
-      "",
-      {
-        filters: searchValue
-          ? [
-              {
-                field: "name",
-                op: "like",
-                value: searchValue,
-              },
-            ]
-          : [],
-      },
-      {
-        queryStringArrayFormat: "indices",
-        preserveState: true,
-      },
-    );
-  }, 500);
-
-  const handleEndpointsRefresh = () => {
-    router.get(
-      "",
-      {
-        filters: consumers.meta.filters,
-      },
-      {
-        queryStringArrayFormat: "indices",
-        preserveState: true,
-        only: ["endpoints"],
-      },
-    );
-  };
 
   const handleCreatePortalLink = () => {
     router.reload({
@@ -87,6 +58,14 @@
       onSuccess: () => {
         showPortalLinkDialog = true;
       },
+    });
+  };
+
+  const handleRefresh = () => {
+    router.reload({
+      queryStringArrayFormat: "indices",
+      except: ["consumers", "consumer"],
+      showProgress: true,
     });
   };
 </script>
@@ -100,176 +79,40 @@
 </svelte:head>
 
 {#snippet sidebar()}
-  <SidebarHeader
-    title="Consumers"
+  <ConsumersSidebar
+    {consumers}
+    selectedId={id}
     onCreate={() => (formIsOpen = true)}
-    onSearch={handleSearch}
-    searchValue={searchName}
   />
-
-  <div class="grow overflow-y-scroll">
-    <div class="flex flex-col">
-      {#each consumers.data as consumer (consumer.id)}
-        <Link
-          href={`consumers/${consumer.id}`}
-          only={["consumer", "id", "events", "eventsMetrics"]}
-          class={cn(
-            "flex items-center gap-1 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors text-left",
-            id === consumer.id && "bg-gray-100",
-          )}
-          data={{ filters: consumers.meta.filters }}
-          preserveState={true}
-          preserveScroll={true}
-        >
-          <div class="flex-1">
-            <p
-              class={cn(
-                "text-sm",
-                id === consumer.id && "font-semibold text-primary",
-              )}
-            >
-              {consumer.name}
-            </p>
-            <p class="text-[0.625rem] text-gray-500 font-mono">
-              {consumer.uid}
-            </p>
-          </div>
-        </Link>
-      {/each}
-    </div>
-  </div>
-{/snippet}
-
-{#snippet endpointsActions()}
-  <div>
-    <Button
-      size="sm"
-      variant="outline"
-      type="button"
-      onclick={handleEndpointsRefresh}
-    >
-      <RotateCwIcon />
-      Refresh
-    </Button>
-    <Button
-      size="sm"
-      variant="outline"
-      type="button"
-      onclick={handleEndpointsRefresh}
-    >
-      <PlusIcon />
-      Add
-    </Button>
-  </div>
 {/snippet}
 
 <ContentWithSidebar {sidebar}>
-  <div class="px-8 py-6 flex-1 flex flex-col gap-6 overflow-x-scroll">
+  <div class="px-8 py-6 flex-1 flex flex-col gap-4 overflow-x-scroll">
     {#key id}
       {#if consumer}
-        <header>
-          <div class="flex items-center justify-between">
-            <h1 class="text-xl font-semibold">{consumer.name}</h1>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger>
-                <Button variant="outline" size="icon">
-                  <EllipsisIcon />
-                </Button></DropdownMenu.Trigger
-              >
-              <DropdownMenu.Content align="end">
-                <DropdownMenu.Group>
-                  <DropdownMenu.Item onclick={handleCreatePortalLink}
-                    >Portal link</DropdownMenu.Item
-                  >
-                  <DropdownMenu.Item>Edit</DropdownMenu.Item>
-                  <DropdownMenu.Item>Disable</DropdownMenu.Item>
-                </DropdownMenu.Group>
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-          </div>
-          <div class="w-full">
-            <dl class="text-sm grid grid-cols-4 gap-4">
-              <div class="flex flex-col gap-1">
-                <dt class="text-xs font-semibold">ID</dt>
-                <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-                  {consumer.id}
-                </dd>
-              </div>
-              <div class="flex flex-col gap-1">
-                <dt class="text-xs font-semibold">UID</dt>
-                <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-                  {consumer.uid}
-                </dd>
-              </div>
-              <div class="flex flex-col gap-1">
-                <dt class="text-xs font-semibold">Inserted at</dt>
-                <dd class="text-gray-700 sm:col-span-3">
-                  <DateTimeDisplay
-                    value={consumer.insertedAt}
-                    size="sm"
-                    options={{ fractionalSecondDigits: undefined }}
-                  />
-                </dd>
-              </div>
-              <div class="flex flex-col gap-1">
-                <dt class="text-xs font-semibold">Updated at</dt>
-                <dd class="text-gray-700 sm:col-span-3">
-                  <DateTimeDisplay
-                    value={consumer.updatedAt}
-                    size="sm"
-                    options={{ fractionalSecondDigits: undefined }}
-                  />
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </header>
-        <div class="grid grid-cols-4 gap-4">
-          <Card.Root class="shadow-none py-4 gap-1">
-            <Card.Header>
-              <Card.Title class="text-sm font-normal text-muted-foreground">
-                Total endpoints
-              </Card.Title>
-            </Card.Header>
-            <Card.Content>
-              <p class="text-3xl">76</p>
-            </Card.Content>
-          </Card.Root>
+        <ConsumerHeader
+          {consumer}
+          onCreatePortalLink={handleCreatePortalLink}
+        />
 
-          <Card.Root class="shadow-none py-4 gap-1">
-            <Card.Header>
-              <Card.Title class="text-sm font-normal text-muted-foreground">
-                Success rate
-              </Card.Title>
-            </Card.Header>
-            <Card.Content>
-              <p class="text-3xl">76</p>
-            </Card.Content>
-          </Card.Root>
-
-          <Card.Root class="shadow-none py-4 gap-1">
-            <Card.Header>
-              <Card.Title class="text-sm font-normal text-muted-foreground">
-                Recent events
-              </Card.Title>
-            </Card.Header>
-            <Card.Content>
-              <p class="text-3xl">76</p>
-            </Card.Content>
-          </Card.Root>
+        <div class="flex items-center justify-end gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-muted-foreground">Filters</span>
+            <MetricsRangeSelect
+              value={globalFilters.last}
+              only={["globalFilters", "eventsKpi", "events", "eventsMetrics"]}
+            />
+          </div>
+          <Button variant="outline" type="button" onclick={handleRefresh}>
+            <RotateCwIcon />
+          </Button>
         </div>
+
+        <ConsumerKpiCards {events} {eventsKpi} {subscriptionsCount} />
 
         <ChartMetrics propKey="eventsMetrics" />
 
-        <Section title="Endpoints" actions={endpointsActions}>
-          <div>
-            {#if consumer.endpoints}
-              <EndpointsTable endpoints={consumer.endpoints} />
-            {:else}
-              <p>No endpoints found</p>
-            {/if}
-          </div>
-        </Section>
+        <ConsumerEndpoints endpoints={consumer.endpoints} />
 
         <EventsTable
           propsKey="events"
@@ -280,50 +123,6 @@
   </div>
 </ContentWithSidebar>
 
-<Sheet.Root bind:open={formIsOpen}>
-  <Sheet.Content side="right" class="">
-    <Sheet.Header>
-      <Sheet.Title>Create consumer</Sheet.Title>
-    </Sheet.Header>
-    <Form
-      class="grid flex-1 auto-rows-min gap-6 px-4"
-      method="post"
-      action="/ui/admin/consumers"
-      onSuccess={() => (formIsOpen = false)}
-    >
-      {#snippet children({ errors })}
-        <div class="grid gap-2">
-          <Label for="uid" class="text-end">Unique ID</Label>
-          <Input id="uid" name="uid" />
-          {#if errors["uid"]}
-            <p class="text-red-500 text-sm">{errors["uid"]}</p>
-          {/if}
-        </div>
-        <div class="grid gap-2">
-          <Label for="name" class="text-end">Name</Label>
-          <Input id="name" name="name" />
-          {#if errors["name"]}
-            <p class="text-red-500 text-sm">{errors["name"]}</p>
-          {/if}
-        </div>
-        <Button type="submit">Create</Button>
-      {/snippet}
-    </Form>
-  </Sheet.Content>
-</Sheet.Root>
+<ConsumerFormSheet bind:open={formIsOpen} />
 
-<Dialog.Root bind:open={showPortalLinkDialog}>
-  <Dialog.Content class="sm:max-w-4xl">
-    <Dialog.Header>
-      <Dialog.Title>Portal link</Dialog.Title>
-      <Dialog.Description>
-        <div class="flex items-center gap-2">
-          <span class="font-mono text-sm">
-            {portalLink}
-          </span>
-          <CopyClipboard value={portalLink} />
-        </div>
-      </Dialog.Description>
-    </Dialog.Header>
-  </Dialog.Content>
-</Dialog.Root>
+<PortalLinkDialog bind:open={showPortalLinkDialog} {portalLink} />

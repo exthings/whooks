@@ -1,30 +1,33 @@
 <script lang="ts">
-  import type { Project, Event, Topic, Meta } from "$types";
+  import type { Project, Topic, Meta, GlobalFilters } from "$types";
 
-  import { Deferred, router } from "@inertiajs/svelte";
-  import BadgeStatus from "$components/badge-status.svelte";
-  import type { BadgeStatusVariant } from "$components/badge-status.svelte";
-  import { Button } from "$lib/components/ui/button";
-  import * as Tabs from "$lib/components/ui/tabs";
-  import * as Card from "$lib/components/ui/card";
-
-  import Section from "$components/section.svelte";
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
-  import SidebarHeader from "$components/sidebar-header.svelte";
-  import SidebarItem from "$components/sidebar-item.svelte";
-  import DateTimeDisplay from "$components/date-time-display.svelte";
-  import EventsTable from "$components/events-table.svelte";
-  import { getFilterValue } from "$utils";
-  import { useDebounce } from "runed";
-  import { EllipsisIcon, EyeIcon, PlusIcon } from "lucide-svelte";
+  import EventsTable from "$containers/events-table.svelte";
+  import ChartMetrics from "$containers/chart-metrics.svelte";
+  import MetricsRangeSelect from "$containers/time-range-select.svelte";
+  import RefreshButton from "$containers/refresh-button.svelte";
 
-  import ProjectFormDialog from "./containers/project-form-dialog.svelte";
-  import TopicDialog from "./containers/topic-dialog.svelte";
-  import TopicFormDialog from "./containers/topic-form-dialog.svelte";
+  import {
+    ProjectsSidebar,
+    ProjectHeader,
+    ProjectKpiCards,
+    ProjectTopics,
+    ProjectFormDialog,
+    TopicDialog,
+    TopicFormDialog,
+  } from "./containers";
 
   type Subscriptions = {
     topicId: string;
     count: number;
+  };
+
+  type EventsKpi = {
+    totalAttempts: number;
+    successRate: number;
+    p95LatencyMs: number;
+    successCount: number;
+    failedCount: number;
   };
 
   type Props = {
@@ -33,46 +36,23 @@
     project?: Project & { topics: Topic[] };
     events?: { meta: Meta };
     subscriptions?: Subscriptions[];
+    globalFilters: GlobalFilters;
+    eventsKpi?: EventsKpi;
   };
 
-  const { id, projects, project, events, subscriptions }: Props = $props();
-
-  const STATUS_MAP: Record<Project["status"], BadgeStatusVariant> = {
-    enabled: "success",
-    disabled: "destructive",
-  };
-
-  let searchName = $derived(
-    getFilterValue(projects.meta.filters, "name")[0]?.value,
-  );
+  const {
+    id,
+    projects,
+    project,
+    events,
+    subscriptions,
+    globalFilters,
+    eventsKpi,
+  }: Props = $props();
 
   let projectFormOpen = $state(false);
   let selectedTopic = $state<Topic | null>(null);
   let topicFormOpen = $state(false);
-
-  const handleSearch = useDebounce((e: Event) => {
-    const target = e.target as HTMLInputElement;
-    const searchValue = target.value;
-
-    router.get(
-      "",
-      {
-        filters: searchValue
-          ? [
-              {
-                field: "name",
-                op: "like",
-                value: searchValue,
-              },
-            ]
-          : [],
-      },
-      {
-        queryStringArrayFormat: "indices",
-        preserveState: true,
-      },
-    );
-  }, 500);
 </script>
 
 <svelte:head>
@@ -84,184 +64,51 @@
 </svelte:head>
 
 {#snippet sidebar()}
-  <SidebarHeader
-    title="Projects"
+  <ProjectsSidebar
+    {projects}
+    selectedId={id}
     onCreate={() => (projectFormOpen = true)}
-    onSearch={handleSearch}
-    searchValue={searchName}
   />
-
-  <div class="grow overflow-y-scroll">
-    <div class="flex flex-col">
-      {#each projects.data as project (project.id)}
-        <SidebarItem
-          href={`projects/${project.id}`}
-          only={["id", "project", "events", "subscriptions"]}
-          isActive={id === project.id}
-          label={project.name}
-          description={project.uid}
-          data={{ filters: projects.meta.filters }}
-          preserveState={true}
-          preserveScroll={true}
-        />
-      {/each}
-    </div>
-  </div>
-{/snippet}
-
-{#snippet topicsActions()}
-  <Button variant="outline" size="icon" onclick={() => (topicFormOpen = true)}
-    ><PlusIcon /></Button
-  >
 {/snippet}
 
 <ContentWithSidebar {sidebar}>
-  <div class="px-8 py-6 flex-1 flex flex-col gap-6 overflow-x-scroll">
+  <div class="px-8 py-6 flex-1 flex flex-col gap-4 overflow-x-scroll">
     {#key id}
       {#if project}
-        <header>
-          <div class="flex justify-between">
-            <div class="flex items-center gap-2 min-h-10">
-              <h1 class="text-xl font-semibold">{project.name}</h1>
-              <BadgeStatus
-                variant={STATUS_MAP[project.status]}
-                label={project.status}
-              />
-            </div>
-            <Button variant="outline" size="icon">
-              <EllipsisIcon />
-            </Button>
-          </div>
-          <div class="w-full">
-            <dl class="text-sm grid grid-cols-4 gap-4">
-              <div class="flex flex-col gap-1">
-                <dt class="text-xs font-semibold">ID</dt>
-                <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-                  {project.id}
-                </dd>
-              </div>
-              <div class="flex flex-col gap-1">
-                <dt class="text-xs font-semibold">UID</dt>
-                <dd class="text-gray-700 sm:col-span-3 font-mono text-xs">
-                  {project.uid}
-                </dd>
-              </div>
-              <div class="flex flex-col gap-1">
-                <dt class="text-xs font-semibold">Inserted at</dt>
-                <dd class="text-gray-700 sm:col-span-3">
-                  <DateTimeDisplay
-                    value={project.insertedAt}
-                    size="xs"
-                    options={{ fractionalSecondDigits: undefined }}
-                  />
-                </dd>
-              </div>
-              <div class="flex flex-col gap-1">
-                <dt class="text-xs font-semibold">Updated at</dt>
-                <dd class="text-gray-700 sm:col-span-3">
-                  <DateTimeDisplay
-                    value={project.updatedAt}
-                    size="xs"
-                    options={{ fractionalSecondDigits: undefined }}
-                  />
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </header>
+        <ProjectHeader {project} />
 
-        <Tabs.Root value="overview">
-          <Tabs.List>
-            <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
-            <Tabs.Trigger value="metrics">Metrics</Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content value="overview" class="flex flex-col gap-6">
-            <div class="grid grid-cols-4 gap-4">
-              <Card.Root class="shadow-none py-4 gap-1">
-                <Card.Header>
-                  <Card.Title class="text-sm font-normal text-muted-foreground">
-                    Subscribers
-                  </Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <Deferred data={["subscriptions"]}>
-                    {#snippet fallback()}
-                      Loading
-                    {/snippet}
-                    {#if subscriptions}
-                      <p class="text-3xl">
-                        {subscriptions.reduce((acc, sub) => acc + sub.count, 0)}
-                      </p>
-                    {/if}
-                  </Deferred>
-                </Card.Content>
-              </Card.Root>
-
-              <Card.Root class="shadow-none py-4 gap-1">
-                <Card.Header>
-                  <Card.Title class="text-sm font-normal text-muted-foreground">
-                    Events
-                  </Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <p class="text-3xl">{events?.meta.total_count ?? 0}</p>
-                </Card.Content>
-              </Card.Root>
-            </div>
-
-            <Section title="Topics" actions={topicsActions}>
-              <Card.Root
-                class="shadow-none py-0 px-0 p-0 gap-1 overflow-x-scroll"
-              >
-                <Card.Content class="p-0">
-                  <ul class="flex flex-col divide-y divide-gray-200">
-                    {#each project.topics as topic (topic.id)}
-                      <li class="flex items-center justify-between py-2 px-4">
-                        <div>
-                          <div class="flex items-center gap-2">
-                            <p class="font-mono text-sm">{topic.name}</p>
-                            <span
-                              class="text-xs bg-gray-200 rounded px-1.5 py-0.5"
-                            >
-                              {subscriptions?.find(
-                                (sub) => sub.topicId === topic.id,
-                              )?.count ?? "-"}
-                            </span>
-                          </div>
-                          <p class="text-muted-foreground text-xs">
-                            {topic.description}
-                          </p>
-                        </div>
-                        <div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onclick={() => (selectedTopic = topic)}
-                          >
-                            <EyeIcon />
-                          </Button>
-                        </div>
-                      </li>
-                    {/each}
-                  </ul>
-                </Card.Content>
-              </Card.Root>
-            </Section>
-
-            <EventsTable
-              propsKey="events"
-              columnVisibility={[
-                "insertedAt",
-                "id",
-                "consumer",
-                "topic",
-                "status",
-                "tags",
-              ]}
+        <div class="flex items-center justify-end gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-muted-foreground">Filters</span>
+            <MetricsRangeSelect
+              only={["globalFilters", "eventsKpi", "events", "eventsMetrics"]}
             />
-          </Tabs.Content>
-          <Tabs.Content value="metrics">Working in progress.</Tabs.Content>
-        </Tabs.Root>
+          </div>
+          <RefreshButton except={["consumers", "consumer"]} />
+        </div>
+
+        <ProjectKpiCards {events} {eventsKpi} {subscriptions} />
+
+        <ChartMetrics propKey="eventsMetrics" />
+
+        <ProjectTopics
+          topics={project.topics}
+          {subscriptions}
+          onAddTopic={() => (topicFormOpen = true)}
+          onViewTopic={(topic) => (selectedTopic = topic)}
+        />
+
+        <EventsTable
+          propsKey="events"
+          columnVisibility={[
+            "insertedAt",
+            "id",
+            "consumer",
+            "topic",
+            "status",
+            "tags",
+          ]}
+        />
       {/if}
     {/key}
   </div>
