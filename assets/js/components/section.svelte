@@ -17,9 +17,11 @@
     <div class="flex items-center justify-between pb-2 min-h-12">
       {#if title}
         <h2 class="font-semibold">{title}</h2>
+      {:else}
+        <div></div>
       {/if}
       {#if actions}
-        <div>{@render actions()}</div>
+        <div class="">{@render actions()}</div>
       {/if}
     </div>
   {/if}

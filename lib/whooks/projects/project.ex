@@ -1,16 +1,29 @@
 defmodule Whooks.Projects.Project do
   use Ecto.Schema
-  import Ecto.Changeset
+  use Flop.Schema
 
-  @derive {
-    Flop.Schema,
+  import Ecto.Changeset
+  import Ecto.Query
+
+  require Logger
+
+  @flop_options [
     filterable: [:name, :inserted_at, :updated_at],
     sortable: [:name, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:name],
       order_directions: [:asc]
-    }
-  }
+    },
+    custom_fields: [
+      name: [
+        filter: {Whooks.Filters, :ilike, []},
+        field_dynamic: {Whooks.Filters, :name_field, []},
+        ecto_type: :string,
+        operators: [:ilike]
+      ]
+    ]
+  ]
+
   @primary_key {:id, TypeID, autogenerate: true, prefix: "project", type: :string}
   @foreign_key_type TypeID
   schema "projects" do

@@ -1,16 +1,17 @@
 defmodule Whooks.Organizations.Organization do
   use Ecto.Schema
+  use Flop.Schema
+
   import Ecto.Changeset
 
-  @derive {
-    Flop.Schema,
+  @flop_options [
     filterable: [:name, :inserted_at, :updated_at],
     sortable: [:name, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:name],
       order_directions: [:asc]
     }
-  }
+  ]
 
   @primary_key {:id, TypeID, autogenerate: true, prefix: "org", type: :string}
   schema "organizations" do

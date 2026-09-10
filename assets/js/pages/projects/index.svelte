@@ -99,6 +99,8 @@
         />
 
         <EventsTable
+          title="Latest events"
+          showActions={true}
           propsKey="events"
           columnVisibility={[
             "insertedAt",

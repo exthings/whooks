@@ -1,18 +1,28 @@
 defmodule Whooks.Events.Event do
   use Ecto.Schema
+  use Flop.Schema
+
   import Ecto.Changeset
 
   @prefix "event"
 
-  @derive {
-    Flop.Schema,
-    filterable: [:id, :uid, :status, :tags, :inserted_at, :updated_at],
+  @flop_options [
+    filterable: [
+      :id,
+      :uid,
+      :status,
+      :tags,
+      :inserted_at,
+      :updated_at,
+      :project_id,
+      :consumer_id
+    ],
     sortable: [:status, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:inserted_at],
       order_directions: [:desc]
     }
-  }
+  ]
 
   @primary_key {:id, TypeID, autogenerate: true, prefix: @prefix, type: :string}
   @foreign_key_type TypeID

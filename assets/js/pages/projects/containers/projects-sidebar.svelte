@@ -22,24 +22,20 @@
     const target = e.target as HTMLInputElement;
     const searchValue = target.value;
 
-    router.get(
-      "",
-      {
+    router.reload({
+      data: {
         filters: searchValue
           ? [
               {
                 field: "name",
-                op: "like",
+                op: "ilike",
                 value: searchValue,
               },
             ]
           : [],
       },
-      {
-        queryStringArrayFormat: "indices",
-        preserveState: true,
-      },
-    );
+      queryStringArrayFormat: "indices",
+    });
   }, 500);
 </script>
 

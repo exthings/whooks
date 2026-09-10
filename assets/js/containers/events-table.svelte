@@ -30,6 +30,8 @@
   import { buildHref } from "$utils";
 
   type Props = {
+    title?: string;
+    showActions?: boolean;
     propsKey: string;
     columnVisibility?: string[];
   };
@@ -41,6 +43,8 @@
   };
 
   let {
+    title,
+    showActions = false,
     propsKey,
     columnVisibility = [
       "insertedAt",
@@ -191,7 +195,7 @@
   </div>
 {/snippet}
 
-<Section title="Latest events" actions={eventsActions}>
+<Section {title} actions={showActions && eventsActions}>
   <div class="w-full">
     <div class="rounded-md border">
       <Table.Root>

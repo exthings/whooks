@@ -6,7 +6,7 @@
   import { EventsTable } from "$containers";
   import Filters from "./containers/filters.svelte";
 
-  usePoll(2000);
+  // usePoll(2000);
 </script>
 
 <svelte:head>

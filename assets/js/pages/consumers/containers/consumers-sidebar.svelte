@@ -30,7 +30,7 @@
           ? [
               {
                 field: "name",
-                op: "like",
+                op: "ilike",
                 value: searchValue,
               },
             ]

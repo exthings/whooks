@@ -1,18 +1,19 @@
 defmodule Whooks.Topics.Topic do
   use Ecto.Schema
+  use Flop.Schema
+
   import Ecto.Changeset
 
   alias Whooks.Common
 
-  @derive {
-    Flop.Schema,
+  @flop_options [
     filterable: [:name, :status, :inserted_at, :updated_at],
     sortable: [:name, :status, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:name],
       order_directions: [:asc]
     }
-  }
+  ]
 
   @primary_key {:id, TypeID, autogenerate: true, prefix: "topic", type: :string}
   @foreign_key_type TypeID
