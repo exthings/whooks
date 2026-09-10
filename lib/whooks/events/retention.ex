@@ -43,12 +43,15 @@ defmodule Whooks.Events.Retention do
   end
 
   @doc """
-  Upserts the hourly repeatable BullMQ job scheduler for event retention.
+  Upserts the hourly repeatable BullMQ job scheduler for event retention on the scheduler queue.
   """
   def setup_scheduler do
+    # Clean up legacy repeatable scheduler on "retention" queue if present
+    BullMQ.JobScheduler.remove(:bullmq_redis, "retention", "hourly_retention_scheduler")
+
     case BullMQ.JobScheduler.upsert(
            :bullmq_redis,
-           "retention",
+           "scheduler",
            "hourly_retention_scheduler",
            %{every: 3_600_000},
            "schedule_organization_purges",

@@ -47,12 +47,12 @@ defmodule Whooks.Application do
       ),
       Supervisor.child_spec(
         {BullMQ.Worker,
-         name: :retention_worker,
-         queue: "retention",
+         name: :scheduler_worker,
+         queue: "scheduler",
          connection: :bullmq_redis,
-         processor: &WhooksWorker.RetentionWorker.process/1,
+         processor: &WhooksWorker.SchedulerWorker.process/1,
          concurrency: 5},
-        id: :retention_worker
+        id: :scheduler_worker
       )
     ]
 

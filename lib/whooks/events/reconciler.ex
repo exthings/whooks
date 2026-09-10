@@ -15,12 +15,15 @@ defmodule Whooks.Events.Reconciler do
   @scheduler_every_ms 300_000
 
   @doc """
-  Upserts the 5-minute repeatable BullMQ job scheduler for stalled events reconciliation.
+  Upserts the 5-minute repeatable BullMQ job scheduler for stalled events reconciliation on the scheduler queue.
   """
   def setup_scheduler do
+    # Clean up legacy repeatable scheduler on "events" queue if present
+    BullMQ.JobScheduler.remove(:bullmq_redis, "events", "stalled_events_reconciler")
+
     case BullMQ.JobScheduler.upsert(
            :bullmq_redis,
-           "events",
+           "scheduler",
            "stalled_events_reconciler",
            %{every: @scheduler_every_ms},
            "reconcile_stalled_events",
