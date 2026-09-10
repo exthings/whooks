@@ -10,7 +10,15 @@ defmodule Whooks.Consumers.Consumer do
     default_order: %{
       order_by: [:name],
       order_directions: [:asc]
-    }
+    },
+    custom_fields: [
+      name: [
+        filter: {Whooks.Filters, :ilike, []},
+        field_dynamic: {Whooks.Filters, :name_field, []},
+        ecto_type: :string,
+        operators: [:ilike]
+      ]
+    ]
   ]
 
   @primary_key {:id, TypeID, autogenerate: true, prefix: "consumer", type: :string}

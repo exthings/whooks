@@ -8,4 +8,13 @@ defmodule Whooks.Filters do
       fragment("? MEMBER OF(?)", ^value, p.tags)
     )
   end
+
+  def ilike(query, %Flop.Filter{value: value, field: field}, _opts) do
+    pattern = "%#{value}%"
+    where(query, [p], fragment("? ILIKE ?", field(p, ^field), ^pattern))
+  end
+
+  def name_field(_opts) do
+    dynamic([p], p.name)
+  end
 end
