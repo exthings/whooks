@@ -14,6 +14,7 @@ defmodule Whooks.Events do
   alias Whooks.Consumers.Consumer
   alias Whooks.Subscriptions.Subscription
   alias Whooks.DeliveryAttempts.DeliveryAttempt
+  alias Whooks.Endpoints.Endpoint
   alias Whooks.Auth.Scope
   alias Whooks.RedisCache
   alias Whooks.Common.Utils
@@ -188,6 +189,149 @@ defmodule Whooks.Events do
     end
   end
 
+  @doc """
+  Resends multiple events in batches by adding jobs to BullMQ in bulk.
+  Accepts a list of %Event{} structs, string IDs, or TypeIDs.
+  """
+  def resend_batch(events_or_ids, opts \\ [])
+
+  def resend_batch([], _opts), do: {:ok, %{total_enqueued: 0, job_ids: []}}
+
+  def resend_batch(events_or_ids, opts) when is_list(events_or_ids) do
+    batch_size = Keyword.get(opts, :batch_size, 1_000)
+
+    event_ids =
+      events_or_ids
+      |> Enum.map(&extract_event_id/1)
+      |> Enum.reject(&is_nil/1)
+
+    if Enum.empty?(event_ids) do
+      {:ok, %{total_enqueued: 0, job_ids: []}}
+    else
+      chunks = Enum.chunk_every(event_ids, batch_size)
+
+      result =
+        Enum.reduce_while(chunks, {:ok, {0, []}}, fn chunk, {:ok, {acc_count, acc_job_ids}} ->
+          jobs = Enum.map(chunk, fn id -> {"resend", %{id: id}, []} end)
+
+          case BullMQ.Queue.add_bulk("events", jobs, connection: :bullmq_redis) do
+            {:ok, enqueued_jobs} ->
+              count = length(enqueued_jobs)
+              job_ids = Enum.map(enqueued_jobs, &to_string(&1.id))
+              Logger.info("[BullMQ] events.resend_batch enqueued #{count} jobs")
+              {:cont, {:ok, {acc_count + count, acc_job_ids ++ job_ids}}}
+
+            {:error, reason} = err ->
+              Logger.error("[BullMQ] events.resend_batch failed: #{inspect(reason)}")
+              {:halt, err}
+          end
+        end)
+
+      case result do
+        {:ok, {total, job_ids}} -> {:ok, %{total_enqueued: total, job_ids: job_ids}}
+        error -> error
+      end
+    end
+  end
+
+  @doc """
+  Retries failed events (by default status :failed and :partial_success) using batch resend.
+  Supports filtering by :project_id, :consumer_id, :topic_id, :inserted_after, :inserted_before, and :batch_size.
+  """
+  def retry_failed(opts \\ []) do
+    statuses = Keyword.get(opts, :statuses, [:failed, :partial_success])
+    batch_size = Keyword.get(opts, :batch_size, 1_000)
+
+    query =
+      from(e in Event,
+        where: e.status in ^statuses,
+        select: e.id
+      )
+      |> apply_retry_filters(opts)
+
+    event_ids = Repo.all(query)
+    resend_batch(event_ids, batch_size: batch_size)
+  end
+
+  @doc """
+  Retries missing events for an endpoint that were created before the endpoint's subscriptions.
+  Finds events with status :no_subscribers, :success, or :pending matching the endpoint's consumer,
+  project, and subscribed topics inserted before each subscription was created.
+  """
+  def retry_missing(endpoint_or_id, opts \\ [])
+
+  def retry_missing(%Endpoint{} = endpoint, opts) do
+    endpoint = Repo.preload(endpoint, subscriptions: :topic)
+    do_retry_missing(endpoint, opts)
+  end
+
+  def retry_missing(endpoint_id, opts)
+      when is_binary(endpoint_id) or is_struct(endpoint_id, TypeID) do
+    case Repo.get(Endpoint, endpoint_id) do
+      nil ->
+        {:error, :endpoint_not_found}
+
+      %Endpoint{} = endpoint ->
+        endpoint = Repo.preload(endpoint, subscriptions: :topic)
+        do_retry_missing(endpoint, opts)
+    end
+  end
+
+  defp do_retry_missing(%Endpoint{subscriptions: []}, _opts) do
+    {:ok, %{total_enqueued: 0}}
+  end
+
+  defp do_retry_missing(%Endpoint{subscriptions: subscriptions} = endpoint, opts) do
+    batch_size = Keyword.get(opts, :batch_size, 1_000)
+
+    conditions =
+      Enum.reduce(subscriptions, nil, fn sub, acc ->
+        cond_clause =
+          dynamic([e], e.topic_id == ^sub.topic_id and e.inserted_at < ^sub.inserted_at)
+
+        if acc, do: dynamic([e], ^acc or ^cond_clause), else: cond_clause
+      end)
+
+    query =
+      from(e in Event,
+        where: e.consumer_id == ^endpoint.consumer_id and e.project_id == ^endpoint.project_id,
+        where: e.status in [:no_subscribers, :success, :pending],
+        where: ^conditions,
+        select: e.id
+      )
+      |> apply_retry_filters(opts)
+
+    event_ids = Repo.all(query)
+    resend_batch(event_ids, batch_size: batch_size)
+  end
+
+  defp extract_event_id(%Event{id: id}), do: to_string(id)
+  defp extract_event_id(%TypeID{} = id), do: TypeID.to_string(id)
+  defp extract_event_id(id) when is_binary(id), do: id
+  defp extract_event_id(_), do: nil
+
+  defp apply_retry_filters(q, opts) do
+    Enum.reduce(opts, q, fn
+      {:project_id, project_id}, q when not is_nil(project_id) ->
+        where(q, [e], e.project_id == ^project_id)
+
+      {:consumer_id, consumer_id}, q when not is_nil(consumer_id) ->
+        where(q, [e], e.consumer_id == ^consumer_id)
+
+      {:topic_id, topic_id}, q when not is_nil(topic_id) ->
+        where(q, [e], e.topic_id == ^topic_id)
+
+      {:inserted_after, %DateTime{} = dt}, q ->
+        where(q, [e], e.inserted_at >= ^dt)
+
+      {:inserted_before, %DateTime{} = dt}, q ->
+        where(q, [e], e.inserted_at <= ^dt)
+
+      _, q ->
+        q
+    end)
+  end
+
   @decorate cache_put(
               cache: RedisCache,
               key: &cache_key_gen/1,
@@ -328,6 +472,18 @@ defmodule Whooks.Events do
   end
 
   def authorize(:resend, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:resend_batch, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:retry_failed, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:retry_missing, %Scope{user: user}, _opts) do
     user.role in [:root, :admin, :support]
   end
 

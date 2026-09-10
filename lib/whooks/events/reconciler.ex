@@ -51,7 +51,7 @@ defmodule Whooks.Events.Reconciler do
   Scans for stalled events and recovers them.
   1. Stalled :pending events older than threshold:
      - If zero subscriptions: mark as :no_subscribers
-     - If subscriptions exist: re-enqueue via Events.resend/1
+     - If subscriptions exist: re-enqueue in bulk via Events.resend_batch/1
   """
   def reconcile(opts \\ []) do
     threshold = Keyword.get(opts, :threshold_seconds, @default_threshold_seconds)
@@ -65,8 +65,8 @@ defmodule Whooks.Events.Reconciler do
 
     stalled_events = Repo.all(stalled_pending_query)
 
-    reconciled =
-      Enum.reduce(stalled_events, 0, fn event, acc ->
+    {no_sub_count, to_resend} =
+      Enum.reduce(stalled_events, {0, []}, fn event, {no_sub_acc, resend_acc} ->
         case Subscriptions.list_by_topic(event.topic_id,
                consumer_id: event.consumer_id,
                project_id: event.project_id
@@ -77,17 +77,31 @@ defmodule Whooks.Events.Reconciler do
             )
 
             Events.update_to_no_subscribers(event)
-            acc + 1
+            {no_sub_acc + 1, resend_acc}
 
           {:ok, _subs} ->
-            Logger.info("[Reconciler] Re-triggering stalled event #{inspect(event.id)}")
-            Events.resend(event)
-            acc + 1
+            Logger.info(
+              "[Reconciler] Queuing stalled event #{inspect(event.id)} for batch resend"
+            )
+
+            {no_sub_acc, [event | resend_acc]}
 
           _ ->
-            acc
+            {no_sub_acc, resend_acc}
         end
       end)
+
+    resend_count =
+      case Events.resend_batch(to_resend) do
+        {:ok, %{total_enqueued: count}} ->
+          count
+
+        {:error, reason} ->
+          Logger.error("[Reconciler] Failed to batch resend stalled events: #{inspect(reason)}")
+          0
+      end
+
+    reconciled = no_sub_count + resend_count
 
     {:ok, %{reconciled_count: reconciled}}
   end
