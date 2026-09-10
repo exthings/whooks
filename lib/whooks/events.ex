@@ -220,6 +220,17 @@ defmodule Whooks.Events do
     |> Repo.update()
   end
 
+  @decorate cache_put(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
+  def update_to_no_subscribers(%Event{} = event) do
+    event
+    |> Event.update_changeset(%{status: :no_subscribers})
+    |> Repo.update()
+  end
+
   defp apply_filters(q, opts, %Flop{} = flop) do
     Logger.info("apply filters flop")
 

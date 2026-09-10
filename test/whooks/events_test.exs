@@ -353,6 +353,20 @@ defmodule Whooks.EventsTest do
       delivery_return = Jason.decode!(delivery_return)
       assert delivery_return["id"] == event_id
     end
+
+    test "updates event status to no_subscribers", %{project: project, topic: topic, consumer: consumer} do
+      {:ok, event} =
+        Events.create(%{
+          uid: "test-no-subs-#{System.unique_integer()}",
+          data: %{"hello" => "world"},
+          project_id: project.id,
+          topic_id: topic.id,
+          consumer_id: consumer.id
+        })
+
+      assert {:ok, updated_event} = Events.update_to_no_subscribers(event)
+      assert updated_event.status == :no_subscribers
+    end
   end
 
   defp endpoint_url(port), do: "http://localhost:#{port}/v1/webhooks"

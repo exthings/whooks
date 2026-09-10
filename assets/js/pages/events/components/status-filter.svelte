@@ -82,5 +82,13 @@
       />
       <Label for="success" class="flex-1 text-green-600">Success</Label>
     </div>
+    <div class="flex items-center gap-3 py-2 px-2">
+      <Checkbox
+        id="no_subscribers"
+        checked={selected.includes("no_subscribers")}
+        onCheckedChange={() => toggleStatus("no_subscribers")}
+      />
+      <Label for="no_subscribers" class="flex-1 text-slate-500">No Subscribers</Label>
+    </div>
   </div>
 </Collapsible>

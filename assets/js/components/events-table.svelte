@@ -56,6 +56,7 @@
     retry: "secondary",
     failed: "destructive",
     success: "success",
+    no_subscribers: "secondary",
   } as const;
 
   const columns: ColumnDef<Event & { topic: Topic }>[] = [
