@@ -119,6 +119,7 @@ defmodule Whooks.Events do
     Logger.info("Creating event: #{inspect(attrs)}")
 
     event_id = Event.gen_id() |> TypeID.to_string()
+    attrs = Map.put(attrs, "id", event_id)
     uid = Map.get(attrs, "uid")
     has_uid = is_binary(uid) and String.trim(uid) != ""
 
