@@ -10,17 +10,30 @@ defmodule WhooksWorker.EventsWorker do
 
   def process(%Job{name: "create", data: data}) do
     Logger.info("[EventsWorker.create] creating: #{inspect(data)}")
-    {:ok, topic} = get_topic(data["topic"], data["project_id"])
 
-    with :ok <- validate_data(topic, data["data"]),
+    with {:ok, topic} <- get_topic(data["topic"], data["project_id"]),
+         :ok <- validate_data(topic, data["data"]),
          {:ok, event} <- Events.create(Map.put(data, "topic_id", topic.id)),
-         {:ok, subscriptions} <- list_subscriptions(event),
-         {:ok, _flow} <- add_flow(event, subscriptions),
-         {:ok, event} <- Events.update_to_processing(event) do
-      {:ok, %{event_id: event.id, status: event.status}}
+         {:ok, subscriptions} <- list_subscriptions(event) do
+      case subscriptions do
+        [] ->
+          Logger.info(
+            "[EventsWorker.create] No subscriptions for event #{inspect(event.id)}, setting status to no_subscribers"
+          )
+
+          {:ok, event} = Events.update_to_no_subscribers(event)
+          {:ok, %{event_id: event.id, status: event.status}}
+
+        _ ->
+          with {:ok, _flow} <- add_flow(event, subscriptions),
+               {:ok, event} <- Events.update_to_processing(event) do
+            {:ok, %{event_id: event.id, status: event.status}}
+          end
+      end
     else
       {:error, %JsonXema.ValidationError{} = error} ->
-        with {:ok, event} <-
+        with {:ok, topic} <- get_topic(data["topic"], data["project_id"]),
+             {:ok, event} <-
                Events.create(
                  Map.merge(data, %{
                    "status" => :failed,
@@ -42,10 +55,18 @@ defmodule WhooksWorker.EventsWorker do
     Logger.info("[EventsWorker.resend] resending: #{inspect(data)}")
 
     with {:ok, event} <- Events.get(data["id"]),
-         {:ok, subscriptions} <- list_subscriptions(event),
-         {:ok, _flow} <- add_flow(event, subscriptions),
-         {:ok, event} <- Events.update_to_processing(event) do
-      {:ok, %{event_id: event.id, status: event.status}}
+         {:ok, subscriptions} <- list_subscriptions(event) do
+      case subscriptions do
+        [] ->
+          {:ok, event} = Events.update_to_no_subscribers(event)
+          {:ok, %{event_id: event.id, status: event.status}}
+
+        _ ->
+          with {:ok, _flow} <- add_flow(event, subscriptions),
+               {:ok, event} <- Events.update_to_processing(event) do
+            {:ok, %{event_id: event.id, status: event.status}}
+          end
+      end
     end
   end
 
@@ -71,7 +92,7 @@ defmodule WhooksWorker.EventsWorker do
 
       event = Events.get_event!(id)
 
-      update_event_status(event, failed_count, total)
+      update_event_status(event, failed_count, total, pending_count)
     end
   end
 
@@ -79,19 +100,32 @@ defmodule WhooksWorker.EventsWorker do
     {:error, "Unknown job type: #{name}"}
   end
 
-  defp update_event_status(event, failed, total) when total > 0 and failed >= total do
+  defp update_event_status(event, _failed, _total, pending_count) when pending_count > 0 do
+    Logger.info(
+      "[EventsWorker.update_status] Event #{inspect(event.id)} has #{pending_count} pending dependencies, keeping processing"
+    )
+
+    {:ok, %{id: event.id, status: event.status, pending: pending_count}}
+  end
+
+  defp update_event_status(event, failed, total, 0) when total > 0 and failed >= total do
     Logger.info("[EventsWorker.update_status] Event failed: #{inspect(event.id)}")
     event |> Events.update_to_failed() |> format_status_result()
   end
 
-  defp update_event_status(event, 0, _total) do
+  defp update_event_status(event, 0, total, 0) when total > 0 do
     Logger.info("[EventsWorker.update_status] Event succeeded: #{inspect(event.id)}")
     event |> Events.update_to_success() |> format_status_result()
   end
 
-  defp update_event_status(event, _failed, _total) do
+  defp update_event_status(event, _failed, total, 0) when total > 0 do
     Logger.info("[EventsWorker.update_status] Event partial success: #{inspect(event.id)}")
     event |> Events.update_to_partial_success() |> format_status_result()
+  end
+
+  defp update_event_status(event, _failed, 0, 0) do
+    Logger.info("[EventsWorker.update_status] Event #{inspect(event.id)} has 0 total deliveries")
+    event |> Events.update_to_no_subscribers() |> format_status_result()
   end
 
   defp format_status_result({:ok, event}), do: {:ok, %{id: event.id}}

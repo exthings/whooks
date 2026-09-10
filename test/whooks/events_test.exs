@@ -370,7 +370,11 @@ defmodule Whooks.EventsTest do
       }
     end
 
-    test "updates event status to no_subscribers", %{project: project, topic: topic, consumer: consumer} do
+    test "updates event status to no_subscribers", %{
+      project: project,
+      topic: topic,
+      consumer: consumer
+    } do
       {:ok, event} =
         Events.create(%{
           uid: "test-no-subs-#{System.unique_integer()}",
@@ -384,8 +388,13 @@ defmodule Whooks.EventsTest do
       assert updated_event.status == :no_subscribers
     end
 
-    test "enqueue uses uid for deduplication when present", %{project: project, topic: topic, consumer: consumer} do
+    test "enqueue uses uid for deduplication when present", %{
+      project: project,
+      topic: topic,
+      consumer: consumer
+    } do
       uid = "unique-uid-#{System.unique_integer()}"
+
       attrs = %{
         "uid" => uid,
         "topic" => topic.name,
@@ -399,7 +408,11 @@ defmodule Whooks.EventsTest do
       assert is_binary(job_id)
     end
 
-    test "enqueue falls back to generated id when uid is nil or empty", %{project: project, topic: topic, consumer: consumer} do
+    test "enqueue falls back to generated id when uid is nil or empty", %{
+      project: project,
+      topic: topic,
+      consumer: consumer
+    } do
       attrs = %{
         "topic" => topic.name,
         "project_id" => TypeID.to_string(project.id),
@@ -412,7 +425,11 @@ defmodule Whooks.EventsTest do
       assert is_binary(job_id)
     end
 
-    test "create is idempotent when event already exists", %{project: project, topic: topic, consumer: consumer} do
+    test "create is idempotent when event already exists", %{
+      project: project,
+      topic: topic,
+      consumer: consumer
+    } do
       attrs = %{
         "uid" => "idempotent-uid-#{System.unique_integer()}",
         "topic_id" => topic.id,
@@ -424,6 +441,33 @@ defmodule Whooks.EventsTest do
       assert {:ok, event1} = Events.create(attrs)
       assert {:ok, event2} = Events.create(attrs)
       assert event1.id == event2.id
+    end
+
+    test "create job with zero subscriptions marks event as no_subscribers", %{
+      project: project,
+      consumer: consumer
+    } do
+      topic_without_subs =
+        topic_fixture(%{
+          project_id: project.id,
+          name: "topic.nosubscriptions"
+        })
+
+      attrs = %{
+        "uid" => "idempotent-uid-#{System.unique_integer()}",
+        "topic" => topic_without_subs.name,
+        "project_id" => TypeID.to_string(project.id),
+        "consumer_id" => TypeID.to_string(consumer.id),
+        "data" => %{"message" => "no subscribers here"}
+      }
+
+      job = %BullMQ.Job{id: "job_test_1", queue_name: "events", name: "create", data: attrs}
+
+      assert {:ok, %{event_id: event_id, status: :no_subscribers}} =
+               WhooksWorker.EventsWorker.process(job)
+
+      event = Events.get!(event_id)
+      assert event.status == :no_subscribers
     end
   end
 
