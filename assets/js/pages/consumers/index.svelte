@@ -115,6 +115,8 @@
         <ConsumerEndpoints endpoints={consumer.endpoints} />
 
         <EventsTable
+          title="Latest events"
+          showActions={true}
           propsKey="events"
           columnVisibility={["insertedAt", "id", "topic", "status", "tags"]}
         />
