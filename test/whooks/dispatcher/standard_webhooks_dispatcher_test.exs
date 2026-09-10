@@ -106,5 +106,21 @@ defmodule Whooks.Dispatcher.StandardWebhooksDispatcherTest do
     assert result.response == nil
   end
 
+  test "dispatch/1 handles arbitrary exception safely without crashing" do
+    params = %Params{
+      event_id: "lcjinejt23v6njnpmlmgz7sl",
+      topic: "transaction.paid",
+      data: %{id: 1, status: "paid"},
+      timestamp: DateTime.utc_now(),
+      metadata: %{
+        url: "not-a-valid-url",
+        secret: "whsec_invalid_base64_!@#$"
+      }
+    }
+
+    assert {:error, %Result{status: :failed}} =
+             StandardWebhooksDispatcher.dispatch(params)
+  end
+
   defp endpoint_url(port), do: "http://localhost:#{port}/v1/webhooks"
 end

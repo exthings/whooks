@@ -30,7 +30,16 @@ defmodule Whooks.Events.Event do
     field :uid, :string
 
     field :status, Ecto.Enum,
-      values: [:pending, :scheduled, :processing, :retry, :success, :failed, :partial_success],
+      values: [
+        :pending,
+        :scheduled,
+        :processing,
+        :retry,
+        :success,
+        :failed,
+        :partial_success,
+        :no_subscribers
+      ],
       default: :pending
 
     field :data, :map

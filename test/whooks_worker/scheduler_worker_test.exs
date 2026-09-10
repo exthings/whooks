@@ -1,10 +1,13 @@
-defmodule WhooksWorker.RetentionWorkerTest do
+defmodule WhooksWorker.SchedulerWorkerTest do
   use Whooks.DataCase, async: false
 
   alias BullMQ.Job
+  alias WhooksWorker.SchedulerWorker
   alias WhooksWorker.RetentionWorker
   alias Whooks.Repo
+  alias Whooks.Events
   alias Whooks.Events.Event
+
   import Whooks.OrganizationsFixtures
   import Whooks.ProjectsFixtures
   import Whooks.ConsumersFixtures
@@ -13,22 +16,22 @@ defmodule WhooksWorker.RetentionWorkerTest do
 
   setup_all do
     {:ok, queue_events} =
-      BullMQ.QueueEvents.start_link(queue: "retention", connection: :bullmq_redis)
+      BullMQ.QueueEvents.start_link(queue: "scheduler", connection: :bullmq_redis)
 
     %{queue_events: queue_events}
   end
 
   setup %{queue_events: queue_events} do
     BullMQ.QueueEvents.subscribe(queue_events, self())
-    BullMQ.Queue.drain("retention", connection: :bullmq_redis)
+    BullMQ.Queue.drain("scheduler", connection: :bullmq_redis)
 
-    org = organization_fixture(%{name: "Worker Org", event_retention_days: 14})
+    org = organization_fixture(%{name: "Scheduler Org", event_retention_days: 14})
     project = project_fixture(%{organization_id: org.id})
     consumer = consumer_fixture(%{organization_id: org.id})
     topic = topic_fixture(%{project_id: project.id})
 
     on_exit(fn ->
-      BullMQ.Queue.drain("retention", connection: :bullmq_redis)
+      BullMQ.Queue.drain("scheduler", connection: :bullmq_redis)
     end)
 
     %{org: org, project: project, consumer: consumer, topic: topic}
@@ -37,7 +40,7 @@ defmodule WhooksWorker.RetentionWorkerTest do
   defp build_job(name, data) do
     %Job{
       id: "test_job_#{System.unique_integer([:positive])}",
-      queue_name: "retention",
+      queue_name: "scheduler",
       name: name,
       data: data
     }
@@ -47,10 +50,10 @@ defmodule WhooksWorker.RetentionWorkerTest do
     test "schedules a purge_organization job for each organization with retention" do
       job = build_job("schedule_organization_purges", %{})
 
-      assert {:ok, %{scheduled_count: count}} = RetentionWorker.process(job)
+      assert {:ok, %{scheduled_count: count}} = SchedulerWorker.process(job)
       assert count >= 1
 
-      # Wait for background worker to complete the scheduled job
+      # Wait for background worker to complete the scheduled job on scheduler queue
       assert_receive {:bullmq_event, :completed, _}, 3000
     end
   end
@@ -85,7 +88,7 @@ defmodule WhooksWorker.RetentionWorkerTest do
           "total_deleted" => 0
         })
 
-      assert {:ok, result} = RetentionWorker.process(job)
+      assert {:ok, result} = SchedulerWorker.process(job)
       assert result.organization_id == org.id
       assert result.deleted_in_batch == 1
       assert result.total_deleted == 1
@@ -104,13 +107,52 @@ defmodule WhooksWorker.RetentionWorkerTest do
           "total_deleted" => 5
         })
 
-      assert {:ok, result} = RetentionWorker.process(job)
+      assert {:ok, result} = SchedulerWorker.process(job)
       assert result.organization_id == org.id
       assert result.total_deleted == 5
       assert result.status == :completed
     end
+  end
 
-    test "unknown job name returns error" do
+  describe "process/1 reconcile_stalled_events" do
+    test "recovers stalled events", %{
+      project: project,
+      consumer: consumer,
+      topic: topic
+    } do
+      stalled_time = DateTime.utc_now() |> DateTime.add(-600, :second)
+
+      {:ok, event} =
+        Events.create(%{
+          uid: "stalled-scheduler-#{System.unique_integer()}",
+          status: :pending,
+          topic_id: topic.id,
+          project_id: project.id,
+          consumer_id: consumer.id,
+          data: %{"test" => "scheduler_stalled"}
+        })
+
+      from(e in Event, where: e.id == ^event.id)
+      |> Repo.update_all(set: [inserted_at: stalled_time])
+
+      job = build_job("reconcile_stalled_events", %{})
+      assert {:ok, %{reconciled_count: count}} = SchedulerWorker.process(job)
+      assert count >= 1
+
+      updated_event = Events.get!(event.id)
+      assert updated_event.status == :no_subscribers
+    end
+  end
+
+  describe "process/1 unknown job" do
+    test "returns error for unsupported job type" do
+      job = build_job("unsupported_job_type", %{})
+      assert {:error, "Unknown job type: unsupported_job_type"} = SchedulerWorker.process(job)
+    end
+  end
+
+  describe "RetentionWorker backward compatibility" do
+    test "delegates process/1 to SchedulerWorker" do
       job = build_job("unsupported_job_type", %{})
       assert {:error, "Unknown job type: unsupported_job_type"} = RetentionWorker.process(job)
     end
