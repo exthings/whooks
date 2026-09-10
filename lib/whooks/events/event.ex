@@ -7,21 +7,21 @@ defmodule Whooks.Events.Event do
   @prefix "event"
 
   @flop_options [
-    filterable: [:id, :uid, :status, :tags, :inserted_at, :updated_at],
+    filterable: [
+      :id,
+      :uid,
+      :status,
+      :tags,
+      :inserted_at,
+      :updated_at,
+      :project_id,
+      :consumer_id
+    ],
     sortable: [:status, :inserted_at, :updated_at],
     default_order: %{
       order_by: [:inserted_at],
       order_directions: [:desc]
-    },
-    adapter_opts: [
-      custom_fields: [
-        tags: [
-          filter: {Whooks.Filters, :member_of, []},
-          ecto_type: :string,
-          operators: [:in, :contains]
-        ]
-      ]
-    ]
+    }
   ]
 
   @primary_key {:id, TypeID, autogenerate: true, prefix: @prefix, type: :string}

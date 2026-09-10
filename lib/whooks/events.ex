@@ -28,19 +28,22 @@ defmodule Whooks.Events do
   end
 
   def list(params, opts \\ []) do
-    Logger.info("list events")
-
-    from(e in Event,
-      join: t in Topic,
-      on: e.topic_id == t.id,
-      as: :topic,
-      join: c in Consumer,
-      on: e.consumer_id == c.id,
-      as: :consumer,
-      preload: [:topic, :consumer]
-    )
-    |> apply_filters(opts)
-    |> Flop.validate_and_run(params, for: Event)
+    with {:ok, flop} <- Flop.validate(params, for: Event) do
+      from(e in Event,
+        join: t in Topic,
+        on: e.topic_id == t.id,
+        as: :topic,
+        join: c in Consumer,
+        on: e.consumer_id == c.id,
+        as: :consumer,
+        preload: [:topic, :consumer]
+      )
+      |> apply_filters(opts, flop)
+      |> Flop.run(flop, for: Event)
+      |> case do
+        {data, meta} -> {:ok, {data, meta}}
+      end
+    end
   end
 
   def list_by_endpoint(params, endpoint_id) do
@@ -215,6 +218,22 @@ defmodule Whooks.Events do
     event
     |> Event.update_changeset(%{status: :partial_success})
     |> Repo.update()
+  end
+
+  defp apply_filters(q, opts, %Flop{} = flop) do
+    Logger.info("apply filters flop")
+
+    Enum.any?(flop.filters, fn f ->
+      f.field in [:id, :uid, :tags]
+    end)
+    |> case do
+      true ->
+        opts = Keyword.drop(opts, [:last])
+        apply_filters(q, opts)
+
+      false ->
+        apply_filters(q, opts)
+    end
   end
 
   defp apply_filters(q, opts) do

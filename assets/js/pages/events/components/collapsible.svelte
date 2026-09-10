@@ -6,15 +6,20 @@
   import { Badge } from "$lib/components/ui/badge";
 
   type Props = {
+    open?: boolean;
     children: Snippet;
     label: string;
     count?: number;
     onClear?: () => void;
   };
 
-  let { children, label, count = $bindable(), onClear }: Props = $props();
-
-  let open = $state(false);
+  let {
+    open = $bindable(false),
+    children,
+    label,
+    count = $bindable(),
+    onClear,
+  }: Props = $props();
 </script>
 
 <Collapsible.Root class="space-y-2" bind:open>
