@@ -353,6 +353,22 @@ defmodule Whooks.EventsTest do
       delivery_return = Jason.decode!(delivery_return)
       assert delivery_return["id"] == event_id
     end
+  end
+
+  describe "event creation resilience" do
+    setup do
+      org = organization_fixture()
+      consumer = consumer_fixture(%{organization_id: org.id})
+      project = project_fixture(%{organization_id: org.id})
+      topic = topic_fixture(%{project_id: project.id})
+
+      %{
+        org: org,
+        consumer: consumer,
+        project: project,
+        topic: topic
+      }
+    end
 
     test "updates event status to no_subscribers", %{project: project, topic: topic, consumer: consumer} do
       {:ok, event} =
@@ -366,6 +382,48 @@ defmodule Whooks.EventsTest do
 
       assert {:ok, updated_event} = Events.update_to_no_subscribers(event)
       assert updated_event.status == :no_subscribers
+    end
+
+    test "enqueue uses uid for deduplication when present", %{project: project, topic: topic, consumer: consumer} do
+      uid = "unique-uid-#{System.unique_integer()}"
+      attrs = %{
+        "uid" => uid,
+        "topic" => topic.name,
+        "project_id" => TypeID.to_string(project.id),
+        "consumer_id" => TypeID.to_string(consumer.id),
+        "data" => %{"key" => "value"}
+      }
+
+      assert {:ok, %{id: event_id, job_id: job_id}} = Events.enqueue(attrs)
+      assert is_binary(event_id)
+      assert is_binary(job_id)
+    end
+
+    test "enqueue falls back to generated id when uid is nil or empty", %{project: project, topic: topic, consumer: consumer} do
+      attrs = %{
+        "topic" => topic.name,
+        "project_id" => TypeID.to_string(project.id),
+        "consumer_id" => TypeID.to_string(consumer.id),
+        "data" => %{"key" => "value"}
+      }
+
+      assert {:ok, %{id: event_id, job_id: job_id}} = Events.enqueue(attrs)
+      assert String.starts_with?(event_id, "event_")
+      assert is_binary(job_id)
+    end
+
+    test "create is idempotent when event already exists", %{project: project, topic: topic, consumer: consumer} do
+      attrs = %{
+        "uid" => "idempotent-uid-#{System.unique_integer()}",
+        "topic_id" => topic.id,
+        "project_id" => project.id,
+        "consumer_id" => consumer.id,
+        "data" => %{"key" => "val"}
+      }
+
+      assert {:ok, event1} = Events.create(attrs)
+      assert {:ok, event2} = Events.create(attrs)
+      assert event1.id == event2.id
     end
   end
 

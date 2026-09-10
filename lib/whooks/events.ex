@@ -119,22 +119,34 @@ defmodule Whooks.Events do
     Logger.info("Creating event: #{inspect(attrs)}")
 
     event_id = Event.gen_id() |> TypeID.to_string()
-    attrs = Map.put(attrs, "id", event_id)
+    uid = Map.get(attrs, "uid")
+    has_uid = is_binary(uid) and String.trim(uid) != ""
 
-    get(attrs["uid"])
-    |> case do
-      {:ok, %Event{} = event} ->
-        {:ok, event}
+    if has_uid do
+      get(uid)
+      |> case do
+        {:ok, %Event{} = event} ->
+          {:ok, event}
 
-      {:error, :not_found} ->
-        with {:ok, job} <-
-               BullMQ.Queue.add("events", "create", attrs,
-                 connection: :bullmq_redis,
-                 deduplication: %{id: event_id}
-               ) do
-          Logger.info("[BullMQ] events.create job added: #{inspect(job.id)}")
-          {:ok, %{id: event_id, job_id: job.id}}
-        end
+        {:error, :not_found} ->
+          with {:ok, job} <-
+                 BullMQ.Queue.add("events", "create", attrs,
+                   connection: :bullmq_redis,
+                   deduplication: %{id: uid || event_id}
+                 ) do
+            Logger.info("[BullMQ] events.create job added with uid dedup: #{inspect(job.id)}")
+            {:ok, %{id: event_id, job_id: job.id}}
+          end
+      end
+    else
+      with {:ok, job} <-
+             BullMQ.Queue.add("events", "create", attrs,
+               connection: :bullmq_redis,
+               deduplication: %{id: event_id}
+             ) do
+        Logger.info("[BullMQ] events.create job added with fallback dedup: #{inspect(job.id)}")
+        {:ok, %{id: event_id, job_id: job.id}}
+      end
     end
   end
 
@@ -142,6 +154,27 @@ defmodule Whooks.Events do
     %Event{}
     |> Event.create_changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, event} ->
+        {:ok, event}
+
+      {:error, %Ecto.Changeset{errors: errors}} = error ->
+        is_duplicate =
+          Keyword.has_key?(errors, :uid) or Keyword.has_key?(errors, :id)
+
+        if is_duplicate do
+          uid = attrs["uid"] || Map.get(attrs, :uid)
+          id = attrs["id"] || Map.get(attrs, :id)
+
+          cond do
+            is_binary(id) and String.trim(id) != "" -> get(id)
+            is_binary(uid) and String.trim(uid) != "" -> get(uid)
+            true -> error
+          end
+        else
+          error
+        end
+    end
   end
 
   def resend(%Event{} = event) do
