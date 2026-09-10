@@ -2,7 +2,7 @@
   import { parseAbsoluteToLocal } from "@internationalized/date";
 
   type Props = {
-    value: string;
+    value?: string;
     locale?: string;
     options?: Intl.DateTimeFormatOptions;
     size?: "xs" | "sm" | "base" | "lg" | "xl";
@@ -27,7 +27,7 @@
     mono = false,
   }: Props = $props();
 
-  let parsedDate = $derived(parseAbsoluteToLocal(value));
+  let parsedDate = $derived(value && parseAbsoluteToLocal(value));
 
   let formatter = new Intl.DateTimeFormat(
     locale,
@@ -35,6 +35,10 @@
   );
 </script>
 
-<time datetime={value} class="text-{size} {mono ? 'font-mono' : ''}">
-  {formatter.format(parsedDate.toDate())}
-</time>
+{#if parsedDate}
+  <time datetime={value} class="text-{size} {mono ? 'font-mono' : ''}">
+    {formatter.format(parsedDate.toDate())}
+  </time>
+{:else}
+  -
+{/if}

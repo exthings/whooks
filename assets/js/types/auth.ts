@@ -8,6 +8,7 @@ export type User = {
   disabledAt: string;
   insertedAt: string;
   updatedAt: string;
+  authenticatedAt?: string;
 };
 
 export type Scope = {

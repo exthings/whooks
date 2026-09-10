@@ -6,23 +6,17 @@ defmodule WhooksWeb.UI.Admin.Settings.UsersController do
 
   def index(conn, params) do
     conn
-    |> assign_users_prop(params)
-    |> assign_prop(:user, nil)
-    |> assign_prop(:id, nil)
+    |> assign_common(params)
+    |> assign_users(params)
+    |> assing_user(params)
     |> render_inertia("settings/users/index")
   end
 
   def show(conn, params) do
     conn
-    |> assign_users_prop(params)
-    |> assign_prop(:user, fn ->
-      Auth.get_user!(params["id"])
-      |> case do
-        nil -> nil
-        user -> Serializer.to_map(user)
-      end
-    end)
-    |> assign_prop(:id, params["id"])
+    |> assign_common(params)
+    |> assign_users(params)
+    |> assing_user(params)
     |> render_inertia("settings/users/index")
   end
 
@@ -39,18 +33,43 @@ defmodule WhooksWeb.UI.Admin.Settings.UsersController do
   end
 
   def update(conn, params) do
-    with {:ok, user} <- Auth.update_user(params["id"], params) do
+    current_user = conn.assigns.current_scope.user
+
+    with {:ok, user} <- Auth.update_user(current_user, params["id"], params) do
       conn
       |> redirect(to: ~p"/ui/admin/settings/users/#{user.id}")
     else
       {:error, changeset} ->
         conn
         |> assign_errors(changeset)
-        |> redirect(to: ~p"/ui/admin/settings/users")
+        |> redirect(to: ~p"/ui/admin/settings/users/#{params["id"]}")
     end
   end
 
-  defp assign_users_prop(conn, params) do
+  defp assign_common(conn, params) do
+    conn
+    |> assign_prop(:id, params["id"])
+    |> assign_prop(:current_user, fn ->
+      Serializer.to_map(conn.assigns.current_scope.user)
+    end)
+  end
+
+  defp assing_user(conn, params) do
+    conn
+    |> assign_prop(:user, fn ->
+      if params["id"] do
+        Auth.get_user!(params["id"])
+        |> case do
+          nil -> nil
+          user -> Serializer.to_map(user)
+        end
+      else
+        nil
+      end
+    end)
+  end
+
+  defp assign_users(conn, params) do
     conn
     |> assign_prop(:users, fn ->
       Auth.list_users(params)

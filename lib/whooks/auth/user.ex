@@ -20,7 +20,7 @@ defmodule Whooks.Auth.User do
     field :external_id, :string
     field :name, :string
     field :email, :string
-    field :role, Ecto.Enum, values: [:root, :admin, :support]
+    field :role, Ecto.Enum, values: [:root, :admin, :support], default: :support
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
@@ -62,7 +62,7 @@ defmodule Whooks.Auth.User do
 
   def register_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:name, :email, :password, :role])
+    |> cast(attrs, [:name, :email, :password])
     |> validate_email(opts)
     |> validate_password(opts)
   end

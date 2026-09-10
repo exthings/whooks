@@ -101,6 +101,54 @@ defmodule Whooks.Auth do
     |> Repo.insert()
   end
 
+  def update_user(current_user, id, attrs) do
+    user = get_user!(id)
+
+    role_attr = attrs["role"] || attrs[:role]
+
+    role_atom =
+      cond do
+        is_binary(role_attr) ->
+          try do
+            String.to_existing_atom(role_attr)
+          rescue
+            ArgumentError -> nil
+          end
+
+        is_atom(role_attr) ->
+          role_attr
+
+        true ->
+          nil
+      end
+
+    cond do
+      user.role == :root and current_user.id == user.id and role_atom != nil and
+          role_atom != :root ->
+        user
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.add_error(:role, "root users cannot change their own role")
+        |> Ecto.Changeset.apply_action(:update)
+
+      current_user.role != :root and user.role == :root ->
+        user
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.add_error(:role, "not authorized to modify a root user")
+        |> Ecto.Changeset.apply_action(:update)
+
+      current_user.role != :root and role_atom == :root ->
+        user
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.add_error(:role, "not authorized to assign root role")
+        |> Ecto.Changeset.apply_action(:update)
+
+      true ->
+        user
+        |> User.update_changeset(attrs)
+        |> Repo.update()
+    end
+  end
+
   def update_user(id, attrs) do
     user = get_user!(id)
     user |> User.update_changeset(attrs) |> Repo.update()

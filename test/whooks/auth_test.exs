@@ -452,4 +452,53 @@ defmodule Whooks.AuthTest do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
+
+  describe "update_user/3" do
+    setup do
+      root_user = user_fixture(%{role: "root"})
+      admin_user = user_fixture(%{role: "admin"})
+      support_user = user_fixture(%{role: "support"})
+
+      %{root_user: root_user, admin_user: admin_user, support_user: support_user}
+    end
+
+    test "prevents root user from demoting themselves", %{root_user: root_user} do
+      {:error, changeset} =
+        Auth.update_user(root_user, root_user.id, %{"role" => "admin"})
+
+      assert %{role: ["root users cannot change their own role"]} = errors_on(changeset)
+    end
+
+    test "allows root user to update their own name without changing role", %{
+      root_user: root_user
+    } do
+      {:ok, updated} = Auth.update_user(root_user, root_user.id, %{"name" => "New Root Name"})
+      assert updated.name == "New Root Name"
+      assert updated.role == :root
+    end
+
+    test "allows root user to update another user's role", %{
+      root_user: root_user,
+      support_user: support_user
+    } do
+      {:ok, updated} = Auth.update_user(root_user, support_user.id, %{"role" => "admin"})
+      assert updated.role == :admin
+    end
+
+    test "prevents non-root user from promoting someone to root", %{
+      admin_user: admin_user,
+      support_user: support_user
+    } do
+      {:error, changeset} = Auth.update_user(admin_user, support_user.id, %{"role" => "root"})
+      assert %{role: ["not authorized to assign root role"]} = errors_on(changeset)
+    end
+
+    test "prevents non-root user from modifying a root user", %{
+      admin_user: admin_user,
+      root_user: root_user
+    } do
+      {:error, changeset} = Auth.update_user(admin_user, root_user.id, %{"name" => "Hacked"})
+      assert %{role: ["not authorized to modify a root user"]} = errors_on(changeset)
+    end
+  end
 end
