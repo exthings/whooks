@@ -13,13 +13,22 @@ defmodule Whooks.Dispatcher.StandardWebhooksDispatcher do
     url = Map.get(params.metadata, :url)
     secret = Map.get(params.metadata, :secret)
 
-    data =
-      StandardWebhooks.build_body(params.topic, timestamp, params.data)
-      |> Jason.encode!()
+    try do
+      data =
+        StandardWebhooks.build_body(params.topic, timestamp, params.data)
+        |> Jason.encode!()
 
-    headers = build_headers(params.event_id, timestamp, data, secret)
+      headers = build_headers(params.event_id, timestamp, data, secret)
 
-    post(url, data, headers)
+      post(url, data, headers)
+    rescue
+      e ->
+        Logger.warning(
+          "[StandardWebhooksDispatcher] Exception during dispatch: #{Exception.message(e)}"
+        )
+
+        {:error, Result.failed(Exception.message(e))}
+    end
   end
 
   @impl true
@@ -101,7 +110,11 @@ defmodule Whooks.Dispatcher.StandardWebhooksDispatcher do
   end
 
   defp handle_response({:error, %Req.TransportError{reason: reason}}) do
-    {:error, Result.failed(reason)}
+    {:error, Result.failed(to_string(reason))}
+  end
+
+  defp handle_response({:error, reason}) do
+    {:error, Result.failed(inspect(reason))}
   end
 
   defp parse_res_body(body) when is_binary(body) do
