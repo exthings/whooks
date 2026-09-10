@@ -90,10 +90,6 @@
           </div>
         </RadioGroup.Root>
 
-        <div class="text-xs">
-          {JSON.stringify($form.errors)}
-        </div>
-
         <div class="flex justify-end gap-2">
           <Button
             type="button"
