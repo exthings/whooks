@@ -3,7 +3,6 @@ defmodule Whooks.Projects.Project do
   use Flop.Schema
 
   import Ecto.Changeset
-  import Ecto.Query
 
   require Logger
 
