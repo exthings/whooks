@@ -96,6 +96,11 @@ defmodule WhooksWorker.EventsWorker do
     end
   end
 
+  def process(%Job{name: "reconcile_stalled_events"}) do
+    Logger.info("[EventsWorker] Running reconcile_stalled_events")
+    Whooks.Events.Reconciler.reconcile()
+  end
+
   def process(%Job{name: name}) do
     {:error, "Unknown job type: #{name}"}
   end

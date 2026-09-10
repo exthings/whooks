@@ -63,6 +63,7 @@ defmodule Whooks.Application do
     case Supervisor.start_link(children, opts) do
       {:ok, pid} ->
         Whooks.Events.Retention.setup_scheduler()
+        Whooks.Events.Reconciler.setup_scheduler()
         {:ok, pid}
 
       error ->
