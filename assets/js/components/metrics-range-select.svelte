@@ -88,7 +88,7 @@
   value={last}
   onValueChange={handleLastChange}
 >
-  <Select.Trigger class={cn("w-24")} size="sm">
+  <Select.Trigger class={cn("w-24")}>
     {context?.label ?? placeholder}
   </Select.Trigger>
   <Select.Content>
