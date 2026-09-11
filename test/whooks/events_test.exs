@@ -274,11 +274,14 @@ defmodule Whooks.EventsTest do
 
       assert {:ok, %{id: _event_id, job_id: job_id}} = Events.enqueue(valid_attrs)
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
-      assert_receive {:bullmq_event, :completed, %{"returnvalue" => delivery_return}}, 2000
+      assert_receive {:bullmq_event, :completed, %{"returnvalue" => ret1}}, 2000
+      assert_receive {:bullmq_event, :completed, %{"returnvalue" => ret2}}, 2000
 
-      delivery_return = Jason.decode!(delivery_return)
-      assert String.starts_with?(delivery_return["id"], "attempt_")
-      assert delivery_return["status"] == "success"
+      returns = [Jason.decode!(ret1), Jason.decode!(ret2)]
+      attempt_return = Enum.find(returns, &String.starts_with?(&1["id"] || "", "attempt_"))
+
+      assert attempt_return != nil
+      assert attempt_return["status"] == "success"
 
       assert {:ok, %Whooks.Events.Event{}} = Events.enqueue(valid_attrs)
     end
@@ -356,7 +359,7 @@ defmodule Whooks.EventsTest do
   end
 
   describe "event creation resilience" do
-    setup do
+    setup %{queue_events: queue_events} do
       org = organization_fixture()
       consumer = consumer_fixture(%{organization_id: org.id})
       project = project_fixture(%{organization_id: org.id})
@@ -366,7 +369,8 @@ defmodule Whooks.EventsTest do
         org: org,
         consumer: consumer,
         project: project,
-        topic: topic
+        topic: topic,
+        queue_events: queue_events
       }
     end
 
@@ -468,6 +472,261 @@ defmodule Whooks.EventsTest do
 
       event = Events.get!(event_id)
       assert event.status == :no_subscribers
+    end
+
+    test "resend_batch enqueues jobs in bulk and handles empty or chunked input", %{
+      project: project,
+      topic: topic,
+      consumer: consumer,
+      queue_events: queue_events
+    } do
+      BullMQ.QueueEvents.subscribe(queue_events, self())
+
+      assert {:ok, %{total_enqueued: 0}} = Events.resend_batch([])
+
+      {:ok, event1} =
+        Events.create(%{
+          uid: "batch-1-#{System.unique_integer()}",
+          topic_id: topic.id,
+          project_id: project.id,
+          consumer_id: consumer.id,
+          data: %{"val" => 1}
+        })
+
+      {:ok, event2} =
+        Events.create(%{
+          uid: "batch-2-#{System.unique_integer()}",
+          topic_id: topic.id,
+          project_id: project.id,
+          consumer_id: consumer.id,
+          data: %{"val" => 2}
+        })
+
+      {:ok, event3} =
+        Events.create(%{
+          uid: "batch-3-#{System.unique_integer()}",
+          topic_id: topic.id,
+          project_id: project.id,
+          consumer_id: consumer.id,
+          data: %{"val" => 3}
+        })
+
+      # Test passing mix of %Event{} and string IDs, with batch_size: 2
+      assert {:ok, %{total_enqueued: 3, job_ids: job_ids}} =
+               Events.resend_batch([event1, event2.id, to_string(event3.id)], batch_size: 2)
+
+      # Await the exact background jobs
+      for job_id <- job_ids do
+        assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
+      end
+
+      # Verify events were processed and transitioned to no_subscribers (topic has no subs)
+      assert Events.get!(event1.id).status == :no_subscribers
+      assert Events.get!(event2.id).status == :no_subscribers
+      assert Events.get!(event3.id).status == :no_subscribers
+    end
+
+    test "retry_failed queries failed and partial_success events and enqueues them", %{
+      project: project,
+      topic: topic,
+      consumer: consumer,
+      queue_events: queue_events
+    } do
+      BullMQ.QueueEvents.subscribe(queue_events, self())
+
+      {:ok, failed_event} =
+        Events.create(%{
+          uid: "failed-#{System.unique_integer()}",
+          topic_id: topic.id,
+          project_id: project.id,
+          consumer_id: consumer.id,
+          data: %{"val" => "failed"},
+          status: :failed
+        })
+
+      {:ok, partial_event} =
+        Events.create(%{
+          uid: "partial-#{System.unique_integer()}",
+          topic_id: topic.id,
+          project_id: project.id,
+          consumer_id: consumer.id,
+          data: %{"val" => "partial"},
+          status: :partial_success
+        })
+
+      {:ok, success_event} =
+        Events.create(%{
+          uid: "success-#{System.unique_integer()}",
+          topic_id: topic.id,
+          project_id: project.id,
+          consumer_id: consumer.id,
+          data: %{"val" => "success"},
+          status: :success
+        })
+
+      assert {:ok, %{total_enqueued: 2, job_ids: job_ids}} =
+               Events.retry_failed(
+                 project_id: project.id,
+                 consumer_id: consumer.id,
+                 topic_id: topic.id
+               )
+
+      # Await the exact background jobs
+      for job_id <- job_ids do
+        assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
+      end
+
+      # Failed and partial success events were retried and moved to no_subscribers
+      assert Events.get!(failed_event.id).status == :no_subscribers
+      assert Events.get!(partial_event.id).status == :no_subscribers
+      # Success event was not retried and remained :success
+      assert Events.get!(success_event.id).status == :success
+    end
+
+    test "retry_missing queries past events created before endpoint subscriptions", %{
+      org: org,
+      bypass: bypass,
+      queue_events: queue_events
+    } do
+      BullMQ.QueueEvents.subscribe(queue_events, self())
+
+      Bypass.stub(bypass, "POST", "/v1/webhooks", fn conn ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{status: "success"}))
+      end)
+
+      # Create a new project, consumer, topic and endpoint
+      new_project = project_fixture(%{organization_id: org.id})
+      new_consumer = consumer_fixture(%{organization_id: org.id})
+      new_topic = topic_fixture(%{project_id: new_project.id})
+
+      new_endpoint =
+        endpoint_fixture(%{
+          consumer_id: new_consumer.id,
+          project_id: new_project.id,
+          url: endpoint_url(bypass.port),
+          secret: "signsecret2"
+        })
+
+      # Create past events with inserted_at before subscription
+      past_time = DateTime.utc_now() |> DateTime.add(-300, :second)
+
+      {:ok, past_no_sub} =
+        Events.create(%{
+          uid: "past-no-sub-#{System.unique_integer()}",
+          topic_id: new_topic.id,
+          project_id: new_project.id,
+          consumer_id: new_consumer.id,
+          data: %{"test" => "no_sub"},
+          status: :no_subscribers
+        })
+
+      {:ok, past_success} =
+        Events.create(%{
+          uid: "past-success-#{System.unique_integer()}",
+          topic_id: new_topic.id,
+          project_id: new_project.id,
+          consumer_id: new_consumer.id,
+          data: %{"test" => "success"},
+          status: :success
+        })
+
+      {:ok, past_pending} =
+        Events.create(%{
+          uid: "past-pending-#{System.unique_integer()}",
+          topic_id: new_topic.id,
+          project_id: new_project.id,
+          consumer_id: new_consumer.id,
+          data: %{"test" => "pending"},
+          status: :pending
+        })
+
+      {:ok, past_failed} =
+        Events.create(%{
+          uid: "past-failed-#{System.unique_integer()}",
+          topic_id: new_topic.id,
+          project_id: new_project.id,
+          consumer_id: new_consumer.id,
+          data: %{"test" => "failed"},
+          status: :failed
+        })
+
+      Ecto.Query.from(e in Whooks.Events.Event,
+        where: e.id in ^[past_no_sub.id, past_success.id, past_pending.id]
+      )
+      |> Repo.update_all(set: [inserted_at: past_time])
+
+      # Now create subscription
+      _subscription =
+        subscription_fixture(%{endpoint_id: new_endpoint.id, topics: [new_topic.id]})
+
+      # Create an event created after subscription
+      {:ok, newer_event} =
+        Events.create(%{
+          uid: "newer-#{System.unique_integer()}",
+          topic_id: new_topic.id,
+          project_id: new_project.id,
+          consumer_id: new_consumer.id,
+          data: %{"test" => "newer"},
+          status: :no_subscribers
+        })
+
+      # retry_missing by endpoint struct
+      assert {:ok, %{total_enqueued: 3, job_ids: job_ids}} = Events.retry_missing(new_endpoint)
+
+      # Await the exact background jobs
+      for job_id <- job_ids do
+        assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
+      end
+
+      # Target events were resent and transitioned to processing or success
+      assert Events.get!(past_no_sub.id).status in [:processing, :success]
+      assert Events.get!(past_success.id).status in [:processing, :success]
+      assert Events.get!(past_pending.id).status in [:processing, :success]
+
+      # Events that were not eligible retained their original status
+      assert Events.get!(past_failed.id).status == :failed
+      assert Events.get!(newer_event.id).status == :no_subscribers
+    end
+
+    test "bulk_replay/1 resends events matching topic_ids and inserted_after", data do
+      BullMQ.QueueEvents.subscribe(data.queue_events, self())
+
+      Bypass.stub(data.bypass, "POST", "/v1/webhooks", fn conn ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{status: "success"}))
+      end)
+
+      {:ok, event1} =
+        Events.create(%{
+          uid: "bulk-1-#{System.unique_integer()}",
+          topic_id: data.topic.id,
+          project_id: data.project.id,
+          consumer_id: data.consumer.id,
+          data: %{"id" => "bulk-1"},
+          status: :success
+        })
+
+      {:ok, event2} =
+        Events.create(%{
+          uid: "bulk-2-#{System.unique_integer()}",
+          topic_id: data.topic.id,
+          project_id: data.project.id,
+          consumer_id: data.consumer.id,
+          data: %{"id" => "bulk-2"},
+          status: :failed
+        })
+
+      assert {:ok, %{total_enqueued: 2, job_ids: job_ids}} =
+               Events.bulk_replay(
+                 project_id: data.project.id,
+                 topic_ids: [data.topic.id]
+               )
+
+      for job_id <- job_ids do
+        assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
+      end
+
+      assert Events.get!(event1.id).status in [:no_subscribers, :processing, :success]
+      assert Events.get!(event2.id).status in [:no_subscribers, :processing, :success]
     end
   end
 

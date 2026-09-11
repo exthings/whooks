@@ -19,6 +19,8 @@
   import * as Sidebar from "$lib/components/ui/sidebar";
   import * as Collapsible from "$lib/components/ui/collapsible/index.js";
   import { PersistedState } from "runed";
+  import { Toaster } from "$lib/components/ui/sonner";
+  import { toast } from "svelte-sonner";
 
   type Props = {
     children: Snippet;
@@ -89,8 +91,26 @@
     }
   });
 
+  let lastFlash = $state<string | null>(null);
+
+  $effect(() => {
+    const flash = $page.props.flash as Record<string, string> | undefined;
+    if (flash) {
+      const flashKey = JSON.stringify(flash);
+      if (flashKey !== "{}" && flashKey !== lastFlash) {
+        lastFlash = flashKey;
+        if (flash.info) toast.info(flash.info);
+        if (flash.success) toast.success(flash.success);
+        if (flash.error) toast.error(flash.error);
+        if (flash.warning) toast.warning(flash.warning);
+      }
+    }
+  });
+
   $inspect(currentScope);
 </script>
+
+<Toaster position="top-center" />
 
 <Sidebar.Provider>
   <!-- <AppSidebar /> -->
