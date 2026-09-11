@@ -10,6 +10,8 @@ defmodule WhooksWeb.UI.Admin.EndpointControllerTest do
   import Whooks.EventsFixtures
   import Whooks.AuthFixtures
 
+  alias Whooks.Repo
+
   setup do
     org = organization_fixture()
     user = user_fixture(%{role: "admin"})
@@ -24,7 +26,7 @@ defmodule WhooksWeb.UI.Admin.EndpointControllerTest do
         url: "http://localhost:4000/webhook"
       })
 
-    _sub = subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
+    [sub] = subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
 
     %{
       org: org,
@@ -32,7 +34,8 @@ defmodule WhooksWeb.UI.Admin.EndpointControllerTest do
       project: project,
       consumer: consumer,
       topic: topic,
-      endpoint: endpoint
+      endpoint: endpoint,
+      sub: sub
     }
   end
 
@@ -44,15 +47,26 @@ defmodule WhooksWeb.UI.Admin.EndpointControllerTest do
       project: project,
       consumer: consumer,
       topic: topic,
-      endpoint: endpoint
+      endpoint: endpoint,
+      sub: sub
     } do
-      _failed_event =
+      event =
         event_fixture(%{
           project_id: project.id,
           consumer_id: consumer.id,
           topic_id: topic.id,
+          status: :processed
+        })
+
+      {:ok, _attempt} =
+        %Whooks.DeliveryAttempts.DeliveryAttempt{}
+        |> Whooks.DeliveryAttempts.DeliveryAttempt.create_changeset(%{
+          id: Whooks.DeliveryAttempts.DeliveryAttempt.gen_id() |> TypeID.to_string(),
+          event_id: event.id,
+          subscription_id: sub.id,
           status: :failed
         })
+        |> Repo.insert()
 
       conn =
         conn
@@ -96,7 +110,7 @@ defmodule WhooksWeb.UI.Admin.EndpointControllerTest do
           project_id: project.id,
           consumer_id: consumer.id,
           topic_id: topic.id,
-          status: :success
+          status: :processed
         })
 
       conn =

@@ -57,6 +57,7 @@ defmodule WhooksWeb.UI.Admin.EventController do
   defp assign_events(conn, params) do
     organization_id = Map.get(conn.params, "organization_id")
     global_filters = conn.assigns.global_filters
+    Logger.info(params)
 
     conn
     |> assign_prop(:events, fn ->

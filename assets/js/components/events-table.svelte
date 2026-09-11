@@ -50,12 +50,15 @@
   let meta: Meta = $derived($page.props[propsKey]?.meta);
 
   const statusVariantMap = {
-    pending: "warning",
     scheduled: "neutral",
+    pending: "warning",
     processing: "info",
-    retry: "secondary",
-    failed: "destructive",
+    processed: "success",
+    unprocessed: "secondary",
+    // legacy fallbacks
     success: "success",
+    failed: "destructive",
+    retry: "secondary",
     no_subscribers: "secondary",
   } as const;
 

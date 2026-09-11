@@ -62,12 +62,11 @@
   let meta: Meta = $derived($page.props[propsKey]?.meta);
 
   const statusVariantMap = {
-    pending: "warning",
     scheduled: "neutral",
+    pending: "warning",
     processing: "info",
-    retry: "secondary",
-    failed: "destructive",
-    success: "success",
+    processed: "success",
+    unprocessed: "secondary",
   } as const;
 
   const columns: ColumnDef<EventWithTopicAndConsumer>[] = [

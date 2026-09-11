@@ -31,14 +31,11 @@ defmodule Whooks.Events.Event do
 
     field :status, Ecto.Enum,
       values: [
-        :pending,
         :scheduled,
+        :pending,
         :processing,
-        :retry,
-        :success,
-        :failed,
-        :partial_success,
-        :no_subscribers
+        :processed,
+        :unprocessed
       ],
       default: :pending
 

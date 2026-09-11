@@ -23,14 +23,14 @@
   });
 
   const successData = $derived(
-    data.filter((item) => item.status === "success").map(mapFn),
+    data.filter((item) => item.status === "processed").map(mapFn),
   );
   const failedData = $derived(
     data.filter((item) => item.status === "failed").map(mapFn),
   );
 
   const chartConfig = {
-    success: { label: "success", color: "var(--color-green-400)" },
+    processed: { label: "processed", color: "var(--color-green-400)" },
     failed: { label: "failed", color: "var(--color-red-400)" },
   } satisfies Chart.ChartConfig;
 
@@ -66,9 +66,9 @@
     y="value"
     series={[
       {
-        key: "success",
-        label: "Success",
-        color: chartConfig.success.color,
+        key: "processed",
+        label: "Processed",
+        color: chartConfig.processed.color,
         data: successData,
       },
       {

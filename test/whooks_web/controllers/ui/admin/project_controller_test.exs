@@ -5,8 +5,12 @@ defmodule WhooksWeb.UI.Admin.ProjectControllerTest do
   import Whooks.ProjectsFixtures
   import Whooks.ConsumersFixtures
   import Whooks.TopicsFixtures
+  import Whooks.EndpointsFixtures
+  import Whooks.SubscriptionsFixtures
   import Whooks.EventsFixtures
   import Whooks.AuthFixtures
+
+  alias Whooks.Repo
 
   setup do
     org = organization_fixture()
@@ -33,13 +37,32 @@ defmodule WhooksWeb.UI.Admin.ProjectControllerTest do
       consumer: consumer,
       topic: topic
     } do
-      _failed_event =
+      endpoint =
+        endpoint_fixture(%{
+          consumer_id: consumer.id,
+          project_id: project.id,
+          url: "http://localhost:4000/webhook"
+        })
+
+      [sub] = subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
+
+      event =
         event_fixture(%{
           project_id: project.id,
           consumer_id: consumer.id,
           topic_id: topic.id,
+          status: :processed
+        })
+
+      {:ok, _attempt} =
+        %Whooks.DeliveryAttempts.DeliveryAttempt{}
+        |> Whooks.DeliveryAttempts.DeliveryAttempt.create_changeset(%{
+          id: Whooks.DeliveryAttempts.DeliveryAttempt.gen_id() |> TypeID.to_string(),
+          event_id: event.id,
+          subscription_id: sub.id,
           status: :failed
         })
+        |> Repo.insert()
 
       conn =
         conn
@@ -65,7 +88,7 @@ defmodule WhooksWeb.UI.Admin.ProjectControllerTest do
           project_id: project.id,
           consumer_id: consumer.id,
           topic_id: topic.id,
-          status: :success
+          status: :processed
         })
 
       conn =

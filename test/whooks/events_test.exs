@@ -3,6 +3,7 @@ defmodule Whooks.EventsTest do
   use ExUnit.Case, async: false
 
   alias Whooks.Events
+  alias Whooks.Events.Event
   import Whooks.OrganizationsFixtures
   import Whooks.ConsumersFixtures
   import Whooks.TopicsFixtures
@@ -96,6 +97,18 @@ defmodule Whooks.EventsTest do
       assert updated_event.status == :scheduled
     end
 
+    test "update_to_pending/1", data do
+      event =
+        event_fixture(%{
+          project_id: data.project.id,
+          topic_id: data.topic.id,
+          consumer_id: data.consumer.id
+        })
+
+      assert {:ok, updated_event} = Events.update_to_pending(event)
+      assert updated_event.status == :pending
+    end
+
     test "update_to_processing/1", data do
       event =
         event_fixture(%{
@@ -108,7 +121,7 @@ defmodule Whooks.EventsTest do
       assert updated_event.status == :processing
     end
 
-    test "update_to_success/1", data do
+    test "update_to_processed/1", data do
       event =
         event_fixture(%{
           project_id: data.project.id,
@@ -116,11 +129,11 @@ defmodule Whooks.EventsTest do
           consumer_id: data.consumer.id
         })
 
-      assert {:ok, updated_event} = Events.update_to_success(event)
-      assert updated_event.status == :success
+      assert {:ok, updated_event} = Events.update_to_processed(event)
+      assert updated_event.status == :processed
     end
 
-    test "update_to_retry/1", data do
+    test "update_to_unprocessed/1", data do
       event =
         event_fixture(%{
           project_id: data.project.id,
@@ -128,32 +141,8 @@ defmodule Whooks.EventsTest do
           consumer_id: data.consumer.id
         })
 
-      assert {:ok, updated_event} = Events.update_to_retry(event)
-      assert updated_event.status == :retry
-    end
-
-    test "update_to_failed/1", data do
-      event =
-        event_fixture(%{
-          project_id: data.project.id,
-          topic_id: data.topic.id,
-          consumer_id: data.consumer.id
-        })
-
-      assert {:ok, updated_event} = Events.update_to_failed(event)
-      assert updated_event.status == :failed
-    end
-
-    test "update_to_partial_success/1", data do
-      event =
-        event_fixture(%{
-          project_id: data.project.id,
-          topic_id: data.topic.id,
-          consumer_id: data.consumer.id
-        })
-
-      assert {:ok, updated_event} = Events.update_to_partial_success(event)
-      assert updated_event.status == :partial_success
+      assert {:ok, updated_event} = Events.update_to_unprocessed(event)
+      assert updated_event.status == :unprocessed
     end
   end
 
@@ -213,15 +202,11 @@ defmodule Whooks.EventsTest do
       assert {:ok, %{id: event_id, job_id: job_id}} = Events.enqueue(valid_attrs)
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
 
-      event_return = Jason.encode!(%{id: event_id})
-
-      assert_receive {:bullmq_event, :completed, %{"returnvalue" => ^event_return}}, 2000
-
       assert_receive {:bullmq_event, :completed, %{"returnvalue" => returnvalue}}, 2000
       assert %{"status" => "success", "id" => "attempt_" <> _} = Jason.decode!(returnvalue)
 
       assert {:ok, event} = Events.get(event_id)
-      assert event.status == :success
+      assert event.status == :processed
     end
 
     test "create_event/1 is published to bullmq and data validation fails", data do
@@ -245,7 +230,7 @@ defmodule Whooks.EventsTest do
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
 
       assert {:ok, event} = Events.get(event_id)
-      assert event.status == :failed
+      assert event.status == :unprocessed
       assert event.metadata["failed_reason"] == "Required properties are missing: [\"id\"]."
     end
 
@@ -275,12 +260,9 @@ defmodule Whooks.EventsTest do
       assert {:ok, %{id: _event_id, job_id: job_id}} = Events.enqueue(valid_attrs)
       assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 2000
       assert_receive {:bullmq_event, :completed, %{"returnvalue" => ret1}}, 2000
-      assert_receive {:bullmq_event, :completed, %{"returnvalue" => ret2}}, 2000
 
-      returns = [Jason.decode!(ret1), Jason.decode!(ret2)]
-      attempt_return = Enum.find(returns, &String.starts_with?(&1["id"] || "", "attempt_"))
-
-      assert attempt_return != nil
+      attempt_return = Jason.decode!(ret1)
+      assert String.starts_with?(attempt_return["id"] || "", "attempt_")
       assert attempt_return["status"] == "success"
 
       assert {:ok, %Whooks.Events.Event{}} = Events.enqueue(valid_attrs)
@@ -350,11 +332,8 @@ defmodule Whooks.EventsTest do
       assert_receive {:bullmq_event, :delayed, %{}}, 2000
       assert_receive {:bullmq_event, :failed, %{}}, 50000
 
-      assert_receive {:bullmq_event, :completed, %{"returnvalue" => delivery_return}},
-                     50000
-
-      delivery_return = Jason.decode!(delivery_return)
-      assert delivery_return["id"] == event_id
+      event = Events.get!(event_id)
+      assert event.status in [:processing, :processed]
     end
   end
 
@@ -374,7 +353,7 @@ defmodule Whooks.EventsTest do
       }
     end
 
-    test "updates event status to no_subscribers", %{
+    test "updates event status to unprocessed", %{
       project: project,
       topic: topic,
       consumer: consumer
@@ -388,8 +367,8 @@ defmodule Whooks.EventsTest do
           consumer_id: consumer.id
         })
 
-      assert {:ok, updated_event} = Events.update_to_no_subscribers(event)
-      assert updated_event.status == :no_subscribers
+      assert {:ok, updated_event} = Events.update_to_unprocessed(event)
+      assert updated_event.status == :unprocessed
     end
 
     test "enqueue uses uid for deduplication when present", %{
@@ -467,11 +446,11 @@ defmodule Whooks.EventsTest do
 
       job = %BullMQ.Job{id: "job_test_1", queue_name: "events", name: "create", data: attrs}
 
-      assert {:ok, %{event_id: event_id, status: :no_subscribers}} =
+      assert {:ok, %{event_id: event_id, status: :unprocessed}} =
                WhooksWorker.EventsWorker.process(job)
 
       event = Events.get!(event_id)
-      assert event.status == :no_subscribers
+      assert event.status == :unprocessed
     end
 
     test "resend_batch enqueues jobs in bulk and handles empty or chunked input", %{
@@ -520,13 +499,13 @@ defmodule Whooks.EventsTest do
         assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
       end
 
-      # Verify events were processed and transitioned to no_subscribers (topic has no subs)
-      assert Events.get!(event1.id).status == :no_subscribers
-      assert Events.get!(event2.id).status == :no_subscribers
-      assert Events.get!(event3.id).status == :no_subscribers
+      # Verify events were processed and transitioned to unprocessed (topic has no subs)
+      assert Events.get!(event1.id).status == :unprocessed
+      assert Events.get!(event2.id).status == :unprocessed
+      assert Events.get!(event3.id).status == :unprocessed
     end
 
-    test "retry_failed queries failed and partial_success events and enqueues them", %{
+    test "retry_failed queries failed events and enqueues them", %{
       project: project,
       topic: topic,
       consumer: consumer,
@@ -541,18 +520,21 @@ defmodule Whooks.EventsTest do
           project_id: project.id,
           consumer_id: consumer.id,
           data: %{"val" => "failed"},
-          status: :failed
+          status: :pending
         })
 
-      {:ok, partial_event} =
-        Events.create(%{
-          uid: "partial-#{System.unique_integer()}",
-          topic_id: topic.id,
-          project_id: project.id,
-          consumer_id: consumer.id,
-          data: %{"val" => "partial"},
-          status: :partial_success
+      endpoint = endpoint_fixture(%{consumer_id: consumer.id, project_id: project.id})
+      [sub] = subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
+
+      {:ok, _attempt} =
+        %Whooks.DeliveryAttempts.DeliveryAttempt{}
+        |> Whooks.DeliveryAttempts.DeliveryAttempt.create_changeset(%{
+          id: Whooks.DeliveryAttempts.DeliveryAttempt.gen_id() |> TypeID.to_string(),
+          event_id: failed_event.id,
+          subscription_id: sub.id,
+          status: :failed
         })
+        |> Repo.insert()
 
       {:ok, success_event} =
         Events.create(%{
@@ -561,10 +543,10 @@ defmodule Whooks.EventsTest do
           project_id: project.id,
           consumer_id: consumer.id,
           data: %{"val" => "success"},
-          status: :success
+          status: :processed
         })
 
-      assert {:ok, %{total_enqueued: 2, job_ids: job_ids}} =
+      assert {:ok, %{total_enqueued: 1, job_ids: job_ids}} =
                Events.retry_failed(
                  project_id: project.id,
                  consumer_id: consumer.id,
@@ -576,11 +558,9 @@ defmodule Whooks.EventsTest do
         assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
       end
 
-      # Failed and partial success events were retried and moved to no_subscribers
-      assert Events.get!(failed_event.id).status == :no_subscribers
-      assert Events.get!(partial_event.id).status == :no_subscribers
-      # Success event was not retried and remained :success
-      assert Events.get!(success_event.id).status == :success
+      # Failed event was retried and moved to processing or processed
+      assert Events.get!(failed_event.id).status in [:processing, :processed]
+      assert Events.get!(success_event.id).status == :processed
     end
 
     test "retry_missing queries past events created before endpoint subscriptions", %{
@@ -617,7 +597,7 @@ defmodule Whooks.EventsTest do
           project_id: new_project.id,
           consumer_id: new_consumer.id,
           data: %{"test" => "no_sub"},
-          status: :no_subscribers
+          status: :unprocessed
         })
 
       {:ok, past_success} =
@@ -627,7 +607,7 @@ defmodule Whooks.EventsTest do
           project_id: new_project.id,
           consumer_id: new_consumer.id,
           data: %{"test" => "success"},
-          status: :success
+          status: :processed
         })
 
       {:ok, past_pending} =
@@ -647,7 +627,7 @@ defmodule Whooks.EventsTest do
           project_id: new_project.id,
           consumer_id: new_consumer.id,
           data: %{"test" => "failed"},
-          status: :failed
+          status: :scheduled
         })
 
       Ecto.Query.from(e in Whooks.Events.Event,
@@ -667,7 +647,7 @@ defmodule Whooks.EventsTest do
           project_id: new_project.id,
           consumer_id: new_consumer.id,
           data: %{"test" => "newer"},
-          status: :no_subscribers
+          status: :unprocessed
         })
 
       # retry_missing by endpoint struct
@@ -678,14 +658,14 @@ defmodule Whooks.EventsTest do
         assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
       end
 
-      # Target events were resent and transitioned to processing or success
-      assert Events.get!(past_no_sub.id).status in [:processing, :success]
-      assert Events.get!(past_success.id).status in [:processing, :success]
-      assert Events.get!(past_pending.id).status in [:processing, :success]
+      # Target events were resent and transitioned to processing or processed
+      assert Events.get!(past_no_sub.id).status in [:processing, :processed]
+      assert Events.get!(past_success.id).status in [:processing, :processed]
+      assert Events.get!(past_pending.id).status in [:processing, :processed]
 
       # Events that were not eligible retained their original status
-      assert Events.get!(past_failed.id).status == :failed
-      assert Events.get!(newer_event.id).status == :no_subscribers
+      assert Events.get!(past_failed.id).status == :scheduled
+      assert Events.get!(newer_event.id).status == :unprocessed
     end
 
     test "bulk_replay/1 resends events matching topic_ids and inserted_after", data do
@@ -702,7 +682,7 @@ defmodule Whooks.EventsTest do
           project_id: data.project.id,
           consumer_id: data.consumer.id,
           data: %{"id" => "bulk-1"},
-          status: :success
+          status: :processed
         })
 
       {:ok, event2} =
@@ -712,7 +692,7 @@ defmodule Whooks.EventsTest do
           project_id: data.project.id,
           consumer_id: data.consumer.id,
           data: %{"id" => "bulk-2"},
-          status: :failed
+          status: :unprocessed
         })
 
       assert {:ok, %{total_enqueued: 2, job_ids: job_ids}} =
@@ -725,8 +705,126 @@ defmodule Whooks.EventsTest do
         assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
       end
 
-      assert Events.get!(event1.id).status in [:no_subscribers, :processing, :success]
-      assert Events.get!(event2.id).status in [:no_subscribers, :processing, :success]
+      assert Events.get!(event1.id).status in [:unprocessed, :processing, :processed]
+      assert Events.get!(event2.id).status in [:unprocessed, :processing, :processed]
+    end
+  end
+
+  describe "create_with_attempts/1" do
+    setup do
+      org = organization_fixture()
+      consumer = consumer_fixture(%{organization_id: org.id})
+      project = project_fixture(%{organization_id: org.id})
+      topic = topic_fixture(%{project_id: project.id})
+
+      %{org: org, consumer: consumer, project: project, topic: topic}
+    end
+
+    test "event with matching subscriptions produces :pending Event and :scheduled DeliveryAttempts",
+         %{
+           project: project,
+           topic: topic,
+           consumer: consumer
+         } do
+      endpoint =
+        endpoint_fixture(%{
+          consumer_id: consumer.id,
+          project_id: project.id,
+          url: "http://localhost:4002/v1/webhooks",
+          secret: "attemptsecret"
+        })
+
+      [subscription] =
+        subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
+
+      attrs = %{
+        "uid" => "cwa-sub-#{System.unique_integer()}",
+        "topic" => topic.name,
+        "project_id" => project.id |> TypeID.to_string(),
+        "consumer_id" => consumer.id |> TypeID.to_string(),
+        "data" => %{"message" => "test"}
+      }
+
+      assert {:ok, %Event{} = event} = Events.create_with_attempts(attrs)
+      assert event.status == :pending
+
+      attempts =
+        Repo.all(
+          from(d in Whooks.DeliveryAttempts.DeliveryAttempt,
+            where: d.event_id == ^event.id
+          )
+        )
+
+      assert length(attempts) == 1
+      attempt = hd(attempts)
+      assert attempt.status == :scheduled
+      assert attempt.subscription_id == subscription.id
+    end
+
+    test "event with 0 subscriptions produces :unprocessed Event and 0 attempts", %{
+      project: project,
+      topic: topic,
+      consumer: consumer
+    } do
+      attrs = %{
+        "uid" => "cwa-nosub-#{System.unique_integer()}",
+        "topic" => topic.name,
+        "project_id" => project.id |> TypeID.to_string(),
+        "consumer_id" => consumer.id |> TypeID.to_string(),
+        "data" => %{"message" => "nosub"}
+      }
+
+      assert {:ok, %Event{} = event} = Events.create_with_attempts(attrs)
+      assert event.status == :unprocessed
+
+      attempts =
+        Repo.all(
+          from(d in Whooks.DeliveryAttempts.DeliveryAttempt,
+            where: d.event_id == ^event.id
+          )
+        )
+
+      assert attempts == []
+    end
+
+    test "deduplicates by uid and returns existing event without creating duplicate attempts", %{
+      project: project,
+      topic: topic,
+      consumer: consumer
+    } do
+      endpoint =
+        endpoint_fixture(%{
+          consumer_id: consumer.id,
+          project_id: project.id,
+          url: "http://localhost:4002/v1/webhooks",
+          secret: "attemptsecret"
+        })
+
+      [_subscription] =
+        subscription_fixture(%{endpoint_id: endpoint.id, topics: [topic.id]})
+
+      uid = "cwa-dedup-#{System.unique_integer()}"
+
+      attrs = %{
+        "uid" => uid,
+        "topic" => topic.name,
+        "project_id" => project.id |> TypeID.to_string(),
+        "consumer_id" => consumer.id |> TypeID.to_string(),
+        "data" => %{"message" => "first"}
+      }
+
+      assert {:ok, %Event{id: id1}} = Events.create_with_attempts(attrs)
+      assert {:ok, %Event{id: id2}} = Events.create_with_attempts(attrs)
+      assert id1 == id2
+
+      attempts =
+        Repo.all(
+          from(d in Whooks.DeliveryAttempts.DeliveryAttempt,
+            where: d.event_id == ^id1
+          )
+        )
+
+      assert length(attempts) == 1
     end
   end
 

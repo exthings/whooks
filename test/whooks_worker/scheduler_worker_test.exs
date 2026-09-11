@@ -140,7 +140,7 @@ defmodule WhooksWorker.SchedulerWorkerTest do
       assert count >= 1
 
       updated_event = Events.get!(event.id)
-      assert updated_event.status == :no_subscribers
+      assert updated_event.status == :unprocessed
     end
   end
 

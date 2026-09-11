@@ -45,15 +45,45 @@
   );
 
   const statusVariant = $derived(
-    {
+    (({
+      scheduled: "neutral",
       pending: "warning",
-      scheduled: "secondary",
       processing: "info",
-      retry: "secondary",
+      processed: "success",
+      unprocessed: "secondary",
+      // legacy
       success: "success",
       failed: "destructive",
-    }[event.status],
+      retry: "secondary",
+    } as const)[event.status] || "neutral") as
+      | "neutral"
+      | "warning"
+      | "info"
+      | "success"
+      | "secondary"
+      | "destructive",
   );
+
+  const attemptStatusVariant = (
+    status: Attempt["status"],
+  ): "neutral" | "info" | "success" | "warning" | "destructive" | "secondary" => {
+    switch (status) {
+      case "scheduled":
+        return "neutral";
+      case "processing":
+        return "info";
+      case "success":
+        return "success";
+      case "retry":
+        return "warning";
+      case "failed":
+        return "destructive";
+      case "discarded":
+        return "secondary";
+      default:
+        return "neutral";
+    }
+  };
 
   const resend = () => {
     router.post(`${event.id}/resend`, {});
@@ -68,9 +98,7 @@
   );
 
   $effect(() => {
-    if (
-      ["pending", "scheduled", "processing", "retry"].includes(event.status)
-    ) {
+    if (["pending", "scheduled", "processing"].includes(event.status)) {
       start();
     } else {
       stop();
@@ -211,9 +239,7 @@
           >
             <div class="col-span-2">
               <BadgeStatus
-                variant={attempt.status === "success"
-                  ? "success"
-                  : "destructive"}
+                variant={attemptStatusVariant(attempt.status)}
                 label={attempt.status}
               />
             </div>
@@ -240,9 +266,7 @@
               <div class="flex items-center gap-4 pb-1">
                 <h3 class="font-semibold">Attempt</h3>
                 <BadgeStatus
-                  variant={selectedAttempt.status === "success"
-                    ? "success"
-                    : "destructive"}
+                  variant={attemptStatusVariant(selectedAttempt.status)}
                   label={selectedAttempt.status}
                 />
               </div>

@@ -3,7 +3,7 @@ export type Event = {
   uid: string;
   insertedAt: string;
   updatedAt: string;
-  status: "pending" | "scheduled" | "processing" | "retry" | "success" | "failed";
+  status: "scheduled" | "pending" | "processing" | "processed" | "unprocessed";
   data: Record<string, any>;
   tags: string[];
   metadata: Record<string, any>;

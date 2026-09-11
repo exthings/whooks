@@ -18,7 +18,17 @@ defmodule Whooks.DeliveryAttempts.DeliveryAttempt do
   @primary_key {:id, TypeID, autogenerate: true, prefix: @prefix, type: :string}
   @foreign_key_type TypeID
   schema "delivery_attempts" do
-    field :status, Ecto.Enum, values: [:success, :failed]
+    field :status, Ecto.Enum,
+      values: [
+        :scheduled,
+        :processing,
+        :success,
+        :retry,
+        :failed,
+        :discarded
+      ],
+      default: :scheduled
+
     field :ip, :string
     field :req_headers, :map
     field :res_headers, :map
@@ -69,12 +79,24 @@ defmodule Whooks.DeliveryAttempts.DeliveryAttempt do
       :event_id
     ])
     |> validate_required([
-      :status,
-      :req_headers,
       :subscription_id,
       :event_id
     ])
     |> foreign_key_constraint(:subscription_id)
     |> foreign_key_constraint(:event_id)
+  end
+
+  def update_changeset(delivery_attempt, attrs) do
+    delivery_attempt
+    |> cast(attrs, [
+      :status,
+      :ip,
+      :req_headers,
+      :res_headers,
+      :res_status,
+      :res_body,
+      :latency_ms
+    ])
+    |> validate_required([:status])
   end
 end

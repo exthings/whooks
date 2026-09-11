@@ -36,19 +36,19 @@
   <div class="flex flex-col border rounded-md divide-y">
     <div class="flex items-center gap-3 py-2 px-2">
       <Checkbox
-        id="pending"
-        checked={selected.includes("pending")}
-        onCheckedChange={() => toggleStatus("pending")}
-      />
-      <Label for="pending" class="flex-1 text-orange-600">Pending</Label>
-    </div>
-    <div class="flex items-center gap-3 py-2 px-2">
-      <Checkbox
         id="scheduled"
         checked={selected.includes("scheduled")}
         onCheckedChange={() => toggleStatus("scheduled")}
       />
       <Label for="scheduled" class="flex-1 text-black">Scheduled</Label>
+    </div>
+    <div class="flex items-center gap-3 py-2 px-2">
+      <Checkbox
+        id="pending"
+        checked={selected.includes("pending")}
+        onCheckedChange={() => toggleStatus("pending")}
+      />
+      <Label for="pending" class="flex-1 text-orange-600">Pending</Label>
     </div>
     <div class="flex items-center gap-3 py-2 px-2">
       <Checkbox
@@ -60,35 +60,19 @@
     </div>
     <div class="flex items-center gap-3 py-2 px-2">
       <Checkbox
-        id="retry"
-        checked={selected.includes("retry")}
-        onCheckedChange={() => toggleStatus("retry")}
+        id="processed"
+        checked={selected.includes("processed")}
+        onCheckedChange={() => toggleStatus("processed")}
       />
-      <Label for="retry" class="flex-1 text-gray-600">Retry</Label>
+      <Label for="processed" class="flex-1 text-green-600">Processed</Label>
     </div>
     <div class="flex items-center gap-3 py-2 px-2">
       <Checkbox
-        id="failed"
-        checked={selected.includes("failed")}
-        onCheckedChange={() => toggleStatus("failed")}
+        id="unprocessed"
+        checked={selected.includes("unprocessed")}
+        onCheckedChange={() => toggleStatus("unprocessed")}
       />
-      <Label for="failed" class="flex-1 text-red-600">Failed</Label>
-    </div>
-    <div class="flex items-center gap-3 py-2 px-2">
-      <Checkbox
-        id="success"
-        checked={selected.includes("success")}
-        onCheckedChange={() => toggleStatus("success")}
-      />
-      <Label for="success" class="flex-1 text-green-600">Success</Label>
-    </div>
-    <div class="flex items-center gap-3 py-2 px-2">
-      <Checkbox
-        id="no_subscribers"
-        checked={selected.includes("no_subscribers")}
-        onCheckedChange={() => toggleStatus("no_subscribers")}
-      />
-      <Label for="no_subscribers" class="flex-1 text-slate-500">No Subscribers</Label>
+      <Label for="unprocessed" class="flex-1 text-slate-500">Unprocessed</Label>
     </div>
   </div>
 </Collapsible>

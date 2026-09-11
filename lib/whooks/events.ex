@@ -10,8 +10,10 @@ defmodule Whooks.Events do
 
   alias Whooks.Repo
   alias Whooks.Events.Event
+  alias Whooks.Topics
   alias Whooks.Topics.Topic
   alias Whooks.Consumers.Consumer
+  alias Whooks.Subscriptions
   alias Whooks.Subscriptions.Subscription
   alias Whooks.DeliveryAttempts.DeliveryAttempt
   alias Whooks.Endpoints.Endpoint
@@ -179,6 +181,231 @@ defmodule Whooks.Events do
     end
   end
 
+  def create_with_attempts(attrs) do
+    topic_param = attrs["topic"] || attrs[:topic] || attrs["topic_id"] || attrs[:topic_id]
+    project_id = attrs["project_id"] || attrs[:project_id]
+    data = attrs["data"] || attrs[:data] || %{}
+    uid = attrs["uid"] || attrs[:uid]
+
+    has_uid = is_binary(uid) and String.trim(uid) != ""
+
+    if has_uid do
+      case get(uid) do
+        {:ok, %Event{} = existing_event} ->
+          {:ok, existing_event}
+
+        {:error, :not_found} ->
+          do_create_with_attempts(attrs, topic_param, project_id, data)
+      end
+    else
+      do_create_with_attempts(attrs, topic_param, project_id, data)
+    end
+  end
+
+  defp do_create_with_attempts(attrs, topic_param, project_id, data) do
+    with {:ok, topic} <- resolve_topic(topic_param, project_id) do
+      case validate_payload(topic, data) do
+        :ok ->
+          attrs =
+            attrs
+            |> to_string_key_map()
+            |> Map.put("topic_id", topic.id)
+            |> Map.put_new_lazy("uid", fn -> Event.gen_id() |> TypeID.to_string() end)
+
+          Repo.transaction(fn ->
+            case create(attrs) do
+              {:ok, %Event{} = event} ->
+                case list_subscriptions(event) do
+                  {:ok, []} ->
+                    {:ok, event} = update_to_unprocessed(event)
+                    {event, []}
+
+                  {:ok, subscriptions} ->
+                    attempts =
+                      Enum.map(subscriptions, fn sub ->
+                        attempt_id = DeliveryAttempt.gen_id() |> TypeID.to_string()
+
+                        %{
+                          id: attempt_id,
+                          event_id: event.id,
+                          subscription_id: sub.id,
+                          status: :scheduled,
+                          subscription: sub
+                        }
+                      end)
+
+                    inserted_attempts =
+                      Enum.map(attempts, fn attempt_data ->
+                        {:ok, attempt} =
+                          %DeliveryAttempt{}
+                          |> DeliveryAttempt.create_changeset(
+                            Map.drop(attempt_data, [:subscription])
+                          )
+                          |> Repo.insert()
+
+                        Map.put(attempt, :subscription, attempt_data.subscription)
+                      end)
+
+                    {event, inserted_attempts}
+                end
+
+              {:error, changeset} ->
+                Repo.rollback(changeset)
+            end
+          end)
+          |> case do
+            {:ok, {event, []}} ->
+              {:ok, event}
+
+            {:ok, {event, attempts}} ->
+              enqueue_delivery_attempt_jobs(event, attempts)
+              {:ok, event}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+
+        {:error, %JsonXema.ValidationError{} = error} ->
+          metadata =
+            (attrs["metadata"] || attrs[:metadata] || %{})
+            |> Map.put("failed_reason", Exception.message(error))
+
+          attrs =
+            attrs
+            |> to_string_key_map()
+            |> Map.put("topic_id", topic.id)
+            |> Map.put("status", :unprocessed)
+            |> Map.put("metadata", metadata)
+            |> Map.put_new_lazy("uid", fn -> Event.gen_id() |> TypeID.to_string() end)
+
+          create(attrs)
+      end
+    end
+  end
+
+  def maybe_mark_event_processed(event_id) do
+    pending_attempts =
+      from(d in DeliveryAttempt,
+        where: d.event_id == ^event_id and d.status in [:scheduled, :processing, :retry]
+      )
+      |> Repo.aggregate(:count)
+
+    if pending_attempts == 0 do
+      case get_event!(event_id) do
+        %Event{status: status} = event when status != :processed ->
+          update_to_processed(event)
+
+        _ ->
+          :ok
+      end
+    else
+      :ok
+    end
+  end
+
+  def list_subscriptions(%Event{} = event) do
+    Subscriptions.list_by_topic(event.topic_id,
+      consumer_id: event.consumer_id,
+      project_id: event.project_id
+    )
+  end
+
+  defp enqueue_delivery_attempt_jobs(%Event{} = event, attempts) do
+    jobs =
+      Enum.map(attempts, fn attempt ->
+        sub = attempt.subscription
+
+        {
+          "attempt",
+          %{
+            "attempt_id" => to_string(attempt.id),
+            "event_id" => to_string(event.id),
+            "subscription_id" => to_string(sub.id),
+            "url" => sub.endpoint.url,
+            "headers" => sub.endpoint.headers,
+            "secret" => sub.endpoint.secret,
+            "topic" => sub.topic.name,
+            "data" => event.data
+          },
+          [
+            attempts: 3,
+            backoff: %{type: :exponential, delay: 5_000}
+          ]
+        }
+      end)
+
+    BullMQ.Queue.add_bulk("deliveries", jobs, connection: :bullmq_redis)
+  end
+
+  defp resolve_topic(topic_or_id, project_id) do
+    cond do
+      is_nil(topic_or_id) ->
+        {:error, :topic_required}
+
+      is_binary(topic_or_id) and String.starts_with?(topic_or_id, "topic_") ->
+        try do
+          topic = Topics.get!(topic_or_id)
+
+          if is_nil(project_id) or to_string(topic.project_id) == to_string(project_id) do
+            {:ok, topic}
+          else
+            {:error, :not_found}
+          end
+        rescue
+          Ecto.NoResultsError -> {:error, :not_found}
+        end
+
+      is_struct(topic_or_id, TypeID) ->
+        try do
+          topic = Topics.get!(topic_or_id)
+
+          if is_nil(project_id) or to_string(topic.project_id) == to_string(project_id) do
+            {:ok, topic}
+          else
+            {:error, :not_found}
+          end
+        rescue
+          Ecto.NoResultsError -> {:error, :not_found}
+        end
+
+      is_binary(topic_or_id) ->
+        try do
+          if project_id do
+            {:ok, Topics.get_by_name!(topic_or_id, project_id)}
+          else
+            {:ok, Topics.get_by_name!(topic_or_id)}
+          end
+        rescue
+          Ecto.NoResultsError -> {:error, :not_found}
+        end
+
+      true ->
+        {:error, :invalid_topic}
+    end
+  end
+
+  defp validate_payload(%Topic{validate_schema: true, json_schema: schema} = topic, data)
+       when not is_nil(schema) do
+    compiled_schema =
+      Whooks.LocalCache.get_or_store!("schemas:#{topic.id}", fn ->
+        JsonXema.new(schema)
+      end)
+
+    case JsonXema.validate(compiled_schema, data) do
+      :ok -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp validate_payload(_topic, _data), do: :ok
+
+  defp to_string_key_map(map) when is_map(map) do
+    Map.new(map, fn
+      {k, v} when is_atom(k) -> {Atom.to_string(k), v}
+      {k, v} -> {k, v}
+    end)
+  end
+
   def resend(%Event{} = event) do
     Logger.info("Resending event: #{inspect(event)}")
 
@@ -186,6 +413,47 @@ defmodule Whooks.Events do
            BullMQ.Queue.add("events", "resend", %{id: event.id}, connection: :bullmq_redis) do
       Logger.info("[BullMQ] events.resend job added: #{inspect(job.id)}")
       {:ok, %{id: event.id, job_id: job.id}}
+    end
+  end
+
+  def resend_event(%Event{} = event) do
+    with {:ok, subscriptions} <- list_subscriptions(event) do
+      case subscriptions do
+        [] ->
+          {:ok, event} = update_to_unprocessed(event)
+          {:ok, event}
+
+        subscriptions ->
+          Repo.transaction(fn ->
+            attempts =
+              Enum.map(subscriptions, fn sub ->
+                attempt_id = DeliveryAttempt.gen_id() |> TypeID.to_string()
+
+                {:ok, attempt} =
+                  %DeliveryAttempt{}
+                  |> DeliveryAttempt.create_changeset(%{
+                    id: attempt_id,
+                    event_id: event.id,
+                    subscription_id: sub.id,
+                    status: :scheduled
+                  })
+                  |> Repo.insert()
+
+                Map.put(attempt, :subscription, sub)
+              end)
+
+            {:ok, event} = update_to_processing(event)
+            {event, attempts}
+          end)
+          |> case do
+            {:ok, {event, attempts}} ->
+              enqueue_delivery_attempt_jobs(event, attempts)
+              {:ok, event}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
   end
 
@@ -239,16 +507,19 @@ defmodule Whooks.Events do
   end
 
   @doc """
-  Retries failed events (by default status :failed and :partial_success) using batch resend.
+  Retries failed events (events with delivery attempts in status :failed) using batch resend.
   Supports filtering by :project_id, :consumer_id, :topic_id, :inserted_after, :inserted_before, and :batch_size.
   """
   def retry_failed(opts \\ []) do
-    statuses = Keyword.get(opts, :statuses, [:failed, :partial_success])
+    statuses = Keyword.get(opts, :statuses, [:failed])
     batch_size = Keyword.get(opts, :batch_size, 1_000)
 
     query =
       from(e in Event,
-        where: e.status in ^statuses,
+        join: d in Whooks.DeliveryAttempts.DeliveryAttempt,
+        on: d.event_id == e.id,
+        where: d.status in ^statuses,
+        distinct: true,
         select: e.id
       )
       |> apply_retry_filters(opts)
@@ -299,7 +570,7 @@ defmodule Whooks.Events do
     query =
       from(e in Event,
         where: e.consumer_id == ^endpoint.consumer_id and e.project_id == ^endpoint.project_id,
-        where: e.status in [:no_subscribers, :success, :pending],
+        where: e.status in [:unprocessed, :processed, :pending],
         where: ^conditions,
         select: e.id
       )
@@ -391,6 +662,17 @@ defmodule Whooks.Events do
               key: &cache_key_gen/1,
               opts: [ttl: @idempotency_key_ttl]
             )
+  def update_to_pending(%Event{} = event) do
+    event
+    |> Event.update_changeset(%{status: :pending})
+    |> Repo.update()
+  end
+
+  @decorate cache_put(
+              cache: RedisCache,
+              key: &cache_key_gen/1,
+              opts: [ttl: @idempotency_key_ttl]
+            )
   def update_to_processing(%Event{} = event) do
     event
     |> Event.update_changeset(%{status: :processing})
@@ -402,9 +684,9 @@ defmodule Whooks.Events do
               key: &cache_key_gen/1,
               opts: [ttl: @idempotency_key_ttl]
             )
-  def update_to_success(%Event{} = event) do
+  def update_to_processed(%Event{} = event) do
     event
-    |> Event.update_changeset(%{status: :success})
+    |> Event.update_changeset(%{status: :processed})
     |> Repo.update()
   end
 
@@ -413,44 +695,17 @@ defmodule Whooks.Events do
               key: &cache_key_gen/1,
               opts: [ttl: @idempotency_key_ttl]
             )
-  def update_to_retry(%Event{} = event) do
+  def update_to_unprocessed(%Event{} = event) do
     event
-    |> Event.update_changeset(%{status: :retry})
+    |> Event.update_changeset(%{status: :unprocessed})
     |> Repo.update()
   end
 
-  @decorate cache_put(
-              cache: RedisCache,
-              key: &cache_key_gen/1,
-              opts: [ttl: @idempotency_key_ttl]
-            )
-  def update_to_failed(%Event{} = event) do
-    event
-    |> Event.update_changeset(%{status: :failed})
-    |> Repo.update()
-  end
-
-  @decorate cache_put(
-              cache: RedisCache,
-              key: &cache_key_gen/1,
-              opts: [ttl: @idempotency_key_ttl]
-            )
-  def update_to_partial_success(%Event{} = event) do
-    event
-    |> Event.update_changeset(%{status: :partial_success})
-    |> Repo.update()
-  end
-
-  @decorate cache_put(
-              cache: RedisCache,
-              key: &cache_key_gen/1,
-              opts: [ttl: @idempotency_key_ttl]
-            )
-  def update_to_no_subscribers(%Event{} = event) do
-    event
-    |> Event.update_changeset(%{status: :no_subscribers})
-    |> Repo.update()
-  end
+  def update_to_no_subscribers(%Event{} = event), do: update_to_unprocessed(event)
+  def update_to_success(%Event{} = event), do: update_to_processed(event)
+  def update_to_partial_success(%Event{} = event), do: update_to_processed(event)
+  def update_to_failed(%Event{} = event), do: update_to_processed(event)
+  def update_to_retry(%Event{} = event), do: update_to_processing(event)
 
   defp apply_filters(q, opts, %Flop{} = flop) do
     Logger.info("apply filters flop")

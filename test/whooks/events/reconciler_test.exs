@@ -40,9 +40,9 @@ defmodule Whooks.Events.ReconcilerTest do
     assert {:ok, %{reconciled_count: count}} = Reconciler.reconcile(threshold_seconds: 300)
     assert count >= 1
 
-    # Since topic has no subscriptions, it should have been moved to no_subscribers
+    # Since topic has no subscriptions, it should have been moved to unprocessed
     updated_event = Events.get!(event.id)
-    assert updated_event.status == :no_subscribers
+    assert updated_event.status == :unprocessed
   end
 
   test "reconciler batch resends pending events older than threshold when subscriptions exist" do
