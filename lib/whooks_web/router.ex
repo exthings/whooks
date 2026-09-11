@@ -48,9 +48,15 @@ defmodule WhooksWeb.Router do
 
       scope "/:organization_id" do
         resources "/projects", ProjectController, only: [:index, :show]
+        post "/projects/:id/recover-failed", ProjectController, :recover_failed
+        post "/projects/:id/bulk-replay", ProjectController, :bulk_replay
+
         resources "/consumers", ConsumerController, only: [:index, :show, :create]
         post "/consumers/:id/portal-link", ConsumerController, :create_portal_link
         resources "/endpoints", EndpointController, only: [:show, :create]
+        post "/endpoints/:id/recover-failed", EndpointController, :recover_failed
+        post "/endpoints/:id/replay-missing", EndpointController, :replay_missing
+        post "/endpoints/:id/bulk-replay", EndpointController, :bulk_replay
         resources "/topics", TopicController, only: [:create]
 
         scope "/events" do

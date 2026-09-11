@@ -14,11 +14,18 @@
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import BadgeStatus from "$components/badge-status.svelte";
   import * as Card from "$lib/components/ui/card";
-  import { router, Deferred } from "@inertiajs/svelte";
+  import { router, Deferred, page } from "@inertiajs/svelte";
   import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
   import Section from "$components/section.svelte";
   import Secret from "$components/secret.svelte";
-  import { ChartMetrics, EventsTable } from "$containers";
+  import {
+    ChartMetrics,
+    EventsTable,
+    ReplayDropdown,
+    RecoverFailedDialog,
+    ReplayMissingDialog,
+    BulkReplayDialog,
+  } from "$containers";
 
   import {
     EllipsisVerticalIcon,
@@ -74,6 +81,14 @@
   );
 
   let removeSubscriptionDialog = $state(false);
+  let recoverFailedOpen = $state(false);
+  let replayMissingOpen = $state(false);
+  let bulkReplayOpen = $state(false);
+
+  const orgId = $derived(
+    $page.props.organizationId || $page.params.organization_id || "",
+  );
+  const endpointTopics = $derived(endpoint.subscriptions.map((s) => s.topic));
 </script>
 
 <svelte:head>
@@ -107,7 +122,13 @@
             label={endpoint.status}
           />
         </div>
-        <div>
+        <div class="flex items-center gap-2">
+          <ReplayDropdown
+            showReplayMissing={true}
+            onRecoverFailed={() => (recoverFailedOpen = true)}
+            onReplayMissing={() => (replayMissingOpen = true)}
+            onBulkReplay={() => (bulkReplayOpen = true)}
+          />
           <Button variant="outline" size="sm">
             <EllipsisVerticalIcon />
           </Button>
@@ -245,3 +266,21 @@
     </AlertDialog.Footer>
   </AlertDialog.Content>
 </AlertDialog.Root>
+
+<RecoverFailedDialog
+  bind:open={recoverFailedOpen}
+  endpointId={endpoint.id}
+  targetName="endpoint"
+/>
+
+<ReplayMissingDialog
+  bind:open={replayMissingOpen}
+  endpointId={endpoint.id}
+/>
+
+<BulkReplayDialog
+  bind:open={bulkReplayOpen}
+  submitUrl={`/ui/admin/${orgId}/endpoints/${endpoint.id}/bulk-replay`}
+  targetName="endpoint"
+  topics={endpointTopics}
+/>

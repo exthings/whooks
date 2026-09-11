@@ -198,7 +198,11 @@ defmodule Whooks.Events do
   def resend_batch([], _opts), do: {:ok, %{total_enqueued: 0, job_ids: []}}
 
   def resend_batch(events_or_ids, opts) when is_list(events_or_ids) do
-    batch_size = Keyword.get(opts, :batch_size, 1_000)
+    Logger.info(
+      "[Events.resend_batch] events_or_ids count: #{length(events_or_ids)}, opts: #{inspect(opts)}"
+    )
+
+    batch_size = Keyword.get(opts, :batch_size, 5_000)
 
     event_ids =
       events_or_ids
@@ -305,6 +309,30 @@ defmodule Whooks.Events do
     resend_batch(event_ids, batch_size: batch_size)
   end
 
+  @doc """
+  Replays events matching the given filters (e.g. project_id, consumer_id, topic_ids, inserted_after, inserted_before).
+  Can include events with any statuses or custom specified statuses.
+  """
+  def bulk_replay(opts \\ []) do
+    Logger.info("[Events.bulk_replay] opts: #{inspect(opts)}")
+    batch_size = Keyword.get(opts, :batch_size, 1_000)
+    statuses = Keyword.get(opts, :statuses)
+
+    query =
+      from(e in Event, select: e.id)
+      |> apply_bulk_statuses(statuses)
+      |> apply_retry_filters(opts)
+
+    event_ids = Repo.all(query)
+    Logger.info("[Events.bulk_replay] Found #{length(event_ids)} events")
+    resend_batch(event_ids, batch_size: batch_size)
+  end
+
+  defp apply_bulk_statuses(q, nil), do: q
+
+  defp apply_bulk_statuses(q, statuses) when is_list(statuses),
+    do: where(q, [e], e.status in ^statuses)
+
   defp extract_event_id(%Event{id: id}), do: to_string(id)
   defp extract_event_id(%TypeID{} = id), do: TypeID.to_string(id)
   defp extract_event_id(id) when is_binary(id), do: id
@@ -321,11 +349,26 @@ defmodule Whooks.Events do
       {:topic_id, topic_id}, q when not is_nil(topic_id) ->
         where(q, [e], e.topic_id == ^topic_id)
 
+      {:topic_ids, topic_ids}, q when is_list(topic_ids) and topic_ids != [] ->
+        where(q, [e], e.topic_id in ^topic_ids)
+
       {:inserted_after, %DateTime{} = dt}, q ->
         where(q, [e], e.inserted_at >= ^dt)
 
+      {:inserted_after, dt_str}, q when is_binary(dt_str) and dt_str != "" ->
+        case DateTime.from_iso8601(dt_str) do
+          {:ok, dt, _} -> where(q, [e], e.inserted_at >= ^dt)
+          _ -> q
+        end
+
       {:inserted_before, %DateTime{} = dt}, q ->
         where(q, [e], e.inserted_at <= ^dt)
+
+      {:inserted_before, dt_str}, q when is_binary(dt_str) and dt_str != "" ->
+        case DateTime.from_iso8601(dt_str) do
+          {:ok, dt, _} -> where(q, [e], e.inserted_at <= ^dt)
+          _ -> q
+        end
 
       _, q ->
         q
@@ -484,6 +527,10 @@ defmodule Whooks.Events do
   end
 
   def authorize(:retry_missing, %Scope{user: user}, _opts) do
+    user.role in [:root, :admin, :support]
+  end
+
+  def authorize(:bulk_replay, %Scope{user: user}, _opts) do
     user.role in [:root, :admin, :support]
   end
 

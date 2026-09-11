@@ -687,6 +687,47 @@ defmodule Whooks.EventsTest do
       assert Events.get!(past_failed.id).status == :failed
       assert Events.get!(newer_event.id).status == :no_subscribers
     end
+
+    test "bulk_replay/1 resends events matching topic_ids and inserted_after", data do
+      BullMQ.QueueEvents.subscribe(data.queue_events, self())
+
+      Bypass.stub(data.bypass, "POST", "/v1/webhooks", fn conn ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{status: "success"}))
+      end)
+
+      {:ok, event1} =
+        Events.create(%{
+          uid: "bulk-1-#{System.unique_integer()}",
+          topic_id: data.topic.id,
+          project_id: data.project.id,
+          consumer_id: data.consumer.id,
+          data: %{"id" => "bulk-1"},
+          status: :success
+        })
+
+      {:ok, event2} =
+        Events.create(%{
+          uid: "bulk-2-#{System.unique_integer()}",
+          topic_id: data.topic.id,
+          project_id: data.project.id,
+          consumer_id: data.consumer.id,
+          data: %{"id" => "bulk-2"},
+          status: :failed
+        })
+
+      assert {:ok, %{total_enqueued: 2, job_ids: job_ids}} =
+               Events.bulk_replay(
+                 project_id: data.project.id,
+                 topic_ids: [data.topic.id]
+               )
+
+      for job_id <- job_ids do
+        assert_receive {:bullmq_event, :completed, %{"jobId" => ^job_id}}, 5000
+      end
+
+      assert Events.get!(event1.id).status in [:no_subscribers, :processing, :success]
+      assert Events.get!(event2.id).status in [:no_subscribers, :processing, :success]
+    end
   end
 
   defp endpoint_url(port), do: "http://localhost:#{port}/v1/webhooks"

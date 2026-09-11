@@ -1,10 +1,16 @@
 <script lang="ts">
-  import type { Project } from "$types";
+  import type { Project, Topic } from "$types";
   import BadgeStatus from "$components/badge-status.svelte";
   import type { BadgeStatusVariant } from "$components/badge-status.svelte";
   import { Button } from "$lib/components/ui/button";
   import DateTimeDisplay from "$components/date-time-display.svelte";
   import { EllipsisIcon } from "lucide-svelte";
+  import { page } from "@inertiajs/svelte";
+  import {
+    ReplayDropdown,
+    RecoverFailedDialog,
+    BulkReplayDialog,
+  } from "$containers/replay";
 
   const STATUS_MAP: Record<Project["status"], BadgeStatusVariant> = {
     enabled: "success",
@@ -12,10 +18,18 @@
   };
 
   type Props = {
-    project: Project;
+    project: Project & { topics?: Topic[] };
   };
 
   const { project }: Props = $props();
+
+  let recoverFailedOpen = $state(false);
+  let bulkReplayOpen = $state(false);
+
+  const orgId = $derived(
+    $page.props.organizationId || $page.params.organization_id || "",
+  );
+  const topics = $derived(project.topics || []);
 </script>
 
 <header>
@@ -27,9 +41,16 @@
         label={project.status}
       />
     </div>
-    <Button variant="outline" size="icon">
-      <EllipsisIcon />
-    </Button>
+    <div class="flex items-center gap-2">
+      <ReplayDropdown
+        showReplayMissing={false}
+        onRecoverFailed={() => (recoverFailedOpen = true)}
+        onBulkReplay={() => (bulkReplayOpen = true)}
+      />
+      <Button variant="outline" size="icon">
+        <EllipsisIcon />
+      </Button>
+    </div>
   </div>
   <div class="w-full">
     <dl class="text-sm grid grid-cols-4 gap-4">
@@ -68,3 +89,16 @@
     </dl>
   </div>
 </header>
+
+<RecoverFailedDialog
+  bind:open={recoverFailedOpen}
+  projectId={project.id}
+  targetName="project"
+/>
+
+<BulkReplayDialog
+  bind:open={bulkReplayOpen}
+  submitUrl={`/ui/admin/${orgId}/projects/${project.id}/bulk-replay`}
+  targetName="project"
+  {topics}
+/>
