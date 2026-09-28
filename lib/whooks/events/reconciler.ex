@@ -148,7 +148,7 @@ defmodule Whooks.Events.Reconciler do
     jobs =
       Enum.map(attempts, fn attempt ->
         sub = attempt.subscription
-        DeliveryAttempt.build_bullmq_job(attempt.id, event, sub, sub.endpoint, sub.topic.name)
+        DeliveryAttempt.build_bullmq_job(attempt.id)
       end)
 
     BullMQ.Queue.add_bulk("deliveries", jobs, connection: :bullmq_redis)

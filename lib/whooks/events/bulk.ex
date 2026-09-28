@@ -275,7 +275,7 @@ defmodule Whooks.Events.Bulk do
                 updated_at: now
               }
 
-              job = DeliveryAttempt.build_bullmq_job(attempt_id, event, sub, ep, topic.name)
+              job = DeliveryAttempt.build_bullmq_job(attempt_id)
               {attempt, job}
             end)
             |> Enum.unzip()
