@@ -102,6 +102,7 @@
     router.reload({
       data,
       showProgress: true,
+      queryStringArrayFormat: "brackets",
       ...options,
     });
   };
@@ -179,7 +180,7 @@
         last: value,
         events_params: { filters },
       },
-      { queryStringArrayFormat: "indices" },
+      { queryStringArrayFormat: "brackets" },
     );
   };
 
@@ -200,7 +201,7 @@
         last: "",
         events_params: { filters },
       },
-      { queryStringArrayFormat: "indices" },
+      { queryStringArrayFormat: "brackets" },
     );
   };
 
@@ -212,7 +213,7 @@
         last: lastValue || "1h",
         events_params: { filters },
       },
-      { queryStringArrayFormat: "indices" },
+      { queryStringArrayFormat: "brackets" },
     );
   };
 
@@ -224,7 +225,7 @@
         last: lastValue || "1h",
         events_params: { filters },
       },
-      { queryStringArrayFormat: "indices" },
+      { queryStringArrayFormat: "brackets" },
     );
   };
 
@@ -245,7 +246,7 @@
             : [],
         },
       },
-      queryStringArrayFormat: "indices",
+      queryStringArrayFormat: "brackets",
       onFinish: () => {
         projectsLoading = false;
       },
@@ -269,7 +270,7 @@
             : [],
         },
       },
-      queryStringArrayFormat: "indices",
+      queryStringArrayFormat: "brackets",
       onFinish: () => {
         consumersLoading = false;
       },
@@ -284,7 +285,7 @@
         last: lastValue || "1h",
         events_params: { filters },
       },
-      { queryStringArrayFormat: "indices" },
+      { queryStringArrayFormat: "brackets" },
     );
   };
 
@@ -296,7 +297,7 @@
         last: lastValue || "1h",
         events_params: { filters },
       },
-      { queryStringArrayFormat: "indices" },
+      { queryStringArrayFormat: "brackets" },
     );
   };
 
@@ -306,7 +307,7 @@
         last: "1h",
         events_params: { filters: [] },
       },
-      { queryStringArrayFormat: "indices" },
+      { queryStringArrayFormat: "brackets" },
     );
   };
 </script>

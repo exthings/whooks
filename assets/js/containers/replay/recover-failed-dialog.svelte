@@ -7,6 +7,7 @@
     open: boolean;
     endpointId?: string;
     projectId?: string;
+    consumerId?: string;
     targetName?: string;
   };
 
@@ -14,6 +15,7 @@
     open = $bindable(false),
     endpointId,
     projectId,
+    consumerId,
     targetName = "endpoint",
   }: Props = $props();
 
@@ -27,7 +29,9 @@
   const submitUrl = $derived(
     endpointId
       ? `/ui/admin/${orgId}/endpoints/${endpointId}/recover-failed`
-      : `/ui/admin/${orgId}/projects/${projectId}/recover-failed`,
+      : consumerId
+        ? `/ui/admin/${orgId}/consumers/${consumerId}/recover-failed`
+        : `/ui/admin/${orgId}/projects/${projectId}/recover-failed`,
   );
 
   const formatSub = (msAgo: number) => {

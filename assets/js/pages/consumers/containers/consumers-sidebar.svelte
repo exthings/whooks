@@ -62,6 +62,8 @@
           "events",
           "eventsMetrics",
           "eventsKpi",
+          "attemptsMetrics",
+          "attemptsKpi",
           "subscriptionsCount",
         ]}
         isActive={selectedId === consumer.id}

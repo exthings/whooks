@@ -5,7 +5,7 @@
   import { Deferred, page } from "@inertiajs/svelte";
   import * as Card from "$lib/components/ui/card";
   import * as Empty from "$lib/components/ui/empty";
-  import { BarChartEvents } from "$components/charts";
+  import { BarChartEvents, BarChartAttempts } from "$components/charts";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import Section from "$components/section.svelte";
   import { ChartColumnIcon } from "lucide-svelte";
@@ -13,9 +13,14 @@
   type Props = {
     propKey?: string;
     title?: string;
+    type?: "attempts" | "events";
   };
 
-  const { propKey = "eventsMetrics", title }: Props = $props();
+  const {
+    propKey = "attemptsMetrics",
+    title = "Delivery attempts",
+    type = "attempts",
+  }: Props = $props();
 
   let metrics:
     | { data: Analytics[]; interval: Interval; last: Last }
@@ -39,7 +44,14 @@
             <Skeleton class="h-full w-full" />
           {/snippet}
           {#if hasData && metrics}
-            <BarChartEvents data={metrics.data} interval={metrics.interval} />
+            {#if type === "attempts"}
+              <BarChartAttempts
+                data={metrics.data}
+                interval={metrics.interval}
+              />
+            {:else}
+              <BarChartEvents data={metrics.data} interval={metrics.interval} />
+            {/if}
           {:else}
             <Empty.Root
               class="h-full border border-dashed border-border/80 bg-muted/10 rounded-lg p-6 flex flex-col items-center justify-center text-center"
@@ -52,15 +64,19 @@
                   <ChartColumnIcon class="size-5" />
                 </Empty.Media>
                 <Empty.Title class="text-sm font-semibold text-foreground">
-                  No event metrics
+                  {#if type === "attempts"}
+                    No delivery attempts
+                  {:else}
+                    No event metrics
+                  {/if}
                 </Empty.Title>
                 <Empty.Description
                   class="text-xs text-muted-foreground text-balance"
                 >
                   {#if metrics?.last}
-                    No events were recorded in the last {metrics.last}.
+                    No {type === "attempts" ? "delivery attempts" : "events"} were recorded in the last {metrics.last}.
                   {:else}
-                    No events were recorded for the selected time range.
+                    No {type === "attempts" ? "delivery attempts" : "events"} were recorded for the selected time range.
                   {/if}
                   Delivery activity will appear here once webhooks are dispatched.
                 </Empty.Description>

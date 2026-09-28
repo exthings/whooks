@@ -1,13 +1,26 @@
 <script lang="ts">
-  import type { Consumer, Event, Topic, Meta, GlobalFilters } from "$types";
+  import type {
+    Consumer,
+    Event,
+    Topic,
+    Meta,
+    GlobalFilters,
+    EventsKpi,
+    AttemptsKpi,
+  } from "$types";
 
-  import { router } from "@inertiajs/svelte";
+  import { router, page } from "@inertiajs/svelte";
   import { Button } from "$lib/components/ui/button";
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
   import { EventsTable } from "$containers";
   import ChartMetrics from "$containers/chart-metrics.svelte";
   import MetricsRangeSelect from "$containers/time-range-select.svelte";
   import { RotateCwIcon } from "lucide-svelte";
+  import {
+    ReplayDropdown,
+    RecoverFailedDialog,
+    BulkReplayDialog,
+  } from "$containers/replay";
 
   import {
     ConsumersSidebar,
@@ -18,24 +31,17 @@
     PortalLinkDialog,
   } from "./containers";
 
-  type EventsKpi = {
-    totalAttempts: number;
-    successRate: number;
-    p95LatencyMs: number;
-    successCount: number;
-    failedCount: number;
-  };
-
   type Props = {
     consumers: { data: Consumer[]; meta: Meta };
     consumer?: Consumer;
     events?: { data: (Event & { topic: Topic })[]; meta: Meta };
     id?: string | null;
     globalFilters: GlobalFilters;
-    organizationId: string;
+    organizationId?: string;
     portalLink?: string;
     subscriptionsCount?: number;
     eventsKpi?: EventsKpi;
+    attemptsKpi?: AttemptsKpi;
   };
 
   const {
@@ -45,12 +51,13 @@
     events,
     portalLink,
     globalFilters,
+    organizationId,
     eventsKpi,
+    attemptsKpi,
     subscriptionsCount,
   }: Props = $props();
 
   let formIsOpen = $state(false);
-  let showPortalLinkDialog = $state(false);
 
   const handleCreatePortalLink = () => {
     router.reload({
@@ -99,18 +106,35 @@
           <div class="flex items-center gap-2">
             <span class="text-sm text-muted-foreground">Filters</span>
             <MetricsRangeSelect
-              value={globalFilters.last}
-              only={["globalFilters", "eventsKpi", "events", "eventsMetrics"]}
+              last={globalFilters?.last}
+              only={[
+                "globalFilters",
+                "eventsKpi",
+                "attemptsKpi",
+                "events",
+                "attemptsMetrics",
+                "eventsMetrics",
+              ]}
             />
           </div>
+
           <Button variant="outline" type="button" onclick={handleRefresh}>
             <RotateCwIcon />
           </Button>
         </div>
 
-        <ConsumerKpiCards {events} {eventsKpi} {subscriptionsCount} />
+        <ConsumerKpiCards
+          {eventsKpi}
+          {attemptsKpi}
+          {subscriptionsCount}
+          {globalFilters}
+        />
 
-        <ChartMetrics propKey="eventsMetrics" />
+        <ChartMetrics
+          propKey="attemptsMetrics"
+          title="Delivery attempts"
+          type="attempts"
+        />
 
         <ConsumerEndpoints endpoints={consumer.endpoints} />
 
@@ -124,7 +148,3 @@
     {/key}
   </div>
 </ContentWithSidebar>
-
-<ConsumerFormSheet bind:open={formIsOpen} />
-
-<PortalLinkDialog bind:open={showPortalLinkDialog} {portalLink} />

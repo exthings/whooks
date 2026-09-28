@@ -25,7 +25,7 @@
 
 <DropdownMenu.Root>
   <DropdownMenu.Trigger>
-    <Button variant="outline" size="sm" class="gap-1.5 font-medium">
+    <Button variant="outline" class="gap-1.5 font-medium">
       <RotateCcwIcon class="size-3.5" />
       <span>Resend</span>
       <ChevronDownIcon class="size-3.5 opacity-60" />

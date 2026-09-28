@@ -1,5 +1,12 @@
 <script lang="ts">
-  import type { Project, Topic, Meta, GlobalFilters } from "$types";
+  import type {
+    Project,
+    Topic,
+    Meta,
+    GlobalFilters,
+    EventsKpi,
+    AttemptsKpi,
+  } from "$types";
 
   import ContentWithSidebar from "$components/content-with-sidebar.svelte";
   import EventsTable from "$containers/events-table.svelte";
@@ -22,14 +29,6 @@
     count: number;
   };
 
-  type EventsKpi = {
-    totalAttempts: number;
-    successRate: number;
-    p95LatencyMs: number;
-    successCount: number;
-    failedCount: number;
-  };
-
   type Props = {
     id: string | null;
     projects: { data: Project[]; meta: Meta };
@@ -38,6 +37,7 @@
     subscriptions?: Subscriptions[];
     globalFilters: GlobalFilters;
     eventsKpi?: EventsKpi;
+    attemptsKpi?: AttemptsKpi;
   };
 
   const {
@@ -48,6 +48,7 @@
     subscriptions,
     globalFilters,
     eventsKpi,
+    attemptsKpi,
   }: Props = $props();
 
   let projectFormOpen = $state(false);
@@ -79,17 +80,34 @@
 
         <div class="flex items-center justify-end gap-2">
           <div class="flex items-center gap-2">
-            <span class="text-sm text-muted-foreground">Filters</span>
             <MetricsRangeSelect
-              only={["globalFilters", "eventsKpi", "events", "eventsMetrics"]}
+              only={[
+                "globalFilters",
+                "id",
+                "events",
+                "eventsMetrics",
+                "eventsKpi",
+                "attemptsMetrics",
+                "attemptsKpi",
+                "subscriptionsCount",
+              ]}
             />
           </div>
           <RefreshButton except={["consumers", "consumer"]} />
         </div>
 
-        <ProjectKpiCards {events} {eventsKpi} {subscriptions} />
+        <ProjectKpiCards
+          {eventsKpi}
+          {attemptsKpi}
+          {subscriptions}
+          {globalFilters}
+        />
 
-        <ChartMetrics propKey="eventsMetrics" />
+        <ChartMetrics
+          propKey="attemptsMetrics"
+          title="Delivery attempts"
+          type="attempts"
+        />
 
         <ProjectTopics
           topics={project.topics}

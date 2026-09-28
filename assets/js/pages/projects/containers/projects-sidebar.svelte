@@ -52,12 +52,14 @@
       <SidebarItem
         href={buildHref(`/projects/${project.id}`)}
         only={[
-          "id",
           "project",
-          "events",
-          "subscriptions",
-          "eventsKpi",
+          "globalFilters",
+          "id",
           "eventsMetrics",
+          "eventsKpi",
+          "attemptsMetrics",
+          "attemptsKpi",
+          "subscriptionsCount",
         ]}
         isActive={selectedId === project.id}
         label={project.name}
