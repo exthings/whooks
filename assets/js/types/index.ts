@@ -11,6 +11,8 @@ import type { Topic } from "./topic";
 import type { Scope, User } from "./auth";
 import type { Interval, Last, GlobalFilters } from "./globalFilters";
 
+import type { EventsKpi, AttemptsKpi } from "./kpi";
+
 export type {
   Analytics,
   Attempt,
@@ -27,4 +29,6 @@ export type {
   Interval,
   Last,
   GlobalFilters,
+  EventsKpi,
+  AttemptsKpi,
 };

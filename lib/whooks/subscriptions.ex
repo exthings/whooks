@@ -31,11 +31,9 @@ defmodule Whooks.Subscriptions do
     from(s in Subscription,
       join: e in assoc(s, :endpoint),
       join: t in assoc(s, :topic),
-      where: s.topic_id == ^topic_id,
-      where: e.status == ^"enabled",
       preload: [:endpoint, :topic]
     )
-    |> apply_filters(opts)
+    |> apply_filters(Keyword.put(opts, :topic_id, topic_id))
     |> Repo.all()
     |> case do
       [] ->
@@ -48,11 +46,26 @@ defmodule Whooks.Subscriptions do
 
   defp apply_filters(q, opts) do
     Enum.reduce(opts, q, fn
+      {:topic_id, "topic_" <> _ = topic_id}, q ->
+        where(q, [s, e, t], t.id == ^topic_id)
+
+      {:topic_id, %{prefix: "topic"} = topic_id}, q ->
+        where(q, [s, e, t], t.id == ^topic_id)
+
+      {:topic_name, topic_name}, q ->
+        where(q, [s, e, t], t.name == ^topic_name)
+
       {:consumer_id, consumer_id}, q ->
-        where(q, [e, s], s.consumer_id == ^consumer_id)
+        where(q, [s, e, t], e.consumer_id == ^consumer_id)
 
       {:project_id, project_id}, q ->
-        where(q, [e, s], s.project_id == ^project_id)
+        where(q, [s, e, t], e.project_id == ^project_id)
+
+      {:status, status}, q ->
+        where(q, [s, e, t], s.status == ^status)
+
+      {:topic_status, status}, q ->
+        where(q, [s, e, t], t.status == ^status)
 
       _, q ->
         q

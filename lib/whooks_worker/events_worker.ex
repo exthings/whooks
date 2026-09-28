@@ -9,7 +9,7 @@ defmodule WhooksWorker.EventsWorker do
   def process(%Job{name: "create", data: data}) do
     Logger.info("[EventsWorker.create] creating: #{inspect(data)}")
 
-    case Events.create_with_attempts(data) do
+    case Events.create_and_enqueue(data) do
       {:ok, %Event{} = event} ->
         {:ok, %{event_id: event.id, status: event.status}}
 

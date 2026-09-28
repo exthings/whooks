@@ -74,9 +74,38 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
         end)
       )
       |> assign_prop(
+        :attempts_metrics,
+        inertia_defer(fn ->
+          {:ok, attempts_stats} =
+            Metrics.delivery_attempts(
+              consumer_id: consumer.id,
+              interval: global_filters.interval,
+              last: global_filters.last
+            )
+
+          %{
+            data: attempts_stats,
+            interval: global_filters.interval,
+            last: global_filters.last
+          }
+        end)
+      )
+      |> assign_prop(
         :events_kpi,
         inertia_defer(fn ->
           Metrics.events_kpi(
+            consumer_id: consumer.id,
+            last: global_filters.last
+          )
+          |> case do
+            {:ok, data} -> data
+          end
+        end)
+      )
+      |> assign_prop(
+        :attempts_kpi,
+        inertia_defer(fn ->
+          Metrics.delivery_attempts_kpi(
             consumer_id: consumer.id,
             last: global_filters.last
           )
@@ -124,6 +153,44 @@ defmodule WhooksWeb.UI.Admin.ConsumerController do
       conn
       |> put_flash(:info, "Portal link for #{consumer.name} created.")
       |> redirect(to: ~p"/ui/admin/#{params["organization_id"]}/consumers/#{consumer.id}")
+    end
+  end
+
+  def recover_failed(conn, %{"organization_id" => org_id, "id" => id} = params) do
+    with :ok <- Bodyguard.permit(Events, :retry_failed, conn.assigns.current_scope, []),
+         {:ok, consumer} <- Consumers.get_by_id(id) do
+      data = Map.put(params, "consumer_id", consumer.id)
+
+      case Events.retry_failed(data) do
+        {:ok, %{total_enqueued: count}} ->
+          conn
+          |> put_flash(:info, "Enqueued #{count} failed deliveries for retry")
+          |> redirect(to: ~p"/ui/admin/#{org_id}/consumers/#{consumer.id}")
+
+        {:error, reason} ->
+          conn
+          |> put_flash(:error, "Failed to retry: #{inspect(reason)}")
+          |> redirect(to: ~p"/ui/admin/#{org_id}/consumers/#{consumer.id}")
+      end
+    end
+  end
+
+  def bulk_replay(conn, %{"organization_id" => org_id, "id" => id} = params) do
+    with :ok <- Bodyguard.permit(Events, :replay, conn.assigns.current_scope, []),
+         {:ok, consumer} <- Consumers.get_by_id(id) do
+      data = Map.put(params, "consumer_id", consumer.id)
+
+      case Events.replay(data) do
+        {:ok, %{total_enqueued: count}} ->
+          conn
+          |> put_flash(:info, "Enqueued #{count} events for replay")
+          |> redirect(to: ~p"/ui/admin/#{org_id}/consumers/#{consumer.id}")
+
+        {:error, reason} ->
+          conn
+          |> put_flash(:error, "Failed to replay: #{inspect(reason)}")
+          |> redirect(to: ~p"/ui/admin/#{org_id}/consumers/#{consumer.id}")
+      end
     end
   end
 end

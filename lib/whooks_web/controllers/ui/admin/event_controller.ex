@@ -21,8 +21,8 @@ defmodule WhooksWeb.UI.Admin.EventController do
     with :ok <- Bodyguard.permit(Events, :list, scope, []) do
       conn
       |> assign_events(events_params)
-      |> assing_projects(projects_params)
-      |> assing_consumers(consumers_params)
+      |> assign_projects(projects_params)
+      |> assign_consumers(consumers_params)
       |> render_inertia("events/index")
     end
   end
@@ -66,7 +66,7 @@ defmodule WhooksWeb.UI.Admin.EventController do
     end)
   end
 
-  defp assing_projects(conn, params) do
+  defp assign_projects(conn, params) do
     organization_id = Map.get(conn.params, "organization_id")
 
     conn
@@ -76,7 +76,7 @@ defmodule WhooksWeb.UI.Admin.EventController do
     end)
   end
 
-  defp assing_consumers(conn, params) do
+  defp assign_consumers(conn, params) do
     organization_id = Map.get(conn.params, "organization_id")
 
     conn
@@ -84,7 +84,6 @@ defmodule WhooksWeb.UI.Admin.EventController do
       Consumers.list(params, organization_id: organization_id)
       |> serialize_paginated()
     end)
-    |> render_inertia("events/index")
   end
 
   defp serialize_paginated({:ok, {data, meta}}) do

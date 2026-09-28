@@ -23,7 +23,7 @@ defmodule Whooks.Dispatcher.StandardWebhooksDispatcher do
       post(url, data, headers)
     rescue
       e ->
-        Logger.warning(
+        Logger.error(
           "[StandardWebhooksDispatcher] Exception during dispatch: #{Exception.message(e)}"
         )
 

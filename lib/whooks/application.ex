@@ -38,6 +38,17 @@ defmodule Whooks.Application do
       ),
       Supervisor.child_spec(
         {BullMQ.Worker,
+         name: :bulk_worker,
+         queue: "bulk_operations",
+         connection: :bullmq_redis,
+         processor: &WhooksWorker.BulkWorker.process/1,
+         concurrency: 10,
+         lock_duration: 120_000,
+         stalled_interval: 60_000},
+        id: :bulk_worker
+      ),
+      Supervisor.child_spec(
+        {BullMQ.Worker,
          name: :delivery_worker,
          queue: "deliveries",
          connection: :bullmq_redis,

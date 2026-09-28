@@ -92,6 +92,54 @@ defmodule Whooks.Topics do
     end
   end
 
+  def get_with_subscriptions(id, opts \\ []) do
+    query =
+      from(t in Topic,
+        left_join: s in assoc(t, :subscriptions),
+        as: :subscription,
+        left_join: e in assoc(s, :endpoint),
+        as: :endpoint,
+        preload: [subscriptions: {s, endpoint: e}]
+      )
+      |> apply_filters(Keyword.put(opts, :topic, id))
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :not_found}
+
+      %Topic{} = topic ->
+        {:ok, topic}
+    end
+  end
+
+  defp apply_filters(q, opts) do
+    Enum.reduce(opts, q, fn
+      {:topic_id, topic_id}, q ->
+        where(q, [t], t.id == ^topic_id)
+
+      {:topic, %TypeID{} = topic}, q ->
+        where(q, [t], t.id == ^topic)
+
+      {:topic, "topic_" <> _ = topic_id}, q ->
+        where(q, [t], t.id == ^topic_id)
+
+      {:topic, topic_name}, q ->
+        where(q, [t], t.name == ^topic_name)
+
+      {:status, status}, q ->
+        where(q, [t], t.status == ^status)
+
+      {:project_id, project_id}, q ->
+        where(q, [t], t.project_id == ^project_id)
+
+      {:consumer_id, consumer_id}, q ->
+        where(q, [endpoint: e], e.consumer_id == ^consumer_id)
+
+      _, q ->
+        q
+    end)
+  end
+
   @doc """
   Creates a topic.
 

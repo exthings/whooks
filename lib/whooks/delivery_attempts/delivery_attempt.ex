@@ -46,6 +46,22 @@ defmodule Whooks.DeliveryAttempts.DeliveryAttempt do
     TypeID.new(@prefix)
   end
 
+  @doc """
+  Constructs the canonical BullMQ job tuple for a webhook delivery attempt.
+  """
+  def build_bullmq_job(attempt_id) do
+    {
+      "attempt",
+      %{
+        "attempt_id" => to_string(attempt_id)
+      },
+      [
+        attempts: 3,
+        backoff: %{type: :exponential, delay: 5_000}
+      ]
+    }
+  end
+
   @doc false
   def changeset(delivery_attempt, attrs) do
     delivery_attempt

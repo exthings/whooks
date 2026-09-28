@@ -49,18 +49,12 @@ defmodule WhooksWeb.UI.Admin.EndpointController do
   def recover_failed(conn, %{"organization_id" => org_id, "id" => id} = params) do
     with :ok <- Bodyguard.permit(Events, :retry_failed, conn.assigns.current_scope, []),
          {:ok, endpoint} <- Endpoints.get_by_id(id) do
-      opts = [
-        consumer_id: endpoint.consumer_id,
-        project_id: endpoint.project_id
-      ]
+      data =
+        params
+        |> Map.put("consumer_id", endpoint.consumer_id)
+        |> Map.put("project_id", endpoint.project_id)
 
-      opts =
-        case params["since"] do
-          since when is_binary(since) and since != "" -> Keyword.put(opts, :inserted_after, since)
-          _ -> opts
-        end
-
-      case Events.retry_failed(opts) do
+      case Events.retry_failed(data) do
         {:ok, %{total_enqueued: count}} ->
           conn
           |> put_flash(:info, "Successfully enqueued #{count} failed event(s) for retry")
@@ -77,15 +71,7 @@ defmodule WhooksWeb.UI.Admin.EndpointController do
   def replay_missing(conn, %{"organization_id" => org_id, "id" => id} = params) do
     with :ok <- Bodyguard.permit(Events, :retry_missing, conn.assigns.current_scope, []),
          {:ok, endpoint} <- Endpoints.get_by_id(id) do
-      opts = []
-
-      opts =
-        case params["since"] do
-          since when is_binary(since) and since != "" -> Keyword.put(opts, :inserted_after, since)
-          _ -> opts
-        end
-
-      case Events.retry_missing(endpoint, opts) do
+      case Events.retry_missing(endpoint, params) do
         {:ok, %{total_enqueued: count}} ->
           conn
           |> put_flash(:info, "Successfully enqueued #{count} missing event(s) for replay")
@@ -100,20 +86,14 @@ defmodule WhooksWeb.UI.Admin.EndpointController do
   end
 
   def bulk_replay(conn, %{"organization_id" => org_id, "id" => id} = params) do
-    with :ok <- Bodyguard.permit(Events, :bulk_replay, conn.assigns.current_scope, []),
+    with :ok <- Bodyguard.permit(Events, :replay, conn.assigns.current_scope, []),
          {:ok, endpoint} <- Endpoints.get_by_id(id) do
-      opts = [
-        consumer_id: endpoint.consumer_id,
-        project_id: endpoint.project_id
-      ]
+      data =
+        params
+        |> Map.put("consumer_id", endpoint.consumer_id)
+        |> Map.put("project_id", endpoint.project_id)
 
-      opts =
-        opts
-        |> maybe_put_date(:inserted_after, params["since"])
-        |> maybe_put_date(:inserted_before, params["until"])
-        |> maybe_put_topics(params["topic_ids"])
-
-      case Events.bulk_replay(opts) do
+      case Events.replay(data) do
         {:ok, %{total_enqueued: count}} ->
           conn
           |> put_flash(:info, "Successfully enqueued #{count} event(s) for replay")
@@ -126,18 +106,4 @@ defmodule WhooksWeb.UI.Admin.EndpointController do
       end
     end
   end
-
-  defp maybe_put_date(opts, _key, nil), do: opts
-  defp maybe_put_date(opts, _key, ""), do: opts
-
-  defp maybe_put_date(opts, key, date_str) when is_binary(date_str) do
-    Keyword.put(opts, key, date_str)
-  end
-
-  defp maybe_put_topics(opts, topic_ids) when is_list(topic_ids) do
-    filtered = Enum.reject(topic_ids, &(&1 in [nil, ""]))
-    if filtered != [], do: Keyword.put(opts, :topic_ids, filtered), else: opts
-  end
-
-  defp maybe_put_topics(opts, _), do: opts
 end

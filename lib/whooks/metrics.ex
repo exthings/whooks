@@ -59,42 +59,28 @@ defmodule Whooks.Metrics do
   end
 
   def events_kpi(opts) do
-    base_query =
-      Event
-      |> join(:inner, [e], da in DeliveryAttempt, on: da.event_id == e.id)
-      |> apply_filters(opts)
-      |> windows([_e, da], latency_window: [order_by: [asc: da.latency_ms]])
-      |> select([_e, da], %{
-        id: da.id,
-        res_status: da.res_status,
-        status: da.status,
-        latency_ms: da.latency_ms,
-        ranking: over(percent_rank(), :latency_window)
-      })
-
-    from(a in subquery(base_query),
-      select: %{
-        total_attempts: count(a.id),
-        success_rate:
-          fragment(
-            "ROUND(COUNT(CASE WHEN ? = 'success' THEN 1 END) * 100.0 / NULLIF(COUNT(?), 0), 2)",
-            a.status,
-            a.id
-          ),
-        success_count: fragment("COUNT(CASE WHEN ? = 'success' THEN 1 END)", a.status),
-        failed_count: fragment("COUNT(CASE WHEN ? = 'failed' THEN 1 END)", a.status),
-        p95_latency_ms:
-          fragment(
-            "MIN(CASE WHEN ? >= 0.95 THEN ? END)",
-            a.ranking,
-            a.latency_ms
-          )
-      }
-    )
+    Event
+    |> apply_filters(opts)
+    |> select([e], %{
+      total_count: count(e.id),
+      pending_count: fragment("COUNT(CASE WHEN ? = 'pending' THEN 1 END)", e.status),
+      processed_count: fragment("COUNT(CASE WHEN ? = 'processed' THEN 1 END)", e.status),
+      processing_count: fragment("COUNT(CASE WHEN ? = 'processing' THEN 1 END)", e.status),
+      unprocessed_count: fragment("COUNT(CASE WHEN ? = 'unprocessed' THEN 1 END)", e.status),
+      scheduled_count: fragment("COUNT(CASE WHEN ? = 'scheduled' THEN 1 END)", e.status)
+    })
     |> Repo.one()
     |> case do
       nil ->
-        {:ok, nil}
+        {:ok,
+         %{
+           total_count: 0,
+           pending_count: 0,
+           processed_count: 0,
+           processing_count: 0,
+           unprocessed_count: 0,
+           scheduled_count: 0
+         }}
 
       data ->
         {:ok, data}
@@ -103,11 +89,11 @@ defmodule Whooks.Metrics do
 
   def delivery_attempts_kpi(opts) do
     base_query =
-      Event
-      |> join(:inner, [e], da in DeliveryAttempt, on: da.event_id == e.id)
-      |> apply_filters(opts)
-      |> windows([_e, da], latency_window: [order_by: [asc: da.latency_ms]])
-      |> select([_e, da], %{
+      DeliveryAttempt
+      |> join(:inner, [da], e in assoc(da, :event))
+      |> apply_attempt_filters(opts)
+      |> windows([da, _e], latency_window: [order_by: [asc: da.latency_ms]])
+      |> select([da, _e], %{
         id: da.id,
         res_status: da.res_status,
         status: da.status,
@@ -118,14 +104,18 @@ defmodule Whooks.Metrics do
     from(a in subquery(base_query),
       select: %{
         total_attempts: count(a.id),
+        scheduled_count: fragment("COUNT(CASE WHEN ? = 'scheduled' THEN 1 END)", a.status),
+        processing_count: fragment("COUNT(CASE WHEN ? = 'processing' THEN 1 END)", a.status),
+        success_count: fragment("COUNT(CASE WHEN ? = 'success' THEN 1 END)", a.status),
+        retry_count: fragment("COUNT(CASE WHEN ? = 'retry' THEN 1 END)", a.status),
+        failed_count: fragment("COUNT(CASE WHEN ? = 'failed' THEN 1 END)", a.status),
+        discarded_count: fragment("COUNT(CASE WHEN ? = 'discarded' THEN 1 END)", a.status),
         success_rate:
           fragment(
             "ROUND(COUNT(CASE WHEN ? = 'success' THEN 1 END) * 100.0 / NULLIF(COUNT(?), 0), 2)",
             a.status,
             a.id
           ),
-        success_count: fragment("COUNT(CASE WHEN ? = 'success' THEN 1 END)", a.status),
-        failed_count: fragment("COUNT(CASE WHEN ? = 'failed' THEN 1 END)", a.status),
         p95_latency_ms:
           fragment(
             "MIN(CASE WHEN ? >= 0.95 THEN ? END)",
@@ -137,7 +127,18 @@ defmodule Whooks.Metrics do
     |> Repo.one()
     |> case do
       nil ->
-        {:ok, nil}
+        {:ok,
+         %{
+           total_attempts: 0,
+           scheduled_count: 0,
+           processing_count: 0,
+           success_count: 0,
+           retry_count: 0,
+           failed_count: 0,
+           discarded_count: 0,
+           success_rate: 0.0,
+           p95_latency_ms: nil
+         }}
 
       data ->
         {:ok, data}
@@ -221,6 +222,68 @@ defmodule Whooks.Metrics do
     end
   end
 
+  def delivery_attempts(opts \\ []) do
+    last = Keyword.get(opts, :last)
+    interval = Keyword.get(opts, :interval)
+    step_seconds = interval_seconds(interval)
+    date_format = sql_date_format(interval)
+    start_dt = Utils.parse_last_to_date_time(last) |> trunc_to_interval(interval)
+    end_dt = NaiveDateTime.utc_now() |> trunc_to_interval(interval)
+
+    from(da in DeliveryAttempt,
+      join: e in assoc(da, :event),
+      group_by: [
+        selected_as(:date_time),
+        da.status
+      ],
+      order_by: [asc: selected_as(:date_time)],
+      select: %{
+        date_time:
+          selected_as(
+            fragment(
+              "DATE_FORMAT(FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(?) / ?) * ?), ?)",
+              da.inserted_at,
+              ^step_seconds,
+              ^step_seconds,
+              ^date_format
+            ),
+            :date_time
+          ),
+        status: da.status,
+        count: fragment("coalesce(count(*), 0)")
+      }
+    )
+    |> apply_attempt_filters(opts)
+    |> Repo.all()
+    |> case do
+      [] ->
+        filled_attempts =
+          fill_time_series([], start_dt, end_dt, interval, [
+            :success,
+            :failed,
+            :retry,
+            :processing,
+            :scheduled,
+            :discarded
+          ])
+
+        {:ok, filled_attempts}
+
+      attempts ->
+        filled_attempts =
+          fill_time_series(attempts, start_dt, end_dt, interval, [
+            :success,
+            :failed,
+            :retry,
+            :processing,
+            :scheduled,
+            :discarded
+          ])
+
+        {:ok, filled_attempts}
+    end
+  end
+
   defp apply_filters(q, opts) do
     Enum.reduce(opts, q, fn
       {:consumer_id, consumer_id}, q ->
@@ -242,7 +305,28 @@ defmodule Whooks.Metrics do
     end)
   end
 
-  defp fill_time_series(db_events, start_dt, end_dt, interval) do
+  defp apply_attempt_filters(q, opts) do
+    Enum.reduce(opts, q, fn
+      {:consumer_id, consumer_id}, q ->
+        where(q, [_da, e], e.consumer_id == ^consumer_id)
+
+      {:project_id, project_id}, q ->
+        where(q, [_da, e], e.project_id == ^project_id)
+
+      {:last, last}, q ->
+        where(
+          q,
+          [da, _e],
+          da.inserted_at >= ^Utils.parse_last_to_date_time(last) and
+            da.inserted_at <= fragment("now()")
+        )
+
+      _, q ->
+        q
+    end)
+  end
+
+  defp fill_time_series(db_events, start_dt, end_dt, interval, default_statuses \\ nil) do
     # Create lookup map: %{{~N[2026-07-31 14:00:00], :delivered} => 12}
     db_map =
       Map.new(db_events, fn %{date_time: date_time, status: status, count: count} ->
@@ -251,9 +335,15 @@ defmodule Whooks.Metrics do
 
     # Get distinct statuses found in the query (or default to empty if none)
     statuses =
-      case Enum.map(db_events, & &1.status) |> Enum.uniq() do
-        [] -> []
-        list -> list
+      case default_statuses do
+        nil ->
+          case Enum.map(db_events, & &1.status) |> Enum.uniq() do
+            [] -> []
+            list -> list
+          end
+
+        list when is_list(list) ->
+          list
       end
 
     # Generate all time buckets in range

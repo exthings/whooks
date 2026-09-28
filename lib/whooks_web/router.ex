@@ -53,6 +53,8 @@ defmodule WhooksWeb.Router do
 
         resources "/consumers", ConsumerController, only: [:index, :show, :create]
         post "/consumers/:id/portal-link", ConsumerController, :create_portal_link
+        post "/consumers/:id/recover-failed", ConsumerController, :recover_failed
+        post "/consumers/:id/bulk-replay", ConsumerController, :bulk_replay
         resources "/endpoints", EndpointController, only: [:show, :create]
         post "/endpoints/:id/recover-failed", EndpointController, :recover_failed
         post "/endpoints/:id/replay-missing", EndpointController, :replay_missing

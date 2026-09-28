@@ -8,6 +8,7 @@ defmodule Whooks.Events.Reconciler do
   alias Whooks.Events
   alias Whooks.Events.Event
   alias Whooks.Subscriptions
+  alias Whooks.DeliveryAttempts.DeliveryAttempt
 
   require Logger
 
@@ -147,24 +148,7 @@ defmodule Whooks.Events.Reconciler do
     jobs =
       Enum.map(attempts, fn attempt ->
         sub = attempt.subscription
-
-        {
-          "attempt",
-          %{
-            "attempt_id" => to_string(attempt.id),
-            "event_id" => to_string(event.id),
-            "subscription_id" => to_string(sub.id),
-            "url" => sub.endpoint.url,
-            "headers" => sub.endpoint.headers,
-            "secret" => sub.endpoint.secret,
-            "topic" => sub.topic.name,
-            "data" => event.data
-          },
-          [
-            attempts: 3,
-            backoff: %{type: :exponential, delay: 5_000}
-          ]
-        }
+        DeliveryAttempt.build_bullmq_job(attempt.id, event, sub, sub.endpoint, sub.topic.name)
       end)
 
     BullMQ.Queue.add_bulk("deliveries", jobs, connection: :bullmq_redis)

@@ -8,7 +8,21 @@ defmodule Whooks.DeliveryAttempts do
 
   alias Whooks.DeliveryAttempts.DeliveryAttempt
 
-  def get!(id), do: Repo.get!(DeliveryAttempt, id)
+  def get!(id) do
+    from(
+      a in DeliveryAttempt,
+      join: e in assoc(a, :event),
+      join: s in assoc(a, :subscription),
+      join: t in assoc(s, :topic),
+      join: ep in assoc(s, :endpoint),
+      where: a.id == ^id,
+      preload: [
+        event: e,
+        subscription: {s, topic: t, endpoint: ep}
+      ]
+    )
+    |> Repo.one!()
+  end
 
   def create_success(attrs) do
     %DeliveryAttempt{}
